@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Dorfdulli Racing</title>
+  <meta name="description" content="Dorfdulli Racing – Events, Bilder, Updates. Schwarz/weiß, mobile first." />
+
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --fg:#f5f5f5;
+      --muted:rgba(245,245,245,.72);
+      --line:rgba(245,245,245,.14);
+      --card:rgba(245,245,245,.06);
+      --shadow: 0 16px 50px rgba(0,0,0,.45);
+      --radius: 18px;
+      --max: 980px;
+      --pad: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(255,255,255,.06), transparent 55%),
+                  radial-gradient(900px 450px at 90% 20%, rgba(255,255,255,.05), transparent 55%),
+                  var(--bg);
+      color: var(--fg);
+      line-height: 1.45;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .container{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 var(--pad);
+    }
+
+    header{
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(12px);
+      background: rgba(11,11,11,.72);
+      border-bottom: 1px solid var(--line);
+      z-index: 30;
+    }
+
+    .topbar{
+      height: 64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .logo{
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex: 0 0 auto;
+    }
+    .logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .brand h1{
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: .5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btnrow{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    .btn{
+      border: 1px solid var(--fg);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      background: transparent;
+      cursor: pointer;
+      user-select:none;
+    }
+    .btn.primary{
+      background: var(--fg);
+      color: var(--bg);
+    }
+
+    main{ padding: 18px 0 46px; }
+
+    .hero{
+      padding: 14px 0 16px;
+    }
+    .heroCard{
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .heroTitle{
+      margin: 0 0 8px;
+      font-size: 26px;
+      line-height: 1.1;
+      letter-spacing: .6px;
+    }
+    .heroSub{
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin: 10px 0 0;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .sectionTitle{
+      margin: 18px 0 12px;
+      font-size: 16px;
+      letter-spacing: .5px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Events accordion */
+    details.event{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    details.event[open]{
+      background: rgba(255,255,255,.05);
+    }
+    summary{
+      list-style:none;
+      cursor:pointer;
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker { display:none; }
+    .eventMeta{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .eventDate{
+      font-weight: 800;
+      letter-spacing: .4px;
+      font-size: 15px;
+    }
+    .eventName{
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .eventCount{
+      color: var(--muted);
+      font-size: 12px;
+      border: 1px solid var(--line);
+      padding: 7px 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .eventBody{
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--line);
+    }
+    .eventNote{
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Gallery grid */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .thumb{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,.04);
+      aspect-ratio: 4/3;
+      position: relative;
+      cursor: pointer;
+    }
+    .thumb img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      filter: grayscale(100%);
+      transition: transform .18s ease;
+    }
+    .thumb:active img{ transform: scale(1.02); }
+
+    /* Lightbox */
+    .lightbox{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.85);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .lightbox.open{ display:flex; }
+    .lightboxInner{
+      width: min(980px, 100%);
+      background: #000;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+    }
+    .lightboxTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+    .lightboxTop .title{
+      font-size: 13px;
+      color: var(--muted);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .xbtn{
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-weight: 800;
+      cursor:pointer;
+    }
+    .lightboxImg{
+      width:100%;
+      height:auto;
+      display:block;
+      filter: grayscale(100%);
+    }
+
+    footer{
+      border-top: 1px solid var(--line);
+      padding: 20px 0 40px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* Larger screens */
+    @media (min-width: 700px){
+      .grid{ grid-template-columns: repeat(3, 1fr); }
+      .heroTitle{ font-size: 34px; }
+      .topbar{ height: 70px; }
+      .logo{ width: 44px; height: 44px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container topbar">
+      <div class="brand">
+        <!-- LOGO: Ersetze src später durch dein Logo (z.B. images/logo.png) -->
+        <div class="logo" title="Dorfdulli Racing Logo">
+          <!-- Wenn du noch kein Logo setzen willst: lass img weg -->
+          <!-- <img src="images/logo.png" alt="Dorfdulli Racing Logo"> -->
+          <span style="font-weight:900; font-size:12px; color:rgba(255,255,255,.75);">DR</span>
+        </div>
+        <h1>Dorfdulli Racing</h1>
+      </div>
+
+      <div class="btnrow">
+        <a class="btn primary" href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp" target="_blank" rel="noopener">
+          Instagram
+        </a>
+
+        <!-- Zweiter Link-Button: Ersetze href & Text -->
+        <a class="btn" href="https://example.com" target="_blank" rel="noopener">
+          Link
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="hero">
+      <div class="heroCard">
+        <h2 class="heroTitle">Schwarz. Weiß. Vollgas.</h2>
+        <p class="heroSub">
+          Events, Bilder und Updates von <strong>Dorfdulli Racing</strong>.
+          Alles mobile-first, schnell und clean.
+        </p>
+
+        <div class="chips">
+          <span class="chip">Event-Fotos</span>
+          <span class="chip">Serien pro Datum</span>
+          <span class="chip">Lightbox</span>
+          <span class="chip">Schwarz/Weiß Style</span>
+        </div>
+      </div>
+    </section>
+
+    <h3 class="sectionTitle">Events</h3>
+
+    <!--
+      EVENTS: Hier legst du deine Serien an.
+      Pro Event: Datum + Name + Liste an Bildern.
+      Ersetze die src-Pfade später durch echte Bilder in /images/.
+    -->
+
+    <details class="event" open>
+      <summary>
+        <div class="eventMeta">
+          <div class="eventDate">2026-05-18</div>
+          <div class="eventName">Trackday Hockenheimring</div>
+        </div>
+        <div class="eventCount">6 Fotos</div>
+      </summary>
+
+      <div class="eventBody">
+        <p class="eventNote">Highlights vom Event – antippen zum Vergrößern.</p>
+
+        <div class="grid">
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 01" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 1">
+          </button>
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 02" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 2">
+          </button>
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 03" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 3">
+          </button>
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 04" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 4">
+          </button>
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 05" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 5">
+          </button>
+          <button class="thumb" data-full="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80" data-title="2026-05-18 • Trackday • 06" aria-label="Foto öffnen">
+            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80" alt="Eventfoto 6">
+          </button>
+        </div>
+      </div>
+    </details>
+
+    <details class="event">
+      <summary>
+        <div class="eventMeta">
+          <div class="eventDate">2026-04-02</div>
+          <div class="eventName">Season Opener • Dorf Rundkurs</div>
+        </div>
+        <div class="eventCount">4 Fotos</div>
+      </summary>
+
+      <div class="eventBody">
+        <p class="eventNote">Hier kommen deine echten Bilder rein (siehe unten „Bilder einfügen“).</p>
+
+        <div class="grid">
+          <button class="thumb" data-full="images/2026-04-02_01.jpg" data-title="2026-04-02 • Season Opener • 01" aria-label="Foto öffnen">
+            <img src="images/2026-04-02_01.jpg" alt="Eventfoto 1 (Platzhalter)">
+          </button>
+          <button class="thumb" data-full="images/2026-04-02_02.jpg" data-title="2026-04-02 • Season Opener • 02" aria-label="Foto öffnen">
+            <img src="images/2026-04-02_02.jpg" alt="Eventfoto 2 (Platzhalter)">
+          </button>
+          <button class="thumb" data-full="images/2026-04-02_03.jpg" data-title="2026-04-02 • Season Opener • 03" aria-label="Foto öffnen">
+            <img src="images/2026-04-02_03.jpg" alt="Eventfoto 3 (Platzhalter)">
+          </button>
+          <button class="thumb" data-full="images/2026-04-02_04.jpg" data-title="2026-04-02 • Season Opener • 04" aria-label="Foto öffnen">
+            <img src="images/2026-04-02_04.jpg" alt="Eventfoto 4 (Platzhalter)">
+          </button>
+        </div>
+      </div>
+    </details>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+        <span>© <span id="year"></span> Dorfdulli Racing</span>
+        <a href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp" target="_blank" rel="noopener">Instagram</a>
+      </div>
+      <div class="muted" style="margin-top:10px;">
+        Tipp: Bilder in den Ordner <strong>/images</strong> legen und in den Events referenzieren.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightboxInner">
+      <div class="lightboxTop">
+        <div class="title" id="lightboxTitle">Bild</div>
+        <button class="xbtn" id="closeLb" aria-label="Schließen">✕</button>
+      </div>
+      <img class="lightboxImg" id="lightboxImg" alt="Großansicht">
+    </div>
+  </div>
+
+  <script>
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Lightbox
+    const lb = document.getElementById("lightbox");
+    const lbImg = document.getElementById("lightboxImg");
+    const lbTitle = document.getElementById("lightboxTitle");
+    const closeLb = document.getElementById("closeLb");
+
+    function openLightbox(src, title){
+      lbImg.src = src;
+      lbTitle.textContent = title || "Bild";
+      lb.classList.add("open");
+      lb.setAttribute("aria-hidden", "false");
+    }
+
+    function closeLightboxFn(){
+      lb.classList.remove("open");
+      lb.setAttribute("aria-hidden", "true");
+      lbImg.src = "";
+    }
+
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest(".thumb");
+      if (!t) return;
+      const full = t.getAttribute("data-full");
+      const title = t.getAttribute("data-title");
+      if (full) openLightbox(full, title);
+    });
+
+    closeLb.addEventListener("click", closeLightboxFn);
+    lb.addEventListener("click", (e) => {
+      if (e.target === lb) closeLightboxFn();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeLightboxFn();
+    });
+  </script>
+</body>
+</html>
