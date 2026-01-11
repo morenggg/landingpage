@@ -39,21 +39,37 @@
       padding: 0 var(--pad);
     }
 
-    header{
+ header{
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(12px);
+  background: rgba(11,11,11,.72);
+  border-bottom: 1px solid var(--line);
+  z-index: 30;
+}
+
+   .topbar{
+  height: 64px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 12px 16px;
-  background: #000;
+  gap: 12px;
 }
 
-    .topbar{
-      height: 64px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-    }
+.insta{
+  justify-self: start;
+}
+
+.brand{
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pizza{
+  justify-self: end;
+}
 
     .brand{
       display:flex;
@@ -309,26 +325,26 @@
 
 <body>
   <header>
-    <div class="container topbar">
-      <div class="brand">
-  <a class="logo" href="/" aria-label="Dorfdulli Racing">
-    <img src="images/logo.PNG" alt="Dorfdulli Racing Logo">
-  </a>
-</div>
+  <div class="container topbar">
+    <a class="btn primary insta"
+       href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp"
+       target="_blank" rel="noopener">
+      Instagram
+    </a>
 
-      <div class="btnrow">
-        <a class="btn primary" href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp" target="_blank" rel="noopener">
-          Instagram
-        </a>
-
-        <!-- Zweiter Link-Button: Ersetze href & Text -->
-        <a class="btn" href="https://www.jhandpizzaservice.de" target="_blank" rel="noopener">
-  🍕
-</a>
-        </a>
-      </div>
+    <div class="brand">
+      <a class="logo" href="/" aria-label="Dorfdulli Racing">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo">
+      </a>
     </div>
-  </header>
+
+    <a class="btn pizza"
+       href="https://www.jhandpizzaservice.de"
+       target="_blank" rel="noopener">
+      🍕 Pizza
+    </a>
+  </div>
+</header>
 
   <main class="container">
 
