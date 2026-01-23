@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Dorfduelli Racing – Motocross Mini</title>
+  <style>
+    :root { --bg:#070707; --fg:#f2f2f2; --muted:rgba(255,255,255,.65); }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+
+    /* ✅ FIX: kein Text markieren / kein iOS Callout beim Drücken */
+    html, body, .controls, .pad, button, .chip, .note, p, h1 {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    /* ✅ FIX: kein Tap-Highlight + besseres Touch */
+    button{
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .wrap{max-width:980px;margin:0 auto;padding:14px 14px 88px}
+    h1{font-size:22px;margin:6px 0 8px}
+    p{margin:0 0 10px;color:var(--muted)}
+    .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 12px}
+    .chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px;font-size:14px}
+    button{background:rgba(255,255,255,.08);color:var(--fg);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;font-size:14px}
+    button:active{transform:translateY(1px)}
+    canvas{width:100%;height:auto;border-radius:18px;border:1px solid rgba(255,255,255,.12);touch-action:none;background:
+      radial-gradient(120% 90% at 60% 20%, #1a1a1a 0%, #0a0a0a 55%, #050505 100%)}
+    .controls{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      backdrop-filter:blur(10px);
+      background:linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.22));
+      border-top:1px solid rgba(255,255,255,.10);
+      display:flex;gap:12px;justify-content:center
+    }
+    .pad{flex:1;max-width:980px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+    .pad button{height:56px;font-size:16px;border-radius:16px}
+    .note{font-size:12px;color:rgba(255,255,255,.55);margin-top:8px}
+    .k{opacity:.9}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🏁 Motocross Mini</h1>
+    <p><span class="k">Handy:</span> Buttons unten (Gas/Bremse/Lean). <span class="k">PC:</span> ← → (Lean), ↑ Gas, ↓ Bremse, R Restart.</p>
+
+    <div class="hud">
+      <div class="chip" id="spd">Speed: 0</div>
+      <div class="chip" id="dst">Dist: 0</div>
+      <div class="chip" id="air">Air: 0.0s</div>
+      <div class="chip" id="st">Status: Ready</div>
+      <button id="rs" type="button">Restart</button>
+    </div>
+
+    <canvas id="c" width="980" height="520"></canvas>
+    <div class="note">Tipp: Spring schön über die Kuppen. Landung zu steil = 💥 (jetzt viel toleranter 😄).</div>
+  </div>
+
+  <div class="controls">
+    <div class="pad">
+      <button id="brk" type="button">🛑 Bremse</button>
+      <button id="l" type="button">⬅️ Lean</button>
+      <button id="r" type="button">➡️ Lean</button>
+      <button id="gas" type="button">🔥 Gas</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const elSpd = document.getElementById("spd");
+  const elDst = document.getElementById("dst");
+  const elAir = document.getElementById("air");
+  const elSt  = document.getElementById("st");
+  const btnRs = document.getElementById("rs");
+
+  const btnGas = document.getElementById("gas");
+  const btnBrk = document.getElementById("brk");
+  const btnL   = document.getElementById("l");
+  const btnR   = document.getElementById("r");
+
+  const W = canvas.width, H = canvas.height;
+
+  // Physics tuning
+  const g = 0.55;              // gravity
+  const wheelR = 12;
+  const bikeLen = 56;          // wheelbase visual
+  const engineForce = 0.14;
+  const brakeForce = 0.22;     // wenn dir zu hart: z.B. 0.14
+  const airPitch = 0.045;      // how fast you can rotate in air
+  const stickiness = 0.20;     // how strongly bike aligns to ground angle when on ground
+
+  // Track: height function (wavy + "jumps")
+  function heightAt(x) {
+    // Base undulation
+    let y = 370
+      + 42 * Math.sin(x * 0.008)
+      + 24 * Math.sin(x * 0.019 + 1.7)
+      + 12 * Math.sin(x * 0.043 + 0.4);
+
+    // Add "tabletop / jump" bumps using smooth pulses
+    const bumps = [
+      {x: 900,  w: 220, h: -55},
+      {x: 1600, w: 260, h: -70},
+      {x: 2450, w: 200, h: -62},
+      {x: 3200, w: 280, h: -80},
+      {x: 4100, w: 240, h: -68},
+    ];
+    for (const b of bumps) {
+      const d = (x - b.x) / b.w;
+      if (Math.abs(d) < 1.2) {
+        // smoothstep bell
+        const t = 1 - Math.min(1, Math.abs(d));
+        y += b.h * (t * t * (3 - 2*t));
+      }
+    }
+    return y;
+  }
+  function slopeAt(x) {
+    // numerical derivative
+    const dx = 2.0;
+    const y1 = heightAt(x - dx);
+    const y2 = heightAt(x + dx);
+    return Math.atan2(y2 - y1, dx * 2);
+  }
+
+  // Camera
+  let camX = 0;
+
+  // Input
+  const keys = { gas:false, brk:false, left:false, right:false };
+  function bindHold(btn, k) {
+    const on  = (e)=>{ e.preventDefault(); keys[k]=true; };
+    const off = (e)=>{ e.preventDefault(); keys[k]=false; };
+    btn.addEventListener("pointerdown", on);
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  }
+  bindHold(btnGas,"gas");
+  bindHold(btnBrk,"brk");
+  bindHold(btnL,"left");
+  bindHold(btnR,"right");
+
+  window.addEventListener("keydown",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=true;
+    if (e.key==="ArrowDown") keys.brk=true;
+    if (e.key==="ArrowLeft") keys.left=true;
+    if (e.key==="ArrowRight") keys.right=true;
+    if (e.key.toLowerCase()==="r") reset();
+  });
+  window.addEventListener("keyup",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=false;
+    if (e.key==="ArrowDown") keys.brk=false;
+    if (e.key==="ArrowLeft") keys.left=false;
+    if (e.key==="ArrowRight") keys.right=false;
+  });
+
+  // Bike state
+  const bike = {
+    x: 120,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    rot: 0,          // radians
+    rotV: 0,
+    onGround: false,
+    airTime: 0,
+
+    // ✅ FIX: für “Crash nur bei echter Landung”
+    wasAir: false,
+    lastVy: 0
+  };
+
+  let crashed = false;
+  let dist = 0;
+
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+  function reset() {
+    camX = 0;
+    dist = 0;
+    crashed = false;
+    bike.x = 120;
+    bike.vx = 2.4;
+    bike.vy = 0;
+    bike.rot = 0;
+    bike.rotV = 0;
+    bike.airTime = 0;
+    bike.wasAir = false;
+    bike.lastVy = 0;
+
+    // place on ground
+    const gy = heightAt(bike.x);
+    bike.y = gy - 55;
+    elSt.textContent = "Status: Running";
+  }
+
+  function crash(msg) {
+    crashed = true;
+    elSt.textContent = "Status: 💥 " + msg;
+  }
+
+  // Drawing helpers
+  function drawBackground() {
+    // faint stars / dust
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    for (let i=0;i<60;i++){
+      const x = (i*167 + (camX*0.2)) % (W+200) - 100;
+      const y = (i*83) % (H*0.6);
+      ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.restore();
+  }
+
+  function drawTrack() {
+    ctx.save();
+    ctx.translate(-camX, 0);
+
+    // fill ground
+    ctx.beginPath();
+    ctx.moveTo(camX - 200, H);
+    const startX = Math.floor((camX - 200) / 8) * 8;
+    const endX   = camX + W + 200;
+    for (let x = startX; x <= endX; x += 8) {
+      ctx.lineTo(x, heightAt(x));
+    }
+    ctx.lineTo(endX, H);
+    ctx.closePath();
+
+    // ground fill
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fill();
+
+    // track line
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = startX; x <= endX; x += 6) {
+      const y = heightAt(x);
+      if (x === startX) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // markers / flags
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    for (let x = startX; x <= endX; x += 220) {
+      const y = heightAt(x);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - 26);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.fillRect(x, y - 26, 14, 8);
+    }
+
+    ctx.restore();
+  }
+
+  function drawBike() {
+    // convert bike world pos to screen
+    const sx = bike.x - camX;
+    const sy = bike.y;
+
+    // shadow
+    const gy = heightAt(bike.x);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(sx, gy + 10, 34, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(bike.rot);
+
+    // wheels
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(-bikeLen/2, 16, wheelR, 0, Math.PI*2);
+    ctx.arc( bikeLen/2, 16, wheelR, 0, Math.PI*2);
+    ctx.stroke();
+
+    // frame
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-bikeLen/2, 16);
+    ctx.lineTo(-6, -2);
+    ctx.lineTo( bikeLen/2, 16);
+    ctx.stroke();
+
+    // handlebar
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(6, -6);
+    ctx.lineTo(22, -14);
+    ctx.stroke();
+
+    // rider (helmet)
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.beginPath();
+    ctx.arc(-6, -20, 10, 0, Math.PI*2);
+    ctx.fill();
+
+    // visor
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(-12, -24, 14, 6);
+
+    ctx.restore();
+
+    if (crashed) {
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.font = "800 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("💥 CRASH! Restart", W/2, H*0.42);
+    }
+  }
+
+  function hud() {
+    elSpd.textContent = `Speed: ${Math.max(0,bike.vx).toFixed(1)}`;
+    elDst.textContent = `Dist: ${Math.floor(dist)}m`;
+    elAir.textContent = `Air: ${bike.airTime.toFixed(1)}s`;
+  }
+
+  function step() {
+    // Physics step
+    if (!crashed) {
+
+      // ✅ FIX: lastVy merken (für Landing-Impact)
+      bike.lastVy = bike.vy;
+
+      // controls
+      if (keys.gas) bike.vx += engineForce;
+      if (keys.brk) bike.vx -= brakeForce;
+      bike.vx *= 0.992;
+      bike.vx = clamp(bike.vx, 0, 10.5);
+
+      const lean = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
+
+      // ground collision check based on "wheel points"
+      const frontX = bike.x + bikeLen/2;
+      const rearX  = bike.x - bikeLen/2;
+
+      const groundF = heightAt(frontX);
+      const groundR = heightAt(rearX);
+
+      // simplified wheel center y
+      const wheelY = bike.y + 16;
+
+      // detect if wheels touch ground (simple)
+      const touchF = wheelY + wheelR >= groundF;
+      const touchR = wheelY + wheelR >= groundR;
+
+      bike.onGround = touchF || touchR;
+
+      if (bike.onGround) {
+        // snap to ground using midpoint ground and align rotation toward slope
+        const midX = bike.x;
+        const groundMid = heightAt(midX);
+
+        // Place bike so wheel centers sit on ground (approx)
+        bike.y = groundMid - (16 + wheelR) - 18; // 18 = "frame height" fudge
+
+        // align rotation to slope (stability)
+        const slope = slopeAt(midX);
+        bike.rot += (slope - bike.rot) * stickiness;
+
+        // allow tiny influence from lean (styling), but small
+        bike.rot += lean * 0.008;
+
+        // ✅ FIX: Crash nur bei echter Landung (Air -> Ground), nicht beim normalen Fahren/Bremsen/Lehnen
+        const justLanded = bike.wasAir && bike.airTime > 0.10;
+        if (justLanded) {
+          const rel = Math.abs(bike.rot - slope);   // Winkel relativ zur Strecke
+          const impact = Math.abs(bike.lastVy);     // Aufprallgeschwindigkeit
+
+          // Tuning: viel toleranter (weniger nervige Random-Crashes)
+          const maxRelAngle = 1.35;  // ~77°
+          const minImpact   = 4.2;
+
+          if (rel > maxRelAngle && impact > minImpact) {
+            crash("Bad landing");
+          }
+        }
+
+        // reset vertical vel; damp rotation
+        bike.vy = 0;
+        bike.rotV *= 0.6;
+
+        // reset airtime smoothly
+        bike.airTime = 0;
+
+        // ground state
+        bike.wasAir = false;
+
+        // small suspension bounce
+        bike.y += Math.sin(dist * 0.05) * 0.2;
+
+      } else {
+        // airborne
+        bike.vy += g;
+        bike.y += bike.vy;
+
+        bike.airTime += 1/60;
+
+        // air rotation control
+        bike.rotV += lean * airPitch;
+        bike.rotV *= 0.985;
+        bike.rot += bike.rotV;
+
+        // if you go upside down at speed -> crash (leicht toleranter)
+        if (Math.abs(bike.rot) > 2.65 && bike.vx > 4.5) crash("Flipped");
+
+        bike.wasAir = true;
+      }
+
+      // move forward
+      bike.x += bike.vx;
+      dist += bike.vx * 0.6;
+
+      // camera follow
+      camX += ((bike.x - W*0.35) - camX) * 0.08;
+
+      // fail if you somehow stop
+      if (bike.vx < 0.05 && dist > 20) crash("Stopped");
+    }
+
+    // Draw
+    ctx.clearRect(0,0,W,H);
+    drawBackground();
+    drawTrack();
+    drawBike();
+    hud();
+
+    requestAnimationFrame(step);
+  }
+
+  btnRs.addEventListener("click", reset);
+
+  reset();
+  step();
+})();
+</script>
+</body>
+</html>
