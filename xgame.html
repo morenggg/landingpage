@@ -3,64 +3,56 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Dorfduelli Racing – Mini Game</title>
+  <title>Dorfduelli Racing – Motocross Mini</title>
   <style>
-    :root { --bg:#0b0b0b; --panel:#121212; --text:#eaeaea; --muted:#b7b7b7; }
-    html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px 14px 80px; }
-    h1 { font-size: 22px; margin: 8px 0 6px; }
-    p { margin: 0 0 12px; color: var(--muted); }
-
-    .hud { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 10px 0 12px; }
-    .chip { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:8px 12px; font-size:14px; }
-    button { background: rgba(255,255,255,.08); color:var(--text); border:1px solid rgba(255,255,255,.18);
-      border-radius:12px; padding:10px 12px; font-size:14px; }
-    button:active { transform: translateY(1px); }
-
-    canvas { width:100%; height:auto; border-radius: 18px; background: radial-gradient(120% 140% at 50% 30%, #1a1a1a 0%, #0a0a0a 60%, #050505 100%);
-      border:1px solid rgba(255,255,255,.12); touch-action: none; }
-
-    .controls {
-      position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-      backdrop-filter: blur(10px);
-      background: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.28));
-      border-top: 1px solid rgba(255,255,255,.10);
-      display:flex; gap:12px; justify-content:center;
+    :root { --bg:#070707; --fg:#f2f2f2; --muted:rgba(255,255,255,.65); }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:980px;margin:0 auto;padding:14px 14px 88px}
+    h1{font-size:22px;margin:6px 0 8px}
+    p{margin:0 0 10px;color:var(--muted)}
+    .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 12px}
+    .chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px;font-size:14px}
+    button{background:rgba(255,255,255,.08);color:var(--fg);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;font-size:14px}
+    button:active{transform:translateY(1px)}
+    canvas{width:100%;height:auto;border-radius:18px;border:1px solid rgba(255,255,255,.12);touch-action:none;background:
+      radial-gradient(120% 90% at 60% 20%, #1a1a1a 0%, #0a0a0a 55%, #050505 100%)}
+    .controls{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      backdrop-filter:blur(10px);
+      background:linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.22));
+      border-top:1px solid rgba(255,255,255,.10);
+      display:flex;gap:12px;justify-content:center
     }
-    .pad {
-      flex: 1; max-width: 420px;
-      display:flex; gap:12px;
-    }
-    .pad button {
-      flex: 1;
-      height: 56px;
-      font-size: 18px;
-      border-radius: 16px;
-    }
-    .note { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 10px; }
+    .pad{flex:1;max-width:980px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+    .pad button{height:56px;font-size:16px;border-radius:16px}
+    .note{font-size:12px;color:rgba(255,255,255,.55);margin-top:8px}
+    .k{opacity:.9}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🏍️ Mini Motorrad-Game</h1>
-    <p>Tippe links/rechts (Handy) oder nutze ← → (PC). Bleib auf der Strecke. Vollgas zählt. 😄</p>
+    <h1>🏁 Motocross Mini</h1>
+    <p><span class="k">Handy:</span> Buttons unten (Gas/Bremse/Lean). <span class="k">PC:</span> ← → (Lean), ↑ Gas, ↓ Bremse, R Restart.</p>
 
     <div class="hud">
-      <div class="chip" id="speed">Speed: 0</div>
-      <div class="chip" id="score">Score: 0</div>
-      <div class="chip" id="status">Status: Ready</div>
-      <button id="restart" type="button">Restart</button>
+      <div class="chip" id="spd">Speed: 0</div>
+      <div class="chip" id="dst">Dist: 0</div>
+      <div class="chip" id="air">Air: 0.0s</div>
+      <div class="chip" id="st">Status: Ready</div>
+      <button id="rs" type="button">Restart</button>
     </div>
 
-    <canvas id="c" width="900" height="520" aria-label="Motorrad Game"></canvas>
-
-    <div class="note">Tipp: Wenn du willst, bau ich dir als Nächstes Obstacles (Ölflecken 🍌), Münzen 🪙 und Highscore.</div>
+    <canvas id="c" width="980" height="520"></canvas>
+    <div class="note">Tipp: Spring schön über die Kuppen. Landung zu steil = 💥.</div>
   </div>
 
   <div class="controls">
     <div class="pad">
-      <button id="left" type="button">⬅️</button>
-      <button id="right" type="button">➡️</button>
+      <button id="brk" type="button">🛑 Bremse</button>
+      <button id="l" type="button">⬅️ Lean</button>
+      <button id="r" type="button">➡️ Lean</button>
+      <button id="gas" type="button">🔥 Gas</button>
     </div>
   </div>
 
@@ -69,236 +61,352 @@
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
 
-  const elSpeed = document.getElementById("speed");
-  const elScore = document.getElementById("score");
-  const elStatus = document.getElementById("status");
-  const btnRestart = document.getElementById("restart");
+  const elSpd = document.getElementById("spd");
+  const elDst = document.getElementById("dst");
+  const elAir = document.getElementById("air");
+  const elSt  = document.getElementById("st");
+  const btnRs = document.getElementById("rs");
 
-  const btnLeft = document.getElementById("left");
-  const btnRight = document.getElementById("right");
+  const btnGas = document.getElementById("gas");
+  const btnBrk = document.getElementById("brk");
+  const btnL   = document.getElementById("l");
+  const btnR   = document.getElementById("r");
 
-  // Game state
   const W = canvas.width, H = canvas.height;
-  let running = true;
-  let crashed = false;
 
-  let t = 0;                 // time
-  let score = 0;
-  let speed = 6.2;           // forward speed
-  let targetSpeed = 6.2;
+  // Physics tuning
+  const g = 0.55;              // gravity
+  const wheelR = 12;
+  const bikeLen = 56;          // wheelbase visual
+  const engineForce = 0.14;
+  const brakeForce = 0.22;
+  const airPitch = 0.045;      // how fast you can rotate in air
+  const stickiness = 0.20;     // how strongly bike aligns to ground angle when on ground
 
-  // Bike
-  const bike = {
-    x: W * 0.5,
-    y: H * 0.72,
-    vx: 0,
-    steer: 0,               // -1..1
-    lean: 0
-  };
+  // Track: height function (wavy + "jumps")
+  function heightAt(x) {
+    // Base undulation
+    let y = 370
+      + 42 * Math.sin(x * 0.008)
+      + 24 * Math.sin(x * 0.019 + 1.7)
+      + 12 * Math.sin(x * 0.043 + 0.4);
 
-  // Track (center line oscillates)
-  const track = {
-    halfWidth: 160,
-    softness: 0.12
-  };
-
-  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-
-  function trackCenter(y, time) {
-    // y 0..H => curve amount increases slightly with distance
-    const n = y / H;
-    const a = 110 + 70 * n; // amplitude
-    return W * 0.5
-      + a * Math.sin(time * 0.012 + n * 6.2)
-      + 40 * Math.sin(time * 0.021 + n * 10.4);
+    // Add "tabletop / jump" bumps using smooth pulses
+    const bumps = [
+      {x: 900,  w: 220, h: -55},
+      {x: 1600, w: 260, h: -70},
+      {x: 2450, w: 200, h: -62},
+      {x: 3200, w: 280, h: -80},
+      {x: 4100, w: 240, h: -68},
+    ];
+    for (const b of bumps) {
+      const d = (x - b.x) / b.w;
+      if (Math.abs(d) < 1.2) {
+        // smoothstep bell
+        const t = 1 - Math.min(1, Math.abs(d));
+        y += b.h * (t * t * (3 - 2*t));
+      }
+    }
+    return y;
+  }
+  function slopeAt(x) {
+    // numerical derivative
+    const dx = 2.0;
+    const y1 = heightAt(x - dx);
+    const y2 = heightAt(x + dx);
+    return Math.atan2(y2 - y1, dx * 2);
   }
 
-  function reset() {
-    running = true;
-    crashed = false;
-    t = 0;
-    score = 0;
-    speed = 6.2;
-    targetSpeed = 6.2;
-    bike.x = W * 0.5;
-    bike.vx = 0;
-    bike.steer = 0;
-    bike.lean = 0;
-    elStatus.textContent = "Status: Ready";
-  }
+  // Camera
+  let camX = 0;
 
   // Input
-  const keys = { left:false, right:false };
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") keys.left = true;
-    if (e.key === "ArrowRight") keys.right = true;
-    if (e.key.toLowerCase() === "r") reset();
-  });
-  window.addEventListener("keyup", (e) => {
-    if (e.key === "ArrowLeft") keys.left = false;
-    if (e.key === "ArrowRight") keys.right = false;
-  });
-
-  function bindHold(btn, which) {
-    const on = (ev) => { ev.preventDefault(); keys[which] = true; };
-    const off = (ev) => { ev.preventDefault(); keys[which] = false; };
+  const keys = { gas:false, brk:false, left:false, right:false };
+  function bindHold(btn, k) {
+    const on  = (e)=>{ e.preventDefault(); keys[k]=true; };
+    const off = (e)=>{ e.preventDefault(); keys[k]=false; };
     btn.addEventListener("pointerdown", on);
     btn.addEventListener("pointerup", off);
     btn.addEventListener("pointercancel", off);
     btn.addEventListener("pointerleave", off);
   }
-  bindHold(btnLeft, "left");
-  bindHold(btnRight, "right");
+  bindHold(btnGas,"gas");
+  bindHold(btnBrk,"brk");
+  bindHold(btnL,"left");
+  bindHold(btnR,"right");
 
-  // Also allow tap on canvas sides
-  canvas.addEventListener("pointerdown", (ev) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (ev.clientX - rect.left) / rect.width;
-    keys.left = x < 0.5;
-    keys.right = x >= 0.5;
+  window.addEventListener("keydown",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=true;
+    if (e.key==="ArrowDown") keys.brk=true;
+    if (e.key==="ArrowLeft") keys.left=true;
+    if (e.key==="ArrowRight") keys.right=true;
+    if (e.key.toLowerCase()==="r") reset();
   });
-  canvas.addEventListener("pointerup", () => { keys.left = false; keys.right = false; });
-  canvas.addEventListener("pointercancel", () => { keys.left = false; keys.right = false; });
+  window.addEventListener("keyup",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=false;
+    if (e.key==="ArrowDown") keys.brk=false;
+    if (e.key==="ArrowLeft") keys.left=false;
+    if (e.key==="ArrowRight") keys.right=false;
+  });
 
-  btnRestart.addEventListener("click", reset);
+  // Bike state
+  const bike = {
+    x: 120,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    rot: 0,          // radians
+    rotV: 0,
+    onGround: false,
+    airTime: 0
+  };
 
-  // Draw helpers
-  function drawTrack(time) {
-    // Road gradient + dashed center line illusion
-    const rows = 80;
-    for (let i = 0; i < rows; i++) {
-      const y0 = (i / rows) * H;
-      const y1 = ((i + 1) / rows) * H;
-      const yMid = (y0 + y1) * 0.5;
+  let crashed = false;
+  let dist = 0;
 
-      const perspective = 0.32 + 0.68 * (yMid / H);
-      const center = trackCenter(yMid, time);
-      const half = track.halfWidth * perspective;
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 
-      // road
-      ctx.fillStyle = `rgba(255,255,255,${0.05 + 0.07 * (1 - yMid / H)})`;
-      ctx.fillRect(center - half, y0, half * 2, y1 - y0);
+  function reset() {
+    camX = 0;
+    dist = 0;
+    crashed = false;
+    bike.x = 120;
+    bike.vx = 2.4;
+    bike.vy = 0;
+    bike.rot = 0;
+    bike.rotV = 0;
+    bike.airTime = 0;
+    // place on ground
+    const gy = heightAt(bike.x);
+    bike.y = gy - 55;
+    elSt.textContent = "Status: Running";
+  }
 
-      // edges
-      ctx.fillStyle = `rgba(255,255,255,${0.10 + 0.14 * (1 - yMid / H)})`;
-      ctx.fillRect(center - half - 6, y0, 3, y1 - y0);
-      ctx.fillRect(center + half + 3, y0, 3, y1 - y0);
+  function crash(msg) {
+    crashed = true;
+    elSt.textContent = "Status: 💥 " + msg;
+  }
 
-      // center dashes
-      const dashOn = ((time * 0.08 + i) % 10) < 5;
-      if (dashOn) {
-        ctx.fillStyle = `rgba(255,255,255,${0.22 + 0.10 * (1 - yMid / H)})`;
-        ctx.fillRect(center - 2, y0, 4, y1 - y0);
-      }
+  // Drawing helpers
+  function drawBackground() {
+    // faint stars / dust
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    for (let i=0;i<60;i++){
+      const x = (i*167 + (camX*0.2)) % (W+200) - 100;
+      const y = (i*83) % (H*0.6);
+      ctx.fillRect(x, y, 2, 2);
     }
+    ctx.restore();
+  }
+
+  function drawTrack() {
+    ctx.save();
+    ctx.translate(-camX, 0);
+
+    // fill ground
+    ctx.beginPath();
+    ctx.moveTo(camX - 200, H);
+    const startX = Math.floor((camX - 200) / 8) * 8;
+    const endX   = camX + W + 200;
+    for (let x = startX; x <= endX; x += 8) {
+      ctx.lineTo(x, heightAt(x));
+    }
+    ctx.lineTo(endX, H);
+    ctx.closePath();
+
+    // ground fill
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fill();
+
+    // track line
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = startX; x <= endX; x += 6) {
+      const y = heightAt(x);
+      if (x === startX) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // markers / flags
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    for (let x = startX; x <= endX; x += 220) {
+      const y = heightAt(x);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - 26);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.fillRect(x, y - 26, 14, 8);
+    }
+
+    ctx.restore();
   }
 
   function drawBike() {
-    const x = bike.x;
-    const y = bike.y;
+    // convert bike world pos to screen
+    const sx = bike.x - camX;
+    const sy = bike.y;
 
     // shadow
+    const gy = heightAt(bike.x);
     ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.beginPath();
-    ctx.ellipse(x, y + 26, 30, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx, gy + 10, 34, 10, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // bike body (simple stylized)
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(bike.lean * 0.45);
+    ctx.translate(sx, sy);
+    ctx.rotate(bike.rot);
 
     // wheels
-    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(-18, 18, 12, 0, Math.PI * 2);
-    ctx.arc(18, 18, 12, 0, Math.PI * 2);
+    ctx.arc(-bikeLen/2, 16, wheelR, 0, Math.PI*2);
+    ctx.arc( bikeLen/2, 16, wheelR, 0, Math.PI*2);
     ctx.stroke();
 
     // frame
-    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
     ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.moveTo(-18, 18);
-    ctx.lineTo(0, -6);
-    ctx.lineTo(18, 18);
+    ctx.moveTo(-bikeLen/2, 16);
+    ctx.lineTo(-6, -2);
+    ctx.lineTo( bikeLen/2, 16);
     ctx.stroke();
 
-    // rider
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    // handlebar
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(0, -18, 10, 0, Math.PI * 2);
+    ctx.moveTo(6, -6);
+    ctx.lineTo(22, -14);
+    ctx.stroke();
+
+    // rider (helmet)
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.beginPath();
+    ctx.arc(-6, -20, 10, 0, Math.PI*2);
     ctx.fill();
 
-    // helmet visor
+    // visor
     ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(-7, -21, 14, 6);
+    ctx.fillRect(-12, -24, 14, 6);
 
     ctx.restore();
 
-    // crash text
     if (crashed) {
       ctx.fillStyle = "rgba(255,255,255,0.95)";
-      ctx.font = "700 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.font = "800 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
       ctx.textAlign = "center";
-      ctx.fillText("💥 CRASH! Tippe Restart", W/2, H*0.46);
+      ctx.fillText("💥 CRASH! Restart", W/2, H*0.42);
     }
   }
 
-  function updateHUD() {
-    elSpeed.textContent = `Speed: ${speed.toFixed(1)}`;
-    elScore.textContent = `Score: ${Math.floor(score)}`;
-    elStatus.textContent = crashed ? "Status: Crash" : "Status: Running";
+  function hud() {
+    elSpd.textContent = `Speed: ${Math.max(0,bike.vx).toFixed(1)}`;
+    elDst.textContent = `Dist: ${Math.floor(dist)}m`;
+    elAir.textContent = `Air: ${bike.airTime.toFixed(1)}s`;
   }
 
-  function tick() {
-    // update
-    if (running && !crashed) {
-      t += speed;
+  function step() {
+    // Physics step
+    if (!crashed) {
+      // controls
+      if (keys.gas) bike.vx += engineForce;
+      if (keys.brk) bike.vx -= brakeForce;
+      bike.vx *= 0.992;
+      bike.vx = clamp(bike.vx, 0, 10.5);
 
-      // Steering input
-      const steerTarget = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
-      bike.steer += (steerTarget - bike.steer) * 0.22;
+      const lean = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
 
-      // Slight speed increase over time (fun)
-      targetSpeed = 6.2 + Math.min(4.0, score / 550);
-      speed += (targetSpeed - speed) * 0.02;
+      // ground collision check based on "wheel points"
+      const frontX = bike.x + bikeLen/2;
+      const rearX  = bike.x - bikeLen/2;
 
-      // move
-      bike.vx += bike.steer * 0.85;
-      bike.vx *= 0.86;
-      bike.x += bike.vx;
+      const groundF = heightAt(frontX);
+      const groundR = heightAt(rearX);
 
-      // lean
-      bike.lean += (bike.vx * 0.03 - bike.lean) * 0.18;
+      // approximate bike baseline y relative to wheels
+      // our bike.y is body origin; wheels are at y+16 in local space,
+      // so wheel world y ~= bike.y + 16 rotated… We'll simplify by using body y + 16 as wheel center y.
+      const wheelY = bike.y + 16;
 
-      // Collision with track boundaries at bike y
-      const center = trackCenter(bike.y, t);
-      const half = track.halfWidth * (0.32 + 0.68 * (bike.y / H));
-      const left = center - half + 10;
-      const right = center + half - 10;
+      // detect if wheels touch ground (simple)
+      const touchF = wheelY + wheelR >= groundF;
+      const touchR = wheelY + wheelR >= groundR;
 
-      if (bike.x < left || bike.x > right) {
-        crashed = true;
-        running = false;
+      bike.onGround = touchF || touchR;
+
+      if (bike.onGround) {
+        // snap to ground using midpoint ground and align rotation toward slope
+        const midX = bike.x;
+        const groundMid = heightAt(midX);
+        // Place bike so that wheel centers sit on ground (approx)
+        bike.y = groundMid - (16 + wheelR) - 18; // 18 = "frame height" fudge
+
+        // align rotation to slope (stability)
+        const slope = slopeAt(midX);
+        bike.rot += (slope - bike.rot) * stickiness;
+
+        // if leaning, you can slightly influence rotation (feels like whips)
+        bike.rot += lean * 0.01;
+
+        // landing angle check: if you land too steep, crash
+        const steep = Math.abs(bike.rot);
+        if (steep > 1.05 && (touchF || touchR) && Math.abs(bike.vy) > 2.0) {
+          crash("Bad landing");
+        }
+
+        // reset airtime + vertical vel
+        bike.vy = 0;
+        bike.airTime = 0;
+        // small suspension bounce
+        bike.y += Math.sin(dist * 0.05) * 0.2;
+
       } else {
-        score += speed * 0.8;
+        // airborne
+        bike.vy += g;
+        bike.y += bike.vy;
+
+        bike.airTime += 1/60;
+
+        // air rotation control
+        bike.rotV += lean * airPitch;
+        bike.rotV *= 0.985;
+        bike.rot += bike.rotV;
+
+        // if you go upside down at speed -> crash
+        if (Math.abs(bike.rot) > 2.4 && bike.vx > 4.0) crash("Flipped");
       }
+
+      // move forward
+      bike.x += bike.vx;
+      dist += bike.vx * 0.6;
+
+      // camera follow
+      camX += ((bike.x - W*0.35) - camX) * 0.08;
+
+      // fail if you somehow stop
+      if (bike.vx < 0.05 && dist > 20) crash("Stopped");
     }
 
-    // draw
-    ctx.clearRect(0, 0, W, H);
-    drawTrack(t);
+    // Draw
+    ctx.clearRect(0,0,W,H);
+    drawBackground();
+    drawTrack();
     drawBike();
-    updateHUD();
+    hud();
 
-    requestAnimationFrame(tick);
+    requestAnimationFrame(step);
   }
+
+  btnRs.addEventListener("click", reset);
 
   reset();
-  tick();
+  step();
 })();
 </script>
 </body>
