@@ -20,8 +20,6 @@
       touch-action: manipulation;
     }
 
-trigger pages deploy
-
     .wrap{max-width:980px;margin:0 auto;padding:14px 14px 88px}
     h1{font-size:22px;margin:6px 0 8px}
     p{margin:0 0 10px;color:var(--muted)}
@@ -59,7 +57,7 @@ trigger pages deploy
     </div>
 
     <canvas id="c" width="980" height="520"></canvas>
-    <div class="note">Tipp: Spring schön über die Kuppen. Landung zu steil = 💥 (aber fair 😄).</div>
+    <div class="note">Mehr Airtime + langsameres Tempo. Landung zu steil = 💥 (fair).</div>
   </div>
 
   <div class="controls">
@@ -89,20 +87,28 @@ trigger pages deploy
 
   const W = canvas.width, H = canvas.height;
 
-  // Physics tuning
-  const g = 0.55;              // gravity
+  // ===== Physics tuning =====
+  // ✅ Mehr Airtime: weniger Gravity
+  const g = 0.40;
+
   const wheelR = 12;
   const bikeLen = 56;          // wheelbase visual
-  const engineForce = 0.14;
-  const brakeForce = 0.22;     // wenn dir zu hart: z.B. 0.16
 
-  // ✅ Weicher/Schwergängiger: weniger aggressiv + stärker stabilisiert
-  const airPitch = 0.030;      // war 0.045
-  const stickiness = 0.26;     // war 0.20
+  // ✅ Langsamer: weniger Power + niedrigere Topspeed
+  const engineForce = 0.10;
+  const brakeForce  = 0.18;
 
-  // ✅ Lean-Tuning
-  const leanMax = 0.55;        // max Einfluss
-  const leanSmooth = 0.12;     // kleiner = schwergängiger
+  // Weicher/Schwergängiger: weniger aggressiv + stärker stabilisiert
+  const airPitch = 0.030;
+  const stickiness = 0.26;
+
+  // Lean-Tuning
+  const leanMax = 0.55;
+  const leanSmooth = 0.12;
+
+  // ✅ Launch-Kick Tuning: mehr „Absprung“
+  const launchKick = 42;     // 35-55 je nach Geschmack (höher = mehr fliegen)
+  const launchWindow = 0.06; // nur direkt nach Abheben
 
   // Track: height function (wavy + "jumps")
   function heightAt(x) {
@@ -181,8 +187,11 @@ trigger pages deploy
     wasAir: false,
     lastVy: 0,
 
-    // ✅ Lean smoothing state
-    lean: 0
+    // Lean smoothing state
+    lean: 0,
+
+    // ✅ for launch-kick
+    lastSlope: 0
   };
 
   let crashed = false;
@@ -194,8 +203,9 @@ trigger pages deploy
     camX = 0;
     dist = 0;
     crashed = false;
+
     bike.x = 120;
-    bike.vx = 2.4;
+    bike.vx = 2.2;
     bike.vy = 0;
     bike.rot = 0;
     bike.rotV = 0;
@@ -203,6 +213,7 @@ trigger pages deploy
     bike.wasAir = false;
     bike.lastVy = 0;
     bike.lean = 0;
+    bike.lastSlope = 0;
 
     const gy = heightAt(bike.x);
     bike.y = gy - 55;
@@ -327,18 +338,18 @@ trigger pages deploy
 
   function step() {
     if (!crashed) {
-
       bike.lastVy = bike.vy;
 
-      // ✅ Gas + Bremse gleichzeitig: neutral / kein Chaos
+      // Gas + Bremse gleichzeitig: neutral / kein Chaos
       const both = keys.gas && keys.brk;
       if (!both && keys.gas) bike.vx += engineForce;
       if (keys.brk) bike.vx -= (both ? brakeForce * 0.35 : brakeForce);
 
-      bike.vx *= 0.992;
-      bike.vx = clamp(bike.vx, 0, 10.5);
+      // ✅ Langsamer: mehr Drag + niedriger Topspeed
+      bike.vx *= 0.988;
+      bike.vx = clamp(bike.vx, 0, 7.8);
 
-      // ✅ Lean weicher (schwergängiger)
+      // Lean weicher (schwergängiger)
       const leanRaw = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
       bike.lean += (leanRaw - bike.lean) * leanSmooth;
       const lean = clamp(bike.lean, -1, 1);
@@ -364,9 +375,9 @@ trigger pages deploy
         bike.y = groundMid - (16 + wheelR) - 18;
 
         const slope = slopeAt(midX);
-        bike.rot += (slope - bike.rot) * stickiness;
+        bike.lastSlope = slope;
 
-        // ✅ weniger Lean-Einfluss am Boden
+        bike.rot += (slope - bike.rot) * stickiness;
         bike.rot += lean * leanMax * 0.006;
 
         // Crash nur beim Landen
@@ -380,19 +391,27 @@ trigger pages deploy
         }
 
         bike.vy = 0;
-        bike.rotV *= 0.4; // ✅ satter/ruhiger als 0.6
+        bike.rotV *= 0.4;
         bike.airTime = 0;
         bike.wasAir = false;
 
         bike.y += Math.sin(dist * 0.05) * 0.2;
 
       } else {
+        // ✅ AIRBORNE: more flight + launch kick on crests
+        const slopeNow = slopeAt(bike.x);
+        const crest = (bike.lastSlope - slopeNow); // >0 = Kuppe
+
+        // Launch-kick only right after takeoff
+        if (bike.airTime < launchWindow) {
+          bike.vy -= crest * launchKick;
+        }
+
         bike.vy += g;
         bike.y += bike.vy;
 
         bike.airTime += 1/60;
 
-        // ✅ weniger aggressiv in der Luft + begrenzt
         bike.rotV += lean * leanMax * airPitch;
         bike.rotV *= 0.985;
         bike.rot += bike.rotV;
