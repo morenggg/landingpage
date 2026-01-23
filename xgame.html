@@ -55,7 +55,7 @@
     </div>
 
     <canvas id="c" width="980" height="520"></canvas>
-    <div class="note">Salto in der Luft ist erlaubt. Crash nur bei schlechter Landung. 😄</div>
+    <div class="note">Fix: kein “Kleben” auf Kuppen → er springt sauber ab. Saltos in der Luft sind erlaubt.</div>
   </div>
 
   <div class="controls">
@@ -86,13 +86,10 @@
   const W = canvas.width, H = canvas.height;
 
   // ===== Physics tuning =====
-  // ✅ weniger “Mond”: Gravity etwas höher (kürzere Airtime)
-  const g = 0.48;
-
+  const g = 0.50;             // etwas realistischer als 0.48; trotzdem airtime
   const wheelR = 12;
   const bikeLen = 56;
 
-  // Speed/Handling
   const engineForce = 0.10;
   const brakeForce  = 0.18;
 
@@ -102,9 +99,10 @@
   const leanMax = 0.55;
   const leanSmooth = 0.12;
 
-  // ✅ weniger Launch: deutlich kleiner + engeres Fenster
-  const launchKick = 24;       // war viel zu hoch (42)
-  const launchWindow = 0.035;  // war 0.06
+  // ✅ Takeoff / Anti-Kleben (neu)
+  const takeoffLook = 22;      // wie weit wir nach vorne schauen (px in world-x)
+  const takeoffDrop = 10;      // ab wieviel "Boden fällt weg" wir abheben (px)
+  const takeoffBoost = 1.7;    // zusätzlicher kleiner Lift beim Abheben
 
   // Track
   function heightAt(x) {
@@ -173,8 +171,7 @@
     airTime: 0,
     wasAir: false,
     lastVy: 0,
-    lean: 0,
-    lastSlope: 0
+    lean: 0
   };
 
   let crashed = false;
@@ -182,7 +179,6 @@
 
   const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
   const wrapAngle = (a)=>{
-    // keep rot in [-PI, PI] so numbers don't explode
     while (a > Math.PI) a -= Math.PI*2;
     while (a < -Math.PI) a += Math.PI*2;
     return a;
@@ -199,7 +195,6 @@
     bike.wasAir = false;
     bike.lastVy = 0;
     bike.lean = 0;
-    bike.lastSlope = slopeAt(bike.x);
 
     const gy = heightAt(bike.x);
     bike.y = gy - 55;
@@ -324,17 +319,21 @@
     if (!crashed) {
       bike.lastVy = bike.vy;
 
+      // Gas + Bremse gleichzeitig: neutral / kein Chaos
       const both = keys.gas && keys.brk;
       if (!both && keys.gas) bike.vx += engineForce;
       if (keys.brk) bike.vx -= (both ? brakeForce * 0.35 : brakeForce);
 
+      // Tempo begrenzen
       bike.vx *= 0.988;
       bike.vx = clamp(bike.vx, 0, 7.8);
 
+      // Lean weicher
       const leanRaw = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
       bike.lean += (leanRaw - bike.lean) * leanSmooth;
       const lean = clamp(bike.lean, -1, 1);
 
+      // wheel contacts
       const frontX = bike.x + bikeLen/2;
       const rearX  = bike.x - bikeLen/2;
 
@@ -345,30 +344,47 @@
       const touchF = wheelY + wheelR >= groundF;
       const touchR = wheelY + wheelR >= groundR;
 
-      bike.onGround = touchF || touchR;
+      // ✅ Anti-Kleben: wenn der Boden vor dir deutlich wegfällt -> TAKEOFF
+      const midX = bike.x;
+      const groundMid = heightAt(midX);
+      const groundAhead = heightAt(midX + takeoffLook);
+      const dropAhead = groundAhead - groundMid; // + = Boden fällt nach unten weg (y wird größer)
+
+      const anyTouch = touchF || touchR;
+      const bothTouch = touchF && touchR;
+
+      // Standard: grounded wenn Kontakt
+      bike.onGround = anyTouch;
+
+      // Takeoff-Trigger: nicht beide Räder sauber drauf UND Boden fällt weg
+      if (anyTouch && !bothTouch && dropAhead > takeoffDrop) {
+        bike.onGround = false;
+        bike.wasAir = true;
+        bike.airTime = Math.max(bike.airTime, 0.001);
+
+        // kleiner Lift: abhängig von drop + speed (aber gedeckelt)
+        const lift = clamp(dropAhead * 0.10 + bike.vx * 0.06, 0.6, 2.8) * takeoffBoost;
+        bike.vy = Math.min(bike.vy, -lift);
+      }
 
       if (bike.onGround) {
-        const midX = bike.x;
-        const groundMid = heightAt(midX);
-
-        bike.y = groundMid - (16 + wheelR) - 18;
+        // ✅ Snap auf Durchschnitt beider Räder -> weniger “Haken” an Kuppen
+        const groundAvg = (groundF + groundR) * 0.5;
+        bike.y = groundAvg - (16 + wheelR) - 18;
 
         const slope = slopeAt(midX);
-        bike.lastSlope = slope;
-
         bike.rot += (slope - bike.rot) * stickiness;
         bike.rot += lean * leanMax * 0.006;
         bike.rotV *= 0.4;
 
-        // ✅ Crash NUR beim Landen
+        // Crash nur beim Landen
         const justLanded = bike.wasAir && bike.airTime > 0.10;
         if (justLanded) {
-          const rel = Math.abs(wrapAngle(bike.rot - slope)); // relativ zur Strecke
+          const rel = Math.abs(wrapAngle(bike.rot - slope));
           const impact = Math.abs(bike.lastVy);
 
-          // wenn du quasi upside down landest -> crash
-          const upsideDown = rel > 2.4;        // ~138°+
-          const tooSteep   = rel > 1.45;       // ~83°+
+          const upsideDown = rel > 2.4;
+          const tooSteep   = rel > 1.45;
           const hardHit    = impact > 4.2;
 
           if (upsideDown) crash("Upside down");
@@ -382,26 +398,17 @@
         bike.y += Math.sin(dist * 0.05) * 0.2;
 
       } else {
-        // AIRBORNE: kleiner Launch-Kick, keine Air-Crashes für Saltos
-        const slopeNow = slopeAt(bike.x);
-        const crest = (bike.lastSlope - slopeNow);
-
-        if (bike.airTime < launchWindow) {
-          // crest clamp damit es nicht eskaliert
-          const c = clamp(crest, -0.08, 0.10);
-          bike.vy -= c * launchKick;
-        }
-
+        // Airborne
         bike.vy += g;
         bike.y += bike.vy;
 
         bike.airTime += 1/60;
 
+        // Saltos erlaubt: keine Air-crash rule
         bike.rotV += lean * leanMax * airPitch;
         bike.rotV *= 0.985;
         bike.rot = wrapAngle(bike.rot + bike.rotV);
 
-        // ✅ keine “Flipped”-Crashes mehr in der Luft
         bike.wasAir = true;
       }
 
