@@ -3,51 +3,74 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Dorfdulli Racing – MX Runner</title>
+  <title>Dorfdulli Racing – MX Ripper</title>
   <style>
-    :root { --bg:#070707; --fg:#f2f2f2; --muted:rgba(255,255,255,.65); }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .wrap{max-width:980px;margin:0 auto;padding:14px 14px 92px}
-    h1{font-size:22px;margin:6px 0 6px}
-    p{margin:0 0 10px;color:var(--muted)}
-    .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 12px}
-    .chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px;font-size:14px}
-    button{background:rgba(255,255,255,.08);color:var(--fg);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;font-size:14px}
-    button:active{transform:translateY(1px)}
-    canvas{width:100%;height:auto;border-radius:18px;border:1px solid rgba(255,255,255,.12);touch-action:none;background:
-      radial-gradient(120% 90% at 60% 20%, #1a1a1a 0%, #0a0a0a 55%, #050505 100%)}
-    .controls{
-      position:fixed;left:0;right:0;bottom:0;
-      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-      backdrop-filter:blur(10px);
-      background:linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.22));
-      border-top:1px solid rgba(255,255,255,.10);
-      display:flex;justify-content:center
+    :root{
+      --bg:#070707; --fg:#f2f2f2; --muted:rgba(255,255,255,.68);
+      --line:rgba(255,255,255,.12);
     }
-    .pad{max-width:980px;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-    .pad button{height:56px;font-size:16px;border-radius:16px}
+    html,body{height:100%; margin:0; background:var(--bg); color:var(--fg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:980px; margin:0 auto; padding:14px 14px 92px}
+    h1{font-size:22px; margin:6px 0 6px}
+    p{margin:0 0 10px; color:var(--muted)}
+    .hud{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0 12px}
+    .chip{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      border-radius:999px; padding:8px 12px; font-size:14px}
+    button{background:rgba(255,255,255,.08); color:var(--fg); border:1px solid rgba(255,255,255,.18);
+      border-radius:12px; padding:10px 12px; font-size:14px}
+    button:active{transform:translateY(1px)}
+    canvas{
+      width:100%; height:auto; border-radius:18px; border:1px solid rgba(255,255,255,.12);
+      touch-action:none;
+      background: radial-gradient(120% 90% at 60% 20%, #1a1a1a 0%, #0a0a0a 55%, #050505 100%);
+      display:block;
+    }
+    .controls{
+      position:fixed; left:0; right:0; bottom:0;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.20));
+      border-top:1px solid rgba(255,255,255,.10);
+      display:flex; justify-content:center; gap:10px;
+    }
+    .pad{
+      max-width:980px; width:100%;
+      display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr;
+      gap:10px;
+    }
+    .pad button{height:56px; font-size:15px; border-radius:16px}
+    .small{font-size:12px; color:rgba(255,255,255,.55); margin-top:8px}
+    .kbd{opacity:.9}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🏁 MX Runner</h1>
-    <p>Handy: Buttons unten. PC: ← → lenken, ↑ Gas, ↓ Bremse, R Restart.</p>
+    <h1>🏁 MX RIPPER</h1>
+    <p>
+      <span class="kbd">Handy:</span> Buttons unten. <span class="kbd">PC:</span> ← → lenken, ↑ Gas, ↓ Bremse, Space Nitro, A/D Trick, R Restart.
+      <br><span class="small">Ziel: Coins sammeln, springen, nicht abfliegen. Highscore wird gespeichert.</span>
+    </p>
 
     <div class="hud">
       <div class="chip" id="spd">Speed: 0</div>
       <div class="chip" id="dst">Dist: 0</div>
       <div class="chip" id="air">Air: 0.0s</div>
+      <div class="chip" id="sc">Score: 0</div>
+      <div class="chip" id="hi">High: 0</div>
       <div class="chip" id="st">Status: Ready</div>
       <button id="rs" type="button">Restart</button>
+      <button id="ps" type="button">Pause</button>
     </div>
 
-    <canvas id="c" width="980" height="540"></canvas>
+    <canvas id="c" width="980" height="560"></canvas>
   </div>
 
   <div class="controls">
     <div class="pad">
       <button id="brk" type="button">🛑 Bremse</button>
       <button id="l" type="button">⬅️ Links</button>
+      <button id="nit" type="button">⚡ Nitro</button>
       <button id="r" type="button">➡️ Rechts</button>
       <button id="gas" type="button">🔥 Gas</button>
     </div>
@@ -56,52 +79,688 @@
 <script>
 (() => {
   const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
 
   const elSpd = document.getElementById("spd");
   const elDst = document.getElementById("dst");
   const elAir = document.getElementById("air");
+  const elSc  = document.getElementById("sc");
+  const elHi  = document.getElementById("hi");
   const elSt  = document.getElementById("st");
   const btnRs = document.getElementById("rs");
+  const btnPs = document.getElementById("ps");
 
   const btnGas = document.getElementById("gas");
   const btnBrk = document.getElementById("brk");
   const btnL   = document.getElementById("l");
   const btnR   = document.getElementById("r");
+  const btnNit = document.getElementById("nit");
 
   const W = canvas.width, H = canvas.height;
 
-  // Pseudo-3D road
+  // ---------- Utils ----------
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp  = (a,b,t)=>a+(b-a)*t;
+  const smooth = (t)=>t*t*(3-2*t);
+
+  // ---------- Pseudo-3D road ----------
   const SEG_LEN   = 24;
-  const DRAW_DIST = 220;
-  const ROAD_W    = 2200;
-  const CAM_H     = 1500;
+  const DRAW_DIST = 230;
+  const ROAD_W    = 2400;       // half width in "world units"
+  const CAM_H     = 1600;
   const CAM_D     = 0.86;
 
+  // Colors (dirt-style)
   const col = {
     skyTop:"rgba(255,255,255,0.10)", skyBot:"rgba(255,255,255,0.00)",
-    grass1:"rgba(255,255,255,0.03)", grass2:"rgba(255,255,255,0.06)",
-    road1:"rgba(255,255,255,0.10)",  road2:"rgba(255,255,255,0.14)",
-    edge:"rgba(255,255,255,0.26)", line:"rgba(255,255,255,0.30)"
+    grass1:"rgba(255,255,255,0.02)", grass2:"rgba(255,255,255,0.05)",
+    dirt1:"rgba(210,170,120,0.14)",  dirt2:"rgba(210,170,120,0.18)",
+    edge:"rgba(255,255,255,0.22)",
+    ruts:"rgba(0,0,0,0.18)",
+    line:"rgba(255,255,255,0.10)",
+    coin:"rgba(255,255,255,0.90)",
+    warn:"rgba(255,255,255,0.85)"
   };
 
-  // Build track: curves + hills + jumps
-  const track = [];
-  function add(n, curve, hill){ for(let i=0;i<n;i++) track.push({curve, hill}); }
-  function hillPulse(n, amp){
-    for(let i=0;i<n;i++){
-      const t=i/(n-1);
-      const v=Math.sin(t*Math.PI);              // 0..1..0
-      track.push({curve:0, hill: amp*v});
+  function project(wx, wy, wz, camX, camY, camZ){
+    const dz = (wz - camZ);
+    if (dz <= 0.1) return null;
+    const scale = (CAM_D / dz);
+    const x = (1 + scale*(wx - camX)/1000) * (W/2);
+    const y = (1 - scale*(wy - camY)/1000) * (H*0.58);
+    const w = scale * ROAD_W * (W/2) / 1000;
+    return { x, y, w, scale };
+  }
+
+  function quad(x1,y1,w1, x2,y2,w2, fill, stroke){
+    ctx.beginPath();
+    ctx.moveTo(x1-w1, y1);
+    ctx.lineTo(x1+w1, y1);
+    ctx.lineTo(x2+w2, y2);
+    ctx.lineTo(x2-w2, y2);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (stroke){
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
   }
 
-  add(180, 0, 0);
-  add(140, 0.6, 0);
-  hillPulse(120, 1200);        // big jump
-  add(120,-0.7, 0);
+  function sky(){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, col.skyTop);
+    g.addColorStop(1, col.skyBot);
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // ---------- Track generation ----------
+  // Segment: {curve, hill, seed, coinLane, hazardLane}
+  const track = [];
+  const TRACK_LEN = 6500;
+
+  function add(n, curve, hill){
+    for(let i=0;i<n;i++){
+      track.push({
+        curve, hill,
+        seed: (track.length*1103515245 + 12345) >>> 0,
+        coinLane: 99,
+        hazardLane: 99
+      });
+    }
+  }
+
+  function hillPulse(n, amp){
+    for(let i=0;i<n;i++){
+      const t=i/(n-1);
+      const v=Math.sin(t*Math.PI); // 0..1..0
+      track.push({
+        curve: 0,
+        hill: amp*v,
+        seed: (track.length*1103515245 + 12345) >>> 0,
+        coinLane: 99,
+        hazardLane: 99
+      });
+    }
+  }
+
+  // Layout tuned for "MX feel"
+  add(140, 0, 0);
+  add(120, 0.55, 0);
+  hillPulse(120, 1250);          // jump 1
+  add(90, -0.75, 0);
   // whoops
-  for(let i=0;i<180;i++) track.push({curve:(i<90?0.25:-0.25), hill:(i%10<5?260:-260)});
-  hillPulse(140, 1400);        // bigger jump
-  add(240, 0.35, 0);
-  while(track.length < 5200) add(80, 0
+  for(let i=0;i<220;i++){
+    track.push({
+      curve: (i<110?0.22:-0.22),
+      hill: (i%12<6?260:-260),
+      seed: (track.length*1103515245 + 12345) >>> 0,
+      coinLane: 99,
+      hazardLane: 99
+    });
+  }
+  hillPulse(150, 1500);          // big jump
+  add(200, 0.35, 0);
+  add(120, -0.4, 0);
+  hillPulse(110, 900);           // medium
+  add(260, 0.0, 0);
+
+  while(track.length < TRACK_LEN) add(120, 0, 0);
+
+  // sprinkle coins & hazards deterministically
+  function rnd01(seed){
+    // LCG
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return [seed, (seed & 0xffffff) / 0x1000000];
+  }
+  for(let i=80;i<track.length;i++){
+    let s = track[i].seed;
+    [s,] = rnd01(s);
+    [s,] = rnd01(s);
+    // coins in clusters
+    let r;
+    [s,r] = rnd01(s);
+    if (r < 0.18){
+      // choose lane: -1,0,1
+      [s,r] = rnd01(s);
+      const lane = (r < 0.33) ? -1 : (r < 0.66 ? 0 : 1);
+      // don't put coins on extreme curves too often
+      if (Math.abs(track[i].curve) < 0.8) track[i].coinLane = lane;
+      // cluster forward
+      for(let k=1;k<10;k++){
+        const j = i+k*9;
+        if (j < track.length && track[j].coinLane === 99) track[j].coinLane = lane;
+      }
+    }
+    // hazards (haybale) — rarer
+    [s,r] = rnd01(s);
+    if (r < 0.08){
+      [s,r] = rnd01(s);
+      const lane = (r < 0.33) ? -1 : (r < 0.66 ? 0 : 1);
+      // avoid placing hazard right on coin
+      if (track[i].coinLane === 99) track[i].hazardLane = lane;
+    }
+    track[i].seed = s;
+  }
+
+  // ---------- Player ----------
+  let paused = false;
+  let crashed = false;
+
+  const state = {
+    x: 0,            // lateral position
+    z: 0,            // forward distance (world)
+    speed: 10.0,
+    target: 14.0,
+    steer: 0,
+
+    // jump model (stable, no falling into void)
+    jump: 0,         // vertical offset above ground (>=0)
+    vy: 0,           // vertical velocity
+
+    // nitro
+    nitro: 100,      // 0..100
+    nitroOn: false,
+
+    // scoring
+    distM: 0,
+    airTime: 0,
+    score: 0,
+    combo: 0,
+    trickSpin: 0,    // accumulated rotation in air (for tricks)
+    lastLandingHard: 0
+  };
+
+  const LS_KEY = "dorfdulli_mx_highscore";
+  let high = 0;
+  try { high = Number(localStorage.getItem(LS_KEY) || "0") || 0; } catch(e){ high = 0; }
+  elHi.textContent = `High: ${Math.floor(high)}`;
+
+  // ---------- Input ----------
+  const keys = { gas:false, brk:false, left:false, right:false, nit:false };
+
+  function bindHold(btn, k){
+    const on=(e)=>{ e.preventDefault(); keys[k]=true; };
+    const off=(e)=>{ e.preventDefault(); keys[k]=false; };
+    btn.addEventListener("pointerdown", on);
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  }
+  bindHold(btnGas,"gas");
+  bindHold(btnBrk,"brk");
+  bindHold(btnL,"left");
+  bindHold(btnR,"right");
+  bindHold(btnNit,"nit");
+
+  window.addEventListener("keydown",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=true;
+    if (e.key==="ArrowDown") keys.brk=true;
+    if (e.key==="ArrowLeft") keys.left=true;
+    if (e.key==="ArrowRight") keys.right=true;
+    if (e.code==="Space") keys.nit=true;
+    if (e.key.toLowerCase()==="r") reset();
+    if (e.key.toLowerCase()==="p") togglePause();
+    // trick keys (air only)
+    if (e.key.toLowerCase()==="a") trickInput(-1);
+    if (e.key.toLowerCase()==="d") trickInput( 1);
+  });
+  window.addEventListener("keyup",(e)=>{
+    if (e.key==="ArrowUp") keys.gas=false;
+    if (e.key==="ArrowDown") keys.brk=false;
+    if (e.key==="ArrowLeft") keys.left=false;
+    if (e.key==="ArrowRight") keys.right=false;
+    if (e.code==="Space") keys.nit=false;
+  });
+
+  // tap/click on canvas = quick steer (left/right half)
+  canvas.addEventListener("pointerdown",(e)=>{
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    keys.left  = x < 0.45;
+    keys.right = x > 0.55;
+  });
+  canvas.addEventListener("pointerup",()=>{ keys.left=false; keys.right=false; });
+  canvas.addEventListener("pointercancel",()=>{ keys.left=false; keys.right=false; });
+
+  btnRs.addEventListener("click", reset);
+  btnPs.addEventListener("click", togglePause);
+
+  function togglePause(){
+    paused = !paused;
+    btnPs.textContent = paused ? "Weiter" : "Pause";
+    elSt.textContent = paused ? "Status: Paused" : (crashed ? elSt.textContent : "Status: Running");
+  }
+
+  // trick via on-screen: double-tap Nitro = whip, long-press Nitro = backflip
+  let nitDownAt = 0;
+  btnNit.addEventListener("pointerdown", ()=>{ nitDownAt = performance.now(); });
+  btnNit.addEventListener("pointerup", ()=>{
+    const dt = performance.now() - nitDownAt;
+    if (dt > 350) trickInput(1); // long press => rotate positive
+  });
+  let lastNitTap = 0;
+  btnNit.addEventListener("click", ()=>{
+    const now = performance.now();
+    if (now - lastNitTap < 280) trickInput(-1); // double tap => rotate negative
+    lastNitTap = now;
+  });
+
+  function trickInput(dir){
+    // only meaningful in air
+    if (state.jump <= 0) return;
+    state.trickSpin += dir * 0.55; // add rotation impulse
+    state.combo += 1;
+    state.score += 6 * (1 + state.combo*0.08);
+  }
+
+  // ---------- Game Logic ----------
+  function segIndex(z){ return Math.floor(z / SEG_LEN) % track.length; }
+
+  function reset(){
+    paused = false;
+    crashed = false;
+    state.x = 0;
+    state.z = 0;
+    state.speed = 10.0;
+    state.target = 14.0;
+    state.steer = 0;
+
+    state.jump = 0;
+    state.vy = 0;
+    state.nitro = 100;
+    state.nitroOn = false;
+
+    state.distM = 0;
+    state.airTime = 0;
+    state.score = 0;
+    state.combo = 0;
+    state.trickSpin = 0;
+    state.lastLandingHard = 0;
+
+    btnPs.textContent = "Pause";
+    elSt.textContent = "Status: Running";
+  }
+
+  function crash(msg){
+    crashed = true;
+    elSt.textContent = "Status: 💥 " + msg;
+    // highscore save
+    if (state.score > high){
+      high = state.score;
+      try { localStorage.setItem(LS_KEY, String(Math.floor(high))); } catch(e){}
+      elHi.textContent = `High: ${Math.floor(high)}`;
+    }
+  }
+
+  function update(){
+    if (paused || crashed) return;
+
+    // steering
+    const steerTarget = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
+    state.steer += (steerTarget - state.steer) * 0.22;
+
+    // speed target
+    state.target = keys.gas ? 18.0 : 14.0;
+    if (keys.brk) state.target = 7.5;
+
+    // nitro
+    state.nitroOn = keys.nit && state.nitro > 2;
+    if (state.nitroOn){
+      state.target += 6.0;
+      state.nitro = Math.max(0, state.nitro - 0.9);
+    } else {
+      state.nitro = Math.min(100, state.nitro + 0.25);
+    }
+
+    // smooth speed
+    state.speed += (state.target - state.speed) * 0.06;
+    state.speed = clamp(state.speed, 0, 26);
+
+    // forward
+    state.z += state.speed;
+    state.distM += state.speed * 0.62;
+
+    const i = segIndex(state.z);
+    const cur = track[i].curve;
+
+    // lateral + curve force
+    state.x += state.steer * (130 + state.speed*20);
+    state.x -= cur * (state.speed * 105);
+
+    // stable jump model using crest impulse
+    const hillNow  = track[i].hill;
+    const hillNext = track[(i+7) % track.length].hill;
+    const crest = (hillNow - hillNext);
+
+    state.vy += crest * 0.0042; // jump strength
+    state.vy -= 0.88;           // gravity
+    state.jump += state.vy;
+
+    if (state.jump < 0){
+      // landing
+      const hard = Math.abs(state.vy);
+      if (state.airTime > 0.18){
+        // reward decent landings
+        const landingScore = Math.max(0, 28 - hard) * 0.8;
+        state.score += landingScore;
+      }
+      // hard landing crash (but only if you were actually in air)
+      if (state.airTime > 0.20 && hard > 15.5){
+        crash("Hard landing");
+      }
+      state.jump = 0;
+      state.vy *= -0.22;
+      // clear airtime & trick
+      if (state.airTime > 0.18){
+        // trick evaluation
+        const spins = Math.abs(state.trickSpin);
+        if (spins > 1.6){
+          state.score += 90 + spins*24;
+          state.combo += 2;
+        }
+      }
+      state.trickSpin *= 0.18;
+      state.airTime *= 0.55;
+      state.combo = Math.max(0, state.combo - 0.2);
+    } else {
+      state.airTime += 1/60;
+      // in air: allow "spin" to accumulate if user hits trick
+      // also tiny passive rotation for drama
+      state.trickSpin += state.steer * 0.02;
+      state.score += 0.4; // alive bonus
+    }
+
+    // Off track crash
+    if (Math.abs(state.x) > ROAD_W * 1.08) crash("Off track");
+
+    // Coins / hazards (lane-based)
+    // map lane to world x positions
+    const laneX = (lane)=> lane * (ROAD_W * 0.42);
+    const nearLane = (x)=>{
+      // pick -1,0,1
+      const n = x / (ROAD_W * 0.42);
+      return (n < -0.5) ? -1 : (n > 0.5 ? 1 : 0);
+    };
+
+    // coin pickup if close
+    if (track[i].coinLane !== 99){
+      const lx = laneX(track[i].coinLane);
+      if (Math.abs(state.x - lx) < (ROAD_W * 0.14) && state.jump < 34){
+        // collect
+        track[i].coinLane = 99;
+        state.score += 40 + Math.min(60, state.speed*3);
+        state.combo += 1;
+      }
+    }
+
+    // hazard collision (hay bale)
+    if (track[i].hazardLane !== 99){
+      const hx = laneX(track[i].hazardLane);
+      const lane = nearLane(state.x);
+      // collide mainly when on ground (like clipping it)
+      if (lane === track[i].hazardLane && state.jump < 20){
+        crash("Hit obstacle");
+      }
+    }
+
+    // scoring baseline
+    state.score += state.speed * 0.09;
+  }
+
+  // ---------- Rendering ----------
+  function drawDirtDetails(P1, P2, n){
+    // ruts lines on dirt
+    const mid = lerp(P1.x, P2.x, 0.5);
+    const y1 = P1.y, y2 = P2.y;
+    const w1 = P1.w, w2 = P2.w;
+
+    ctx.strokeStyle = col.ruts;
+    ctx.lineWidth = Math.max(1, 2.2 * P2.scale);
+    const rutOff = (n % 4) * 0.06;
+
+    ctx.beginPath();
+    ctx.moveTo((P1.x - w1*0.22), y1);
+    ctx.lineTo((P2.x - w2*(0.22+rutOff)), y2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo((P1.x + w1*0.22), y1);
+    ctx.lineTo((P2.x + w2*(0.22+rutOff)), y2);
+    ctx.stroke();
+
+    // faint center scuff
+    if (n % 9 < 4){
+      ctx.strokeStyle = col.line;
+      ctx.lineWidth = Math.max(1, 1.5 * P2.scale);
+      ctx.beginPath();
+      ctx.moveTo(mid, y1);
+      ctx.lineTo(mid, y2);
+      ctx.stroke();
+    }
+  }
+
+  function drawCoin(P, lane){
+    // coin projected position: offset from road center
+    const lx = lane * (P.w * 0.42);
+    const cx = P.x + lx;
+    const cy = P.y - (18 * P.scale) - clamp(state.jump*0.02, 0, 18);
+    const r  = Math.max(2.5, 10 * P.scale);
+
+    ctx.fillStyle = col.coin;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r*1.8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawHazard(P, lane){
+    // small hay bale / barrier
+    const lx = lane * (P.w * 0.42);
+    const x = P.x + lx;
+    const y = P.y - (10 * P.scale);
+    const w = Math.max(6, 28 * P.scale);
+    const h = Math.max(5, 18 * P.scale);
+
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.fillRect(x - w/2, y - h, w, h);
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(x - w/2, y - h - 2, w, 2);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBike(){
+    // screen position & "lift" by jump
+    const bx = W/2 + (state.x/ROAD_W) * (W*0.24);
+    const lift = clamp(state.jump*0.02, 0, 32);
+    const by = H*0.80 - lift;
+
+    // shadow (bigger when airborne)
+    const sh = 1 + clamp(state.jump/120, 0, 1.3);
+    ctx.fillStyle="rgba(0,0,0,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(bx, by+40, 46*sh, 14*sh, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // bike/rider stylized but chunkier
+    ctx.save();
+    const lean = clamp(state.steer*0.62, -0.62, 0.62) + clamp(state.trickSpin*0.08, -0.45, 0.45);
+    ctx.translate(bx, by);
+    ctx.rotate(lean);
+
+    // rear smoke when nitro
+    if (state.nitroOn){
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      for (let i=0;i<6;i++){
+        const rx = -50 - i*10;
+        const ry = 12 + Math.sin((state.z+i)*0.08)*4;
+        ctx.beginPath();
+        ctx.arc(rx, ry, 8+i*1.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // wheels
+    ctx.strokeStyle="rgba(255,255,255,0.92)";
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.arc(-28, 22, 15, 0, Math.PI*2);
+    ctx.arc( 28, 22, 15, 0, Math.PI*2);
+    ctx.stroke();
+
+    // frame
+    ctx.lineWidth=7;
+    ctx.beginPath();
+    ctx.moveTo(-28,22);
+    ctx.lineTo(-6, -2);
+    ctx.lineTo( 28,22);
+    ctx.stroke();
+
+    // seat/body
+    ctx.fillStyle="rgba(255,255,255,0.95)";
+    ctx.fillRect(-14, -8, 30, 8);
+
+    // rider helmet
+    ctx.beginPath();
+    ctx.arc(-10, -24, 12, 0, Math.PI*2);
+    ctx.fill();
+
+    // visor
+    ctx.fillStyle="rgba(0,0,0,0.35)";
+    ctx.fillRect(-16, -28, 14, 6);
+
+    // handlebar
+    ctx.strokeStyle="rgba(255,255,255,0.90)";
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(6,-10);
+    ctx.lineTo(26,-20);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // crash text
+    if (crashed){
+      ctx.fillStyle="rgba(255,255,255,0.95)";
+      ctx.font="800 34px system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      ctx.textAlign="center";
+      ctx.fillText("💥 CRASH! Restart", W/2, H*0.42);
+      ctx.font="600 16px system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      ctx.fillText("Tip: stay on track. Land softer. Coins = points.", W/2, H*0.42 + 26);
+    }
+  }
+
+  function drawNitroBar(){
+    const x = 18, y = 18;
+    const w = 180, h = 10;
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillRect(x, y, w*(state.nitro/100), h);
+    ctx.globalAlpha = 1;
+  }
+
+  function hud(){
+    elSpd.textContent = `Speed: ${state.speed.toFixed(1)}`;
+    elDst.textContent = `Dist: ${Math.floor(state.distM)}m`;
+    elAir.textContent = `Air: ${state.airTime.toFixed(1)}s`;
+    elSc.textContent  = `Score: ${Math.floor(state.score)}`;
+    elHi.textContent  = `High: ${Math.floor(high)}`;
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    sky();
+
+    // camera
+    const idxNow = segIndex(state.z);
+    const baseY = CAM_H + track[idxNow].hill;
+    const camX = state.x;
+    const camZ = state.z;
+    const camY = baseY + state.jump; // stable: never falls into void
+
+    // Draw from far to near
+    let maxY = H;
+    let x = 0, dx = 0;
+
+    for (let n=0; n<DRAW_DIST; n++){
+      const idx = segIndex(camZ + n*SEG_LEN);
+      const seg = track[idx];
+      dx += seg.curve;
+
+      const z1 = camZ + n*SEG_LEN;
+      const z2 = camZ + (n+1)*SEG_LEN;
+
+      const y1 = seg.hill;
+      const y2 = track[segIndex(camZ + (n+1)*SEG_LEN)].hill;
+
+      const P1 = project(x,      y1, z1, camX, camY, camZ);
+      const P2 = project(x + dx, y2, z2, camX, camY, camZ);
+      if (!P1 || !P2) continue;
+      if (P2.y >= maxY) continue;
+      maxY = P2.y;
+
+      // grass
+      const grass = (n%2===0) ? col.grass1 : col.grass2;
+      quad(W/2, P1.y, P1.w*2.45, W/2, P2.y, P2.w*2.45, grass);
+
+      // dirt
+      const dirt = (n%2===0) ? col.dirt1 : col.dirt2;
+      quad(P1.x, P1.y, P1.w, P2.x, P2.y, P2.w, dirt, col.edge);
+
+      // ruts/details
+      drawDirtDetails(P1, P2, n);
+
+      // draw coins/hazards for mid-distance segments (avoid popping too close)
+      if (n > 18 && n < 160){
+        if (seg.coinLane !== 99 && (n % 2 === 0)) drawCoin(P2, seg.coinLane);
+        if (seg.hazardLane !== 99 && (n % 3 === 0)) drawHazard(P2, seg.hazardLane);
+      }
+    }
+
+    // bike and UI overlays
+    drawBike();
+    drawNitroBar();
+    hud();
+
+    // pause overlay
+    if (paused){
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.font="800 34px system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      ctx.textAlign="center";
+      ctx.fillText("⏸ PAUSE", W/2, H*0.42);
+      ctx.font="600 16px system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      ctx.fillText("Press P / Button to continue", W/2, H*0.42 + 26);
+    }
+  }
+
+  function loop(){
+    // Update+Render; keep animation even if paused (so UI draws)
+    update();
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // Safety: if canvas/context fails, show message
+  if (!ctx){
+    document.body.innerHTML = "<div style='padding:20px;color:white'>Canvas not supported.</div>";
+    return;
+  }
+
+  reset();
+  loop();
+})();
+</script>
+</body>
+</html>
