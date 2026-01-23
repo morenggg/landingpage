@@ -8,13 +8,11 @@
     :root { --bg:#070707; --fg:#f2f2f2; --muted:rgba(255,255,255,.65); }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
 
-    /* Kein Text markieren / kein iOS Callout beim Drücken */
     html, body, .controls, .pad, button, .chip, .note, p, h1 {
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
     }
-    /* Kein Tap-Highlight + besseres Touch */
     button{
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
@@ -57,7 +55,7 @@
     </div>
 
     <canvas id="c" width="980" height="520"></canvas>
-    <div class="note">Mehr Airtime + langsameres Tempo. Landung zu steil = 💥 (fair).</div>
+    <div class="note">Salto in der Luft ist erlaubt. Crash nur bei schlechter Landung. 😄</div>
   </div>
 
   <div class="controls">
@@ -88,29 +86,27 @@
   const W = canvas.width, H = canvas.height;
 
   // ===== Physics tuning =====
-  // ✅ Mehr Airtime: weniger Gravity
-  const g = 0.40;
+  // ✅ weniger “Mond”: Gravity etwas höher (kürzere Airtime)
+  const g = 0.48;
 
   const wheelR = 12;
-  const bikeLen = 56;          // wheelbase visual
+  const bikeLen = 56;
 
-  // ✅ Langsamer: weniger Power + niedrigere Topspeed
+  // Speed/Handling
   const engineForce = 0.10;
   const brakeForce  = 0.18;
 
-  // Weicher/Schwergängiger: weniger aggressiv + stärker stabilisiert
   const airPitch = 0.030;
   const stickiness = 0.26;
 
-  // Lean-Tuning
   const leanMax = 0.55;
   const leanSmooth = 0.12;
 
-  // ✅ Launch-Kick Tuning: mehr „Absprung“
-  const launchKick = 42;     // 35-55 je nach Geschmack (höher = mehr fliegen)
-  const launchWindow = 0.06; // nur direkt nach Abheben
+  // ✅ weniger Launch: deutlich kleiner + engeres Fenster
+  const launchKick = 18;       // war viel zu hoch (42)
+  const launchWindow = 0.035;  // war 0.06
 
-  // Track: height function (wavy + "jumps")
+  // Track
   function heightAt(x) {
     let y = 370
       + 42 * Math.sin(x * 0.008)
@@ -140,10 +136,8 @@
     return Math.atan2(y2 - y1, dx * 2);
   }
 
-  // Camera
   let camX = 0;
 
-  // Input
   const keys = { gas:false, brk:false, left:false, right:false };
   function bindHold(btn, k) {
     const on  = (e)=>{ e.preventDefault(); keys[k]=true; };
@@ -172,38 +166,30 @@
     if (e.key==="ArrowRight") keys.right=false;
   });
 
-  // Bike state
   const bike = {
-    x: 120,
-    y: 0,
-    vx: 0,
-    vy: 0,
-    rot: 0,          // radians
-    rotV: 0,
+    x: 120, y: 0, vx: 0, vy: 0,
+    rot: 0, rotV: 0,
     onGround: false,
     airTime: 0,
-
-    // Landing logic
     wasAir: false,
     lastVy: 0,
-
-    // Lean smoothing state
     lean: 0,
-
-    // ✅ for launch-kick
     lastSlope: 0
   };
 
   let crashed = false;
   let dist = 0;
 
-  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const wrapAngle = (a)=>{
+    // keep rot in [-PI, PI] so numbers don't explode
+    while (a > Math.PI) a -= Math.PI*2;
+    while (a < -Math.PI) a += Math.PI*2;
+    return a;
+  };
 
   function reset() {
-    camX = 0;
-    dist = 0;
-    crashed = false;
-
+    camX = 0; dist = 0; crashed = false;
     bike.x = 120;
     bike.vx = 2.2;
     bike.vy = 0;
@@ -213,7 +199,7 @@
     bike.wasAir = false;
     bike.lastVy = 0;
     bike.lean = 0;
-    bike.lastSlope = 0;
+    bike.lastSlope = slopeAt(bike.x);
 
     const gy = heightAt(bike.x);
     bike.y = gy - 55;
@@ -244,9 +230,7 @@
     ctx.moveTo(camX - 200, H);
     const startX = Math.floor((camX - 200) / 8) * 8;
     const endX   = camX + W + 200;
-    for (let x = startX; x <= endX; x += 8) {
-      ctx.lineTo(x, heightAt(x));
-    }
+    for (let x = startX; x <= endX; x += 8) ctx.lineTo(x, heightAt(x));
     ctx.lineTo(endX, H);
     ctx.closePath();
 
@@ -340,21 +324,17 @@
     if (!crashed) {
       bike.lastVy = bike.vy;
 
-      // Gas + Bremse gleichzeitig: neutral / kein Chaos
       const both = keys.gas && keys.brk;
       if (!both && keys.gas) bike.vx += engineForce;
       if (keys.brk) bike.vx -= (both ? brakeForce * 0.35 : brakeForce);
 
-      // ✅ Langsamer: mehr Drag + niedriger Topspeed
       bike.vx *= 0.988;
       bike.vx = clamp(bike.vx, 0, 7.8);
 
-      // Lean weicher (schwergängiger)
       const leanRaw = (keys.left ? -1 : 0) + (keys.right ? 1 : 0);
       bike.lean += (leanRaw - bike.lean) * leanSmooth;
       const lean = clamp(bike.lean, -1, 1);
 
-      // ground collision check based on wheel points
       const frontX = bike.x + bikeLen/2;
       const rearX  = bike.x - bikeLen/2;
 
@@ -362,7 +342,6 @@
       const groundR = heightAt(rearX);
 
       const wheelY = bike.y + 16;
-
       const touchF = wheelY + wheelR >= groundF;
       const touchR = wheelY + wheelR >= groundR;
 
@@ -379,32 +358,38 @@
 
         bike.rot += (slope - bike.rot) * stickiness;
         bike.rot += lean * leanMax * 0.006;
+        bike.rotV *= 0.4;
 
-        // Crash nur beim Landen
+        // ✅ Crash NUR beim Landen
         const justLanded = bike.wasAir && bike.airTime > 0.10;
         if (justLanded) {
-          const rel = Math.abs(bike.rot - slope);
+          const rel = Math.abs(wrapAngle(bike.rot - slope)); // relativ zur Strecke
           const impact = Math.abs(bike.lastVy);
-          const maxRelAngle = 1.35;
-          const minImpact   = 4.2;
-          if (rel > maxRelAngle && impact > minImpact) crash("Bad landing");
+
+          // wenn du quasi upside down landest -> crash
+          const upsideDown = rel > 2.4;        // ~138°+
+          const tooSteep   = rel > 1.45;       // ~83°+
+          const hardHit    = impact > 4.2;
+
+          if (upsideDown) crash("Upside down");
+          else if (tooSteep && hardHit) crash("Bad landing");
         }
 
         bike.vy = 0;
-        bike.rotV *= 0.4;
         bike.airTime = 0;
         bike.wasAir = false;
 
         bike.y += Math.sin(dist * 0.05) * 0.2;
 
       } else {
-        // ✅ AIRBORNE: more flight + launch kick on crests
+        // AIRBORNE: kleiner Launch-Kick, keine Air-Crashes für Saltos
         const slopeNow = slopeAt(bike.x);
-        const crest = (bike.lastSlope - slopeNow); // >0 = Kuppe
+        const crest = (bike.lastSlope - slopeNow);
 
-        // Launch-kick only right after takeoff
         if (bike.airTime < launchWindow) {
-          bike.vy -= crest * launchKick;
+          // crest clamp damit es nicht eskaliert
+          const c = clamp(crest, -0.08, 0.10);
+          bike.vy -= c * launchKick;
         }
 
         bike.vy += g;
@@ -414,9 +399,9 @@
 
         bike.rotV += lean * leanMax * airPitch;
         bike.rotV *= 0.985;
-        bike.rot += bike.rotV;
+        bike.rot = wrapAngle(bike.rot + bike.rotV);
 
-        if (Math.abs(bike.rot) > 2.65 && bike.vx > 4.5) crash("Flipped");
+        // ✅ keine “Flipped”-Crashes mehr in der Luft
         bike.wasAir = true;
       }
 
