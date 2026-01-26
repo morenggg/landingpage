@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <title>Dorfdulli Racing</title>
-  <meta name="description" content="Dorfdulli Racing – Events, Bilder, Updates. Schwarz/weiß, mobile first." />
+  <meta name="description" content="Dorfdulli Racing – Schwarz/weiß, mobile first." />
 
   <style>
     :root{
@@ -13,8 +13,7 @@
       --fg:#f5f5f5;
       --muted:rgba(245,245,245,.72);
       --line:rgba(245,245,245,.14);
-      --card:rgba(245,245,245,.06);
-      --shadow: 0 16px 50px rgba(0,0,0,.45);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
       --radius: 18px;
       --max: 980px;
       --pad: 18px;
@@ -25,9 +24,10 @@
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 600px at 20% 0%, rgba(255,255,255,.06), transparent 55%),
-                  radial-gradient(900px 450px at 90% 20%, rgba(255,255,255,.05), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 600px at 20% 0%, rgba(255,255,255,.06), transparent 55%),
+        radial-gradient(900px 450px at 90% 20%, rgba(255,255,255,.05), transparent 55%),
+        var(--bg);
       color: var(--fg);
       line-height: 1.45;
     }
@@ -39,212 +39,187 @@
       padding: 0 var(--pad);
     }
 
- header{
-  position: sticky;
-  top: 0;
-  backdrop-filter: blur(12px);
-  background: rgba(11,11,11,.72);
-  border-bottom: 1px solid var(--line);
-  z-index: 30;
-}
-
-   .topbar{
-  height: 64px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 12px;
-}
-
-
-      .logo{
-  width: 190px;
-  height: 52px;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  overflow:hidden;
-}
-
-.logo img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:block;
-  filter: invert(1) grayscale(1) contrast(1.1);
-}
-  
-
-    .btnrow{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex: 0 0 auto;
+    /* HEADER */
+    header{
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(12px);
+      background: rgba(11,11,11,.72);
+      border-bottom: 1px solid var(--line);
+      z-index: 30;
     }
-
-    .btn{
-      border: 1px solid var(--fg);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 700;
-      font-size: 13px;
-      display:inline-flex;
-      align-items:center;
-      gap: 10px;
-      background: transparent;
-      cursor: pointer;
-      user-select:none;
-    }
-    .btn.primary{
-      background: var(--fg);
-      color: var(--bg);
-    }
-
-    main{ padding: 18px 0 46px; }
-
-    .hero{
-      padding: 14px 0 16px;
-    }
-    .heroCard{
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
-      border-radius: var(--radius);
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-    .heroTitle{
-      margin: 0 0 8px;
-      font-size: 26px;
-      line-height: 1.1;
-      letter-spacing: .6px;
-    }
-    .heroSub{
-      margin: 0 0 14px;
-      color: var(--muted);
-      font-size: 15px;
-    }
-    .chips{
-      display:flex;
-      flex-wrap:wrap;
-      gap: 8px;
-      margin: 10px 0 0;
-    }
-    .chip{
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      padding: 8px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .sectionTitle{
-      margin: 18px 0 12px;
-      font-size: 16px;
-      letter-spacing: .5px;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    /* Events accordion */
-    details.event{
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: rgba(255,255,255,.03);
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    details.event[open]{
-      background: rgba(255,255,255,.05);
-    }
-    summary{
-      list-style:none;
-      cursor:pointer;
-      padding: 14px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+    .topbar{
+      height: 70px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
       gap: 12px;
-      user-select:none;
     }
-    summary::-webkit-details-marker { display:none; }
-    .eventMeta{
+
+    .logo{
+      width: 190px;
+      height: 52px;
       display:flex;
-      flex-direction:column;
-      gap: 4px;
-      min-width: 0;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background: transparent;
+      border: none;
     }
-    .eventDate{
-      font-weight: 800;
-      letter-spacing: .4px;
-      font-size: 15px;
-    }
-    .eventName{
-      color: var(--muted);
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .eventCount{
-      color: var(--muted);
-      font-size: 12px;
-      border: 1px solid var(--line);
-      padding: 7px 10px;
-      border-radius: 999px;
-      flex: 0 0 auto;
-    }
-
-    .eventBody{
-      padding: 0 16px 16px;
-      border-top: 1px solid var(--line);
-    }
-    .eventNote{
-      margin: 12px 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    /* Gallery grid */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .thumb{
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255,255,255,.04);
-      aspect-ratio: 4/3;
-      position: relative;
-      cursor: pointer;
-    }
-    .thumb img{
+    .logo img{
       width:100%;
       height:100%;
-      object-fit:cover;
+      object-fit:contain;
       display:block;
-      filter: grayscale(100%);
-      transition: transform .18s ease;
+      filter: invert(1) grayscale(1) contrast(1.1);
     }
-    .thumb:active img{ transform: scale(1.02); }
 
-    /* Lightbox */
+    /* Icon Buttons */
+    .insta, .pizza{
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: #000;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select:none;
+    }
+    .pizza{
+      font-size: 22px;
+      line-height: 1;
+      justify-self: end;
+    }
+
+    main{ padding: 28px 0 56px; }
+
+    /* BRAND SECTION */
+    .brand-gallery{
+      padding: 22px 0 0;
+    }
+
+    .brand-row{
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 18px;
+      align-items: center;
+      margin: 26px 0 34px;
+      padding-bottom: 34px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-row:last-child{
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .brand-row.reverse{
+      grid-template-columns: .75fr 1.25fr;
+    }
+
+    /* Image Card */
+    .brand-image{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: rgba(255,255,255,.04);
+      box-shadow: var(--shadow);
+      position: relative;
+      cursor: pointer;
+      transform: translateZ(0);
+    }
+
+    .brand-image img{
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: grayscale(100%) contrast(1.05);
+      transform: scale(1.01);
+      transition: transform .25s ease, filter .35s ease;
+    }
+
+    /* kleiner “Punch” beim Hover (Desktop) */
+    @media (hover:hover){
+      .brand-image:hover img{
+        transform: scale(1.04);
+        filter: grayscale(0%) contrast(1.05);
+      }
+    }
+
+    /* Logo side — NICHT klickbar, sehr dezent */
+    .brand-logo{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      min-height: 220px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position: relative;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .brand-logo::after{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(420px 220px at 20% 40%, rgba(255,255,255,.08), transparent 55%),
+        radial-gradient(420px 220px at 80% 60%, rgba(255,255,255,.06), transparent 55%);
+      opacity:.55;
+      transform: rotate(8deg);
+    }
+
+    .brand-logo img{
+      width: 78%;
+      max-width: 380px;
+      height: auto;
+      display:block;
+      opacity: .16;
+      filter: grayscale(100%) contrast(1.1);
+      transform: translateY(2px);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Mobile */
+    @media (max-width: 900px){
+      .brand-row,
+      .brand-row.reverse{
+        grid-template-columns: 1fr;
+      }
+      .brand-logo{
+        min-height: 160px;
+      }
+      .brand-logo img{
+        width: 64%;
+        opacity: .18;
+      }
+    }
+
+    footer{
+      border-top: 1px solid var(--line);
+      padding: 20px 0 40px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* LIGHTBOX */
     .lightbox{
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.85);
+      background: rgba(0,0,0,.86);
       display:none;
       align-items:center;
       justify-content:center;
-      padding: 18px;
-      z-index: 50;
+      padding: 16px;
+      z-index: 60;
     }
     .lightbox.open{ display:flex; }
+
     .lightboxInner{
       width: min(980px, 100%);
       background: #000;
@@ -282,180 +257,69 @@
       width:100%;
       height:auto;
       display:block;
-      filter: grayscale(100%);
+      /* IN LIGHTBOX: FARBE */
+      filter: none;
     }
-
-    footer{
-      border-top: 1px solid var(--line);
-      padding: 20px 0 40px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    /* Larger screens */
-    @media (min-width: 700px){
-      .grid{ grid-template-columns: repeat(3, 1fr); }
-      .heroTitle{ font-size: 34px; }
-      .topbar{ height: 70px; }
-      .logo{ width: 44px; height: 44px; }
-    }
-    
-/* Header Icon-Buttons: wieder rund + sauber */
-.insta, .pizza{
-  width: 32px;
-  height: 32px;
-  padding: 0 !important;
-  border-radius: 999px !important;
-  background: #fff !important;
-  color: #000 !important;
-  border: none !important;
-
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* Emoji sauber zentrieren */
-.pizza{
-  font-size: 22px;
-  line-height: 1;
-}
-
-.pizza{
-  justify-self: end;
-}
-
-.brand-gallery {
-  width: 100%;
-  background: #000;
-  padding: 80px 0;
-}
-
-.brand-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 120px 0;
-  position: relative;
-}
-
-.brand-row.reverse {
-  flex-direction: row-reverse;
-}
-
-.brand-image {
-  width: 55%;
-  z-index: 2;
-}
-
-.brand-image img {
-  width: 100%;
-  display: block;
-  filter: grayscale(100%);
-  transition: filter 0.6s ease;
-  border-radius: 6px;
-}
-
-.brand-image img:hover {
-  filter: grayscale(0%);
-}
-
-.brand-logo {
-  width: 45%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.brand-logo img {
-  width: 80%;
-  max-width: 420px;
-  opacity: 0.12;
-  filter: grayscale(100%);
-}
-
-/* Mobile */
-@media (max-width: 900px) {
-  .brand-row,
-  .brand-row.reverse {
-    flex-direction: column;
-  }
-
-  .brand-image,
-  .brand-logo {
-    width: 100%;
-    margin: 40px 0;
-  }
-
-  .brand-logo img {
-    width: 60%;
-  }
-}
- 
-
   </style>
 </head>
 
 <body>
   <header>
-  <div class="container topbar">
-    <a class="btn primary insta"
-   href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp"
-   target="_blank" rel="noopener"
-   aria-label="Instagram">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-       xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="20" height="20" rx="5"
-          stroke="currentColor" stroke-width="2"/>
-    <circle cx="12" cy="12" r="5"
-            stroke="currentColor" stroke-width="2"/>
-    <circle cx="17.5" cy="6.5" r="1.5"
-            fill="currentColor"/>
-  </svg>
-</a>
-
-    <div class="brand">
-      <a class="logo" href="/" aria-label="Dorfdulli Racing">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo">
+    <div class="container topbar">
+      <a class="insta"
+         href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp"
+         target="_blank" rel="noopener" aria-label="Instagram">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="20" height="20" rx="5"
+                stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="5"
+                  stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.5"
+                  fill="currentColor"/>
+        </svg>
       </a>
+
+      <a class="logo" href="/" aria-label="Dorfdulli Racing">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" loading="eager" />
+      </a>
+
+      <a class="pizza"
+         href="https://www.jhandpizzaservice.de"
+         target="_blank" rel="noopener" aria-label="Pizza">🍕</a>
     </div>
+  </header>
 
-    <a class="btn pizza"
-       href="https://www.jhandpizzaservice.de"
-   target="_blank" rel="noopener"
-   aria-label="Pizza">
-  🍕
-</a>
+  <main class="container">
+    <section class="brand-gallery" aria-label="Brand Gallery">
 
-  </div>
-  <main>
+      <!-- ROW 1: Bild links, Logo rechts -->
+      <div class="brand-row">
+        <div class="brand-image"
+             data-full="images/IMG_0663.jpeg"
+             data-title="IMG_0663">
+          <img src="images/IMG_0663.jpeg" alt="Racing Image 1"
+               loading="lazy" decoding="async">
+        </div>
+        <div class="brand-logo" aria-hidden="true">
+          <img src="images/IMG_0657.png" alt="">
+        </div>
+      </div>
 
-  <section class="brand-gallery">
+      <!-- ROW 2: Logo links, Bild rechts -->
+      <div class="brand-row reverse">
+        <div class="brand-logo" aria-hidden="true">
+          <img src="images/IMG_0658.jpeg" alt="">
+        </div>
+        <div class="brand-image"
+             data-full="images/IMG_0662.jpeg"
+             data-title="IMG_0662">
+          <img src="images/IMG_0662.jpeg" alt="Racing Image 2"
+               loading="lazy" decoding="async">
+        </div>
+      </div>
 
-  <!-- ROW 1 -->
-  <div class="brand-row">
-    <div class="brand-image">
-      <img src="images/IMG_0663.jpeg" alt="Racing Image 1">
-    </div>
-    <div class="brand-logo">
-      <img src="images/IMG_0657.png" alt="Brand Logo 1">
-    </div>
-  </div>
-
-  <!-- ROW 2 -->
-  <div class="brand-row reverse">
-    <div class="brand-image">
-      <img src="images/IMG_0662.jpeg" alt="Racing Image 2">
-    </div>
-    <div class="brand-logo">
-      <img src="images/IMG_0658.jpeg" alt="Brand Logo 2">
-    </div>
-  </div>
-
-</section>
-
+    </section>
   </main>
 
   <footer>
@@ -479,10 +343,8 @@
   </div>
 
   <script>
-    // Year
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // Lightbox
     const lb = document.getElementById("lightbox");
     const lbImg = document.getElementById("lightboxImg");
     const lbTitle = document.getElementById("lightboxTitle");
@@ -502,21 +364,14 @@
     }
 
     document.addEventListener("click", (e) => {
-      const t = e.target.closest(".thumb");
-      if (!t) return;
-      const full = t.getAttribute("data-full");
-      const title = t.getAttribute("data-title");
-      if (full) openLightbox(full, title);
+      const card = e.target.closest(".brand-image");
+      if (!card) return;
+      openLightbox(card.dataset.full, card.dataset.title);
     });
 
     closeLb.addEventListener("click", closeLightboxFn);
-    lb.addEventListener("click", (e) => {
-      if (e.target === lb) closeLightboxFn();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeLightboxFn();
-    });
+    lb.addEventListener("click", (e) => { if (e.target === lb) closeLightboxFn(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightboxFn(); });
   </script>
 </body>
 </html>
