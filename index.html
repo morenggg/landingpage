@@ -1,169 +1,266 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dorfdulli Racing</title>
-  <meta name="description" content="Dorfdulli Racing">
+  <meta name="description" content="Dorfdulli Racing – Videos & Bilder. Mobile first." />
 
   <style>
-    /* RESET */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root{
+      --bg:#0b0b0b;
+      --fg:#f5f5f5;
+      --muted:rgba(245,245,245,.72);
+      --line:rgba(245,245,245,.14);
+      --shadow: 0 16px 50px rgba(0,0,0,.45);
+      --radius: 18px;
+      --max: 980px;
+      --pad: 18px;
     }
 
-    html, body {
-      height: 100%;
-    }
-
-    body {
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: #fff;
-      background: #000;
-      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.45;
+      overflow-x:hidden;
     }
 
-    /* =========================
-       BACKGROUND VIDEO
-    ========================= */
-    .bg-video {
+    a{ color:inherit; text-decoration:none; }
+    .container{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 var(--pad);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ===== Background Video ===== */
+    .bg-video{
       position: fixed;
       inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    .bg-video video{
       width: 100%;
       height: 100%;
       object-fit: cover;
-      z-index: -2;
+      object-position: center;
+      filter: grayscale(100%) contrast(1.05) brightness(.55);
+    }
+    /* dark overlay so text stays readable */
+    .bg-video::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(900px 600px at 20% 0%, rgba(255,255,255,.08), transparent 60%),
+                  radial-gradient(900px 600px at 90% 20%, rgba(255,255,255,.06), transparent 60%),
+                  rgba(0,0,0,.55);
+      pointer-events:none;
     }
 
-    .bg-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: -1;
-    }
-
-    /* =========================
-       HEADER
-    ========================= */
-    header {
+    /* ===== Header ===== */
+    header{
       position: sticky;
       top: 0;
-      z-index: 10;
       backdrop-filter: blur(12px);
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(11,11,11,.68);
+      border-bottom: 1px solid var(--line);
+      z-index: 30;
     }
 
-    .topbar {
+    .topbar{
       height: 64px;
-      padding: 0 16px;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
+      gap: 12px;
     }
 
-    .logo img {
-      height: 42px;
-      filter: invert(1);
-      display: block;
-      margin: 0 auto;
+    .logo{
+      width: 190px;
+      height: 52px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background: transparent;
+    }
+    .logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      filter: invert(1) grayscale(1) contrast(1.1);
     }
 
-    .icon-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #fff;
-      color: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      font-size: 18px;
+    .btn{
+      border: 1px solid var(--fg);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      background: transparent;
+      cursor: pointer;
+      user-select:none;
     }
 
-    .icon-btn.right {
-      justify-self: end;
+    /* Header Icon-Buttons: rund + sauber */
+    .insta, .pizza{
+      width: 32px;
+      height: 32px;
+      padding: 0 !important;
+      border-radius: 999px !important;
+      background: #fff !important;
+      color: #000 !important;
+      border: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
+    .pizza{ font-size: 22px; line-height: 1; justify-self:end; }
 
-    /* =========================
-       MAIN CONTENT
-    ========================= */
-    main {
-      padding: 48px 0 80px;
-      display: flex;
-      justify-content: center;
-    }
+    main{ padding: 18px 0 46px; }
 
-    .gallery {
+    /* ===== Gallery ===== */
+    .gallery{
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 28px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+      align-items:center;
+      padding-top: 18px;
     }
 
-    .gallery img {
-      width: 60%;
-      max-width: 420px;
-      border-radius: 16px;
-      display: block;
+    /* 60% smaller than "full" look -> limit width */
+    .gallery-item{
+      width: min(600px, 92vw); /* feels like ~60% on phones vs full width */
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+    }
+
+    .gallery-item img{
+      width:100%;
+      height:auto;
+      display:block;
+
+      /* Schwarzweiß + Transparenz, damit Video durchscheint */
       filter: grayscale(100%);
-      transition: filter 0.4s ease;
+      opacity: 0.5;
+
+      transition: opacity .35s ease, filter .35s ease, transform .2s ease;
     }
 
-    .gallery img:hover {
-      filter: grayscale(0%);
+    /* optional nice touch */
+    .gallery-item:active img{
+      transform: scale(1.01);
+      opacity: 0.7;
+      filter: grayscale(50%);
     }
 
-    /* =========================
-       DESKTOP OPTIONAL
-    ========================= */
-    @media (min-width: 900px) {
-      .gallery img {
-        width: 40%;
-      }
+    footer{
+      border-top: 1px solid rgba(255,255,255,.14);
+      padding: 20px 0 40px;
+      color: rgba(245,245,245,.72);
+      font-size: 13px;
+      position: relative;
+      z-index: 2;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- BACKGROUND VIDEO -->
-  <video class="bg-video" autoplay muted loop playsinline>
-    <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
-  </video>
-  <div class="bg-overlay"></div>
+  <!-- Background Video -->
+  <div class="bg-video" aria-hidden="true">
+    <video autoplay muted loop playsinline>
+      <!-- dein MP4 -->
+      <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
+    </video>
+  </div>
 
-  <!-- HEADER -->
   <header>
-    <div class="topbar">
-      <a class="icon-btn"
-         href="https://www.instagram.com/dorfdulli.racing"
-         target="_blank"
-         aria-label="Instagram">📷</a>
+    <div class="container topbar">
 
-      <div class="logo">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing">
-      </div>
+      <!-- Instagram -->
+      <a class="btn insta"
+         href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp"
+         target="_blank" rel="noopener"
+         aria-label="Instagram">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="20" height="20" rx="5"
+                stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="5"
+                  stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.5"
+                  fill="currentColor"/>
+        </svg>
+      </a>
 
-      <a class="icon-btn right"
+      <!-- Center Logo -->
+      <a class="logo" href="/" aria-label="Dorfdulli Racing">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo">
+      </a>
+
+      <!-- Pizza -->
+      <a class="btn pizza"
          href="https://www.jhandpizzaservice.de"
-         target="_blank"
+         target="_blank" rel="noopener"
          aria-label="Pizza">🍕</a>
+
     </div>
   </header>
 
-  <!-- MAIN -->
   <main>
-    <section class="gallery">
-      <img src="images/IMG_0673.jpeg" alt="Racing Image 0673">
-      <img src="images/IMG_0674.jpeg" alt="Racing Image 0674">
-      <img src="images/IMG_0662.jpeg" alt="Racing Image 0662">
-      <img src="images/IMG_0663.jpeg" alt="Racing Image 0663">
-    </section>
+    <div class="container">
+      <section class="gallery" aria-label="Bilder">
+
+        <!-- 0673 -->
+        <div class="gallery-item">
+          <img src="images/IMG_0673.jpeg" alt="Racing 0673">
+        </div>
+
+        <!-- 0674 -->
+        <div class="gallery-item">
+          <img src="images/IMG_0674.jpeg" alt="Racing 0674">
+        </div>
+
+        <!-- 0662 -->
+        <div class="gallery-item">
+          <img src="images/IMG_0662.jpeg" alt="Racing 0662">
+        </div>
+
+        <!-- 0663 -->
+        <div class="gallery-item">
+          <img src="images/IMG_0663.jpeg" alt="Racing 0663">
+        </div>
+
+      </section>
+    </div>
   </main>
+
+  <footer>
+    <div class="container" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+      <span>© <span id="year"></span> Dorfdulli Racing</span>
+      <a href="https://www.instagram.com/dorfdulli.racing?igsh=NnVoN2l1OGVwMnZp" target="_blank" rel="noopener">Instagram</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 
 </body>
 </html>
