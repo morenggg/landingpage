@@ -56,6 +56,8 @@
       display:block;
       margin:0 auto;
     }
+
+    /* Icon Buttons */
     .icon-btn{
       width:34px;
       height:34px;
@@ -66,7 +68,6 @@
       align-items:center;
       justify-content:center;
       text-decoration:none;
-      font-size:18px;
     }
     .icon-btn.right{justify-self:end;}
 
@@ -84,28 +85,33 @@
       gap:22px;
     }
 
-    /* 👇 HIER die wichtigen Änderungen */
     .gallery img{
-      width:48%;              /* kleiner */
-      max-width:320px;        /* Deckel */
+      width:48%;
+      max-width:320px;
       border-radius:16px;
       display:block;
 
       filter:grayscale(100%);
-      opacity:0.61;           /* mehr Transparenz */
+      opacity:0.6;
 
       transition:opacity .35s ease, filter .35s ease;
     }
 
     .gallery img:hover{
-      opacity:0.6;
+      opacity:0.85;
       filter:grayscale(60%);
     }
 
     @media(min-width:900px){
-      .gallery img{
-        width:32%;
-      }
+      .gallery img{ width:32%; }
+    }
+
+    /* ===== Footer ===== */
+    footer{
+      padding:24px 0 30px;
+      text-align:center;
+      font-size:13px;
+      color:rgba(255,255,255,.6);
     }
   </style>
 </head>
@@ -123,17 +129,34 @@
   <!-- Header -->
   <header>
     <div class="topbar">
+
+      <!-- Instagram (echtes Icon) -->
       <a class="icon-btn"
          href="https://www.instagram.com/dorfdulli.racing"
-         target="_blank">📷</a>
+         target="_blank"
+         aria-label="Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="20" height="20" rx="5"
+                stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="5"
+                  stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.5"
+                  fill="currentColor"/>
+        </svg>
+      </a>
 
+      <!-- Logo -->
       <div class="logo">
         <img src="images/logo.PNG" alt="Dorfdulli Racing">
       </div>
 
+      <!-- Pizza -->
       <a class="icon-btn right"
          href="https://www.jhandpizzaservice.de"
-         target="_blank">🍕</a>
+         target="_blank"
+         aria-label="Pizza">🍕</a>
+
     </div>
   </header>
 
@@ -146,6 +169,11 @@
       <img src="images/IMG_0663.jpeg" alt="">
     </section>
   </main>
+
+  <!-- Footer -->
+  <footer>
+    © 2026 Dorfdulli Racing
+  </footer>
 
 </body>
 </html>
