@@ -325,68 +325,75 @@
   justify-self: end;
 }
 
-
-  /* === Brand Visuals === */
-
-.brand-visuals{
-  width:min(1100px, 92vw);
-  margin: 80px auto;
-  display:flex;
-  flex-direction:column;
-  gap: 28px;
+.brand-gallery {
+  width: 100%;
+  background: #000;
+  padding: 80px 0;
 }
 
-.brand-row{
-  display:grid;
-  grid-template-columns: 1.3fr 0.7fr;
-  min-height: 360px;
-  background:#0a0a0a;
-  border-radius: 20px;
-  overflow:hidden;
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 120px 0;
+  position: relative;
 }
 
-.brand-row.reverse{
-  grid-template-columns: 0.7fr 1.3fr;
+.brand-row.reverse {
+  flex-direction: row-reverse;
 }
 
-.brand-image img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  filter: grayscale(100%) contrast(1.15) brightness(.9);
-  transform: scale(1.03);
-  transition: filter .5s ease, transform .5s ease;
+.brand-image {
+  width: 55%;
+  z-index: 2;
 }
 
-@media (hover:hover){
-  .brand-image:hover img{
-    filter:none;
-    transform:scale(1.08);
-  }
+.brand-image img {
+  width: 100%;
+  display: block;
+  filter: grayscale(100%);
+  transition: filter 0.6s ease;
+  border-radius: 6px;
 }
 
-.brand-logo{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: clamp(4rem, 10vw, 9rem);
-  font-weight: 900;
-  letter-spacing: .08em;
-  color: rgba(255,255,255,.14);
-  user-select:none;
-  pointer-events:none;
+.brand-image img:hover {
+  filter: grayscale(0%);
 }
 
-.ktm{ font-style: italic; }
-.husky{ letter-spacing: .12em; }
-.yamaha{ font-weight: 800; }
+.brand-logo {
+  width: 45%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 
-@media (max-width: 820px){
+.brand-logo img {
+  width: 80%;
+  max-width: 420px;
+  opacity: 0.12;
+  filter: grayscale(100%);
+}
+
+/* Mobile */
+@media (max-width: 900px) {
   .brand-row,
-  .brand-row.reverse{
-    grid-template-columns: 1fr;
+  .brand-row.reverse {
+    flex-direction: column;
+  }
+
+  .brand-image,
+  .brand-logo {
+    width: 100%;
+    margin: 40px 0;
+  }
+
+  .brand-logo img {
+    width: 60%;
   }
 }
+ 
 
   </style>
 </head>
@@ -424,30 +431,31 @@
 
   </div>
   <main>
-    <section class="brand-visuals">
 
+  <section class="brand-gallery">
+
+  <!-- ROW 1 -->
   <div class="brand-row">
     <div class="brand-image">
-      <img src="images/random1.jpg" alt="Racing Image 1">
+      <img src="images/IMG_0663.jpeg" alt="Racing Image 1">
     </div>
-    <div class="brand-logo ktm">KTM</div>
+    <div class="brand-logo">
+      <img src="images/IMG_0657.png" alt="Brand Logo 1">
+    </div>
   </div>
 
+  <!-- ROW 2 -->
   <div class="brand-row reverse">
-    <div class="brand-logo husky">HUSQVARNA</div>
     <div class="brand-image">
-      <img src="images/random2.jpg" alt="Racing Image 2">
+      <img src="images/IMG_0662.jpeg" alt="Racing Image 2">
     </div>
-  </div>
-
-  <div class="brand-row">
-    <div class="brand-image">
-      <img src="images/random3.jpg" alt="Racing Image 3">
+    <div class="brand-logo">
+      <img src="images/IMG_0658.jpeg" alt="Brand Logo 2">
     </div>
-    <div class="brand-logo yamaha">YAMAHA</div>
   </div>
 
 </section>
+
   </main>
 
   <footer>
