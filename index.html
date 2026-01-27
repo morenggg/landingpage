@@ -105,13 +105,6 @@
     @media(min-width:900px){
       .gallery img{ width:32%; }
     }
-    
-    <section class="gallery">
-  <!-- deine Bilder -->
-
-  <!-- Pinball Button -->
-  <a href="pinball.html" class="game-btn" aria-label="Pinball starten"></a>
-</section>
 
     /* ===== Footer ===== */
     footer{
@@ -120,63 +113,6 @@
       font-size:13px;
       color:rgba(255,255,255,.6);
     }
-    .footer-insta{
-  margin-top: 6px;
-  font-size: 0.25em;        /* 👈 1/4 so groß */
-  opacity: 0.6;
-}
-
-.footer-insta a{
-  color: inherit;
-  text-decoration: none;
-}
-
-/* ===== Pinball Game Button ===== */
-.game-btn{
-  width: 48%;                 /* gleiche Breite wie Bilder */
-  max-width: 320px;
-  aspect-ratio: 4 / 3;        /* gleiche Bildwirkung */
-  border-radius: 16px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text-decoration: none;
-
-  /* Play Icon */
-  position: relative;
-  font-size: 0;               /* kein Text */
-
-  /* Optik wie Bilder */
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-  opacity: 0.6;
-
-  transition: opacity .35s ease, transform .2s ease;
-}
-
-/* Play Symbol */
-.game-btn::before{
-  content: "▶";
-  font-size: 52px;
-  color: rgba(255,255,255,.85);
-  transform: translateX(3px); /* optisch mittig */
-}
-
-/* Hover / Tap */
-.game-btn:hover{
-  opacity: 0.85;
-  transform: scale(1.02);
-}
-
-/* Desktop */
-@media(min-width:900px){
-  .game-btn{
-    width: 32%;
-  }
-}
-
   </style>
 </head>
 
@@ -236,16 +172,7 @@
 
   <!-- Footer -->
   <footer>
-    <footer>
-  © 2026 Dorfdulli Racing
-
-  <div class="footer-insta">
-    <a href="https://www.instagram.com/ultrafuckingviolett?igsh=Zmo1NHJkOXhzN3Z2&utm_source=qr"
-       target="_blank" rel="noopener">
-      instagram.com/ultrafuckingviolett
-    </a>
-  </div>
-</footer>
+    © 2026 Dorfdulli Racing
   </footer>
 
 </body>
