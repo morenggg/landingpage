@@ -92,18 +92,53 @@
       display:block;
 
       filter:grayscale(100%);
-      opacity:0.6;
+      opacity:0.55;
 
       transition:opacity .35s ease, filter .35s ease;
     }
 
     .gallery img:hover{
-      opacity:0.85;
+      opacity:0.8;
       filter:grayscale(60%);
     }
 
+    /* ===== Game Button ===== */
+    .game-btn{
+      width:48%;
+      max-width:320px;
+      aspect-ratio:4/3;
+      border-radius:16px;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+
+      opacity:0.55;
+      text-decoration:none;
+
+      transition:opacity .3s ease, transform .2s ease;
+    }
+
+    .game-btn::before{
+      content:"▶";
+      font-size:56px;
+      color:rgba(255,255,255,.9);
+      transform:translateX(4px);
+    }
+
+    .game-btn:hover{
+      opacity:0.85;
+      transform:scale(1.03);
+    }
+
     @media(min-width:900px){
-      .gallery img{ width:32%; }
+      .gallery img,
+      .game-btn{
+        width:32%;
+      }
     }
 
     /* ===== Footer ===== */
@@ -130,7 +165,7 @@
   <header>
     <div class="topbar">
 
-      <!-- Instagram (echtes Icon) -->
+      <!-- Instagram -->
       <a class="icon-btn"
          href="https://www.instagram.com/dorfdulli.racing"
          target="_blank"
@@ -163,10 +198,16 @@
   <!-- Main -->
   <main>
     <section class="gallery">
+
       <img src="images/IMG_0673.jpeg" alt="">
       <img src="images/IMG_0674.jpeg" alt="">
+
+      <!-- 🎮 GAME BUTTON -->
+      <a href="pinball.html" class="game-btn" aria-label="Play Game"></a>
+
       <img src="images/IMG_0662.jpeg" alt="">
       <img src="images/IMG_0663.jpeg" alt="">
+
     </section>
   </main>
 
