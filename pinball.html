@@ -17,15 +17,19 @@
       --glass: rgba(255,255,255,.06);
     }
     
-    html,body{
-      margin:0; height:100%;
-      background: radial-gradient(1200px 900px at 50% 10%, #172760 0%, var(--bg) 55%, #040610 100%);
-      color:var(--ink);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      overflow:hidden;
-      touch-action:none;
-      -webkit-user-select:none;
-      user-select:none;
+    html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(1200px 900px at 50% 10%, #172760 0%, var(--bg) 55%, #040610 100%);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
     }
     #wrap{
       height:100%;
@@ -42,6 +46,11 @@
       align-items:stretch;
       justify-content:space-between;
       gap:10px;
+        position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
     }
     .card{
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
@@ -78,15 +87,18 @@
       box-shadow:none;
     }
     canvas{
-      width:min(820px, 96vw);
-      height:auto;
-      border-radius:18px;
-      border:1px solid var(--line);
-      background:
-        radial-gradient(900px 700px at 50% 15%, rgba(255,255,255,.06), rgba(255,255,255,0) 65%),
-        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
-      box-shadow: 0 30px 90px rgba(0,0,0,.45);
-    }
+  position: fixed;
+  left: 50%;
+  top: 120px; /* Platz für HUD */
+  transform: translateX(-50%);
+  width: min(820px, 96vw);
+  height: calc(100dvh - 140px);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(900px 700px at 50% 15%, rgba(255,255,255,.06), rgba(255,255,255,0) 65%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+}
     .help{
       width:min(820px, 96vw);
       color:var(--muted);
