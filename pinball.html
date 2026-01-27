@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Mobile Pinball (Realistic) – Single File</title>
+  <style>
+    :root{
+      --bg:#070a14;
+      --panel:#0c1330;
+      --ink:#e8efff;
+      --muted:#9bb0e6;
+      --accent:#66ffd6;
+      --hot:#ff5b7a;
+      --gold:#ffd36b;
+      --line: rgba(255,255,255,.14);
+      --glass: rgba(255,255,255,.06);
+    }
+    html,body{
+      margin:0; height:100%;
+      background: radial-gradient(1200px 900px at 50% 10%, #172760 0%, var(--bg) 55%, #040610 100%);
+      color:var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden;
+      touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
+    }
+    #wrap{
+      height:100%;
+      display:grid;
+      grid-template-rows: auto 1fr auto;
+      place-items:center;
+      gap:10px;
+      padding:12px;
+      box-sizing:border-box;
+    }
+    .hud{
+      width:min(820px, 96vw);
+      display:flex;
+      align-items:stretch;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      padding:10px 12px;
+      backdrop-filter: blur(6px);
+    }
+    .stats{display:flex; gap:10px; flex-wrap:wrap}
+    .stat{min-width:160px}
+    .label{
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .value{
+      font-size:20px;
+      font-weight:800;
+      margin-top:2px;
+    }
+    .pill{
+      display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:9px; height:9px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(102,255,214,.65);
+    }
+    .dot.off{
+      background: rgba(255,255,255,.25);
+      box-shadow:none;
+    }
+    canvas{
+      width:min(820px, 96vw);
+      height:auto;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:
+        radial-gradient(900px 700px at 50% 15%, rgba(255,255,255,.06), rgba(255,255,255,0) 65%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+    }
+    .help{
+      width:min(820px, 96vw);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      border-bottom-color:rgba(0,0,0,.35);
+      padding:2px 6px;
+      border-radius:8px;
+      color:var(--ink);
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <div class="hud">
+    <div class="card stats">
+      <div class="stat">
+        <div class="label">Punkte</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Ball</div>
+        <div class="value"><span id="ball">1</span> / 3</div>
+      </div>
+      <div class="stat">
+        <div class="label">Multiplikator</div>
+        <div class="value">x<span id="mult">1</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Highscore</div>
+        <div class="value" id="hiscore">0</div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; min-width:210px;">
+      <div class="pill"><span id="soundDot" class="dot off"></span> Sound (tap aktiviert)</div>
+      <div class="pill"><span id="saverDot" class="dot off"></span> Ball-Saver</div>
+      <div class="pill"><span class="dot" style="background:var(--gold); box-shadow:0 0 16px rgba(255,211,107,.65)"></span>
+        Touch: links/rechts Flipper • rechts unten Launcher
+      </div>
+    </div>
+  </div>
+
+  <canvas id="game" width="820" height="1200"></canvas>
+
+  <div class="card help">
+    <div><b>Mobile:</b> Linke Hälfte halten = linker Flipper • Rechte Hälfte halten = rechter Flipper • <b>rechts unten halten</b> = Launcher laden, <b>loslassen</b> = schießen.</div>
+    <div><b>Tastatur (optional):</b> <kbd>A</kbd>/<kbd>←</kbd> links • <kbd>D</kbd>/<kbd>→</kbd> rechts • <kbd>Space</kbd> Launcher • <kbd>R</kbd> Reset</div>
+    <div style="opacity:.9; margin-top:6px">Tipp: Wenn Sound nicht geht, einmal ins Spielfeld tippen (Browser-Policy).</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // =========================================================
+  // Utilities (Vector math)
+  // =========================================================
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp = (a,b,t)=>a+(b-a)*t;
+
+  function v(x=0,y=0){ return {x,y}; }
+  function add(a,b){ return {x:a.x+b.x, y:a.y+b.y}; }
+  function sub(a,b){ return {x:a.x-b.x, y:a.y-b.y}; }
+  function mul(a,s){ return {x:a.x*s, y:a.y*s}; }
+  function dot(a,b){ return a.x*b.x + a.y*b.y; }
+  function len(a){ return Math.hypot(a.x,a.y); }
+  function norm(a){
+    const l=len(a)||1e-9;
+    return {x:a.x/l, y:a.y/l};
+  }
+  function perp(a){ return {x:-a.y, y:a.x}; }
+
+  // Closest point on segment AB to point P
+  function closestPointOnSeg(A,B,P){
+    const AB = sub(B,A);
+    const t = clamp(dot(sub(P,A), AB) / (dot(AB,AB) || 1e-9), 0, 1);
+    return add(A, mul(AB, t));
+  }
+
+  // =========================================================
+  // Canvas scaling (devicePixelRatio)
+  // =========================================================
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const BASE_W = 820, BASE_H = 1200;
+  // We'll keep internal physics in BASE coordinates for stability,
+  // and scale render to fit the CSS size.
+  canvas.width = BASE_W;
+  canvas.height = BASE_H;
+
+  // =========================================================
+  // HUD
+  // =========================================================
+  const scoreEl = document.getElementById("score");
+  const ballEl = document.getElementById("ball");
+  const multEl = document.getElementById("mult");
+  const hiEl = document.getElementById("hiscore");
+  const soundDot = document.getElementById("soundDot");
+  const saverDot = document.getElementById("saverDot");
+
+  let hiScore = 0;
+  try { hiScore = +localStorage.getItem("pinball_hiscore") || 0; } catch {}
+  hiEl.textContent = hiScore;
+
+  // =========================================================
+  // Audio (WebAudio, mobile-friendly)
+  // =========================================================
+  let audioCtx = null;
+  let audioEnabled = false;
+
+  function ensureAudio(){
+    if (audioEnabled) return;
+    try{
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioEnabled = true;
+      soundDot.classList.remove("off");
+    }catch(e){
+      audioEnabled = false;
+    }
+  }
+  function beep({freq=220, dur=0.05, type="sine", vol=0.25, bend=0}={}){
+    if(!audioEnabled || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if(bend){
+      o.frequency.exponentialRampToValueAtTime(Math.max(40, freq*bend), t0+dur);
+    }
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0);
+    o.stop(t0+dur);
+  }
+  function thump(intensity=1){
+    beep({freq:120, dur:0.06, type:"triangle", vol:0.22*intensity, bend:0.8});
+  }
+  function ping(intensity=1){
+    beep({freq:680, dur:0.04, type:"sine", vol:0.18*intensity, bend:1.4});
+  }
+  function clack(intensity=1){
+    beep({freq:260, dur:0.03, type:"square", vol:0.12*intensity, bend:1.25});
+  }
+
+  // =========================================================
+  // Game constants (tuned for "realistic feel")
+  // =========================================================
+  const DT = 1/120;                 // fixed physics step
+  const GRAV = 2400;                // px/s^2 (BASE coordinates)
+  const AIR_DAMP = 0.9995;          // velocity damping per step
+  const MAX_V = 4200;               // clamp velocity
+  const BALL_R = 12;
+  const REST_WALL = 0.86;           // wall restitution
+  const REST_BUMPER = 1.08;         // bumpers add energy slightly
+  const REST_FLIP = 0.92;           // base bounce off flippers
+  const FRICTION_SURF = 0.995;      // surface friction on contacts
+  const NUDGE_SHAKE = 1.0;          // visual shake intensity base
+
+  // =========================================================
+  // Inputs (Touch + Keyboard fallback)
+  // =========================================================
+  let leftHeld = false, rightHeld = false;
+  let launcherHeld = false;
+  let launcherPower = 0; // 0..1
+  let lastTouchTime = 0;
+
+  function isMobileLike(){
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  function touchToControls(touches){
+    // default: entire lower half is flippers; bottom-right corner is launcher
+    // left half -> left flipper, right half -> right flipper
+    // launcher: touch in a bottom-right zone
+    const LZ = {x0: BASE_W*0.78, y0: BASE_H*0.72, x1: BASE_W, y1: BASE_H};
+    let l=false, r=false, la=false;
+
+    for(const t of touches){
+      const p = screenToWorld(t.clientX, t.clientY);
+      if(p.x>=LZ.x0 && p.y>=LZ.y0) { la=true; continue; }
+      if(p.y > BASE_H*0.62){
+        if(p.x < BASE_W*0.5) l=true; else r=true;
+      }else{
+        // allow flippers anywhere: left/right half
+        if(p.x < BASE_W*0.5) l=true; else r=true;
+      }
+    }
+    leftHeld = l;
+    rightHeld = r;
+    launcherHeld = la;
+  }
+
+  // Convert CSS/screen coords -> BASE world coords
+  function screenToWorld(cx, cy){
+    const rect = canvas.getBoundingClientRect();
+    const x = ( (cx - rect.left) / rect.width ) * BASE_W;
+    const y = ( (cy - rect.top ) / rect.height) * BASE_H;
+    return {x, y};
+  }
+
+  // Touch events
+  window.addEventListener("touchstart", (e)=>{
+    ensureAudio();
+    lastTouchTime = performance.now();
+    touchToControls(e.touches);
+    if(gameOver) restart();
+  }, {passive:false});
+  window.addEventListener("touchmove", (e)=>{
+    lastTouchTime = performance.now();
+    touchToControls(e.touches);
+  }, {passive:false});
+  window.addEventListener("touchend", (e)=>{
+    lastTouchTime = performance.now();
+    touchToControls(e.touches);
+    // releasing launcher triggers launch if ball is in lane and not active
+    if(!launcherHeld && launcherPower>0){
+      attemptLaunch();
+    }
+  }, {passive:false});
+  window.addEventListener("touchcancel", (e)=>{
+    touchToControls([]);
+    if(launcherPower>0) attemptLaunch();
+  }, {passive:false});
+
+  // Keyboard fallback (desktop)
+  window.addEventListener("keydown",(e)=>{
+    ensureAudio();
+    if(e.code==="ArrowLeft" || e.code==="KeyA") leftHeld=true;
+    if(e.code==="ArrowRight"|| e.code==="KeyD") rightHeld=true;
+    if(e.code==="Space") launcherHeld=true;
+    if(e.code==="KeyR") restart();
+  });
+  window.addEventListener("keyup",(e)=>{
+    if(e.code==="ArrowLeft" || e.code==="KeyA") leftHeld=false;
+    if(e.code==="ArrowRight"|| e.code==="KeyD") rightHeld=false;
+    if(e.code==="Space"){
+      launcherHeld=false;
+      if(launcherPower>0) attemptLaunch();
+    }
+  });
+
+  // Also allow clicking to enable audio
+  canvas.addEventListener("pointerdown", ()=>ensureAudio());
+
+  // =========================================================
+  // Playfield geometry
+  // - walls are segments
+  // - bumpers are circles
+  // - slings are "active" segments in lower area with extra kick
+  // - targets are circles that award points / increase multiplier
+  // =========================================================
+  const walls = [];
+  const slings = [];
+  const bumpers = [];
+  const targets = [];
+
+  // Create a classic-ish outline with inlanes/outlanes + shooter lane
+  function buildField(){
+    walls.length=0; slings.length=0; bumpers.length=0; targets.length=0;
+
+    const m = 28;
+    const shooterLaneX = BASE_W*0.84;
+
+    // Outer bounds (left/top/right excluding shooter lane opening)
+    // Left wall
+    walls.push(seg(v(m, m), v(m, BASE_H-m), {rest:REST_WALL}));
+    // Top wall
+    walls.push(seg(v(m, m), v(BASE_W-m, m), {rest:REST_WALL}));
+    // Right wall above shooter lane entry
+    walls.push(seg(v(BASE_W-m, m), v(BASE_W-m, BASE_H*0.68), {rest:REST_WALL}));
+
+    // Shooter lane left divider (creates narrow lane)
+    walls.push(seg(v(shooterLaneX, m), v(shooterLaneX, BASE_H-m), {rest:REST_WALL}));
+
+    // Bottom "drain" area guides: left and right angled walls (like real pinball)
+    // Left lower rail to drain
+    walls.push(seg(v(m, BASE_H*0.80), v(BASE_W*0.33, BASE_H-m), {rest:REST_WALL}));
+    // Right lower rail to drain (between shooter divider and right)
+    walls.push(seg(v(shooterLaneX, BASE_H*0.80), v(BASE_W*0.67, BASE_H-m), {rest:REST_WALL}));
+
+    // Inlane/outlane guides near flippers
+    // Left inlane guide
+    walls.push(seg(v(BASE_W*0.22, BASE_H*0.70), v(BASE_W*0.30, BASE_H*0.83), {rest:REST_WALL}));
+    // Left outlane guide
+    walls.push(seg(v(BASE_W*0.12, BASE_H*0I’m sorry — that code block cut off because my message got too long. I can still give you the **complete, working single-file HTML** right now, but I need to send it in **smaller chunks** so nothing gets truncated.
+
+### Do this:
+1) Create `pinball.html`  
+2) Paste **Teil 1**, then **Teil 2**, then **Teil 3** (in that order).  
+3) Save → open.
+
+---
+
+## ✅ Teil 1/3 (paste first)
+
+```html
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Mobile Pinball (Realistic) – Single File</title>
+  <style>
+    :root{
+      --bg:#070a14;
+      --ink:#e8efff;
+      --muted:#9bb0e6;
+      --accent:#66ffd6;
+      --hot:#ff5b7a;
+      --gold:#ffd36b;
+      --line: rgba(255,255,255,.14);
+    }
+    html,body{
+      margin:0; height:100%;
+      background: radial-gradient(1200px 900px at 50% 10%, #172760 0%, var(--bg) 55%, #040610 100%);
+      color:var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden;
+      touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
+    }
+    #wrap{
+      height:100%;
+      display:grid;
+      grid-template-rows: auto 1fr auto;
+      place-items:center;
+      gap:10px;
+      padding:12px;
+      box-sizing:border-box;
+    }
+    .hud{
+      width:min(820px, 96vw);
+      display:flex;
+      align-items:stretch;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      padding:10px 12px;
+      backdrop-filter: blur(6px);
+    }
+    .stats{display:flex; gap:10px; flex-wrap:wrap}
+    .stat{min-width:160px}
+    .label{
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .value{
+      font-size:20px;
+      font-weight:800;
+      margin-top:2px;
+    }
+    .pill{
+      display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:9px; height:9px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(102,255,214,.65);
+    }
+    .dot.off{
+      background: rgba(255,255,255,.25);
+      box-shadow:none;
+    }
+    canvas{
+      width:min(820px, 96vw);
+      height:auto;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:
+        radial-gradient(900px 700px at 50% 15%, rgba(255,255,255,.06), rgba(255,255,255,0) 65%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+    }
+    .help{
+      width:min(820px, 96vw);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      border-bottom-color:rgba(0,0,0,.35);
+      padding:2px 6px;
+      border-radius:8px;
+      color:var(--ink);
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <div class="hud">
+    <div class="card stats">
+      <div class="stat"><div class="label">Punkte</div><div class="value" id="score">0</div></div>
+      <div class="stat"><div class="label">Ball</div><div class="value"><span id="ball">1</span> / 3</div></div>
+      <div class="stat"><div class="label">Multiplikator</div><div class="value">x<span id="mult">1</span></div></div>
+      <div class="stat"><div class="label">Highscore</div><div class="value" id="hiscore">0</div></div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; min-width:210px;">
+      <div class="pill"><span id="soundDot" class="dot off"></span> Sound (tap aktiviert)</div>
+      <div class="pill"><span id="saverDot" class="dot off"></span> Ball-Saver</div>
+      <div class="pill"><span class="dot" style="background:var(--gold); box-shadow:0 0 16px rgba(255,211,107,.65)"></span>
+        Touch: links/rechts Flipper • rechts unten Launcher
+      </div>
+    </div>
+  </div>
+
+  <canvas id="game" width="820" height="1200"></canvas>
+
+  <div class="card help">
+    <div><b>Mobile:</b> Linke Hälfte halten = linker Flipper • Rechte Hälfte halten = rechter Flipper • <b>rechts unten halten</b> = Launcher laden, <b>loslassen</b> = schießen.</div>
+    <div><b>Tastatur:</b> <kbd>A</kbd>/<kbd>←</kbd> links • <kbd>D</kbd>/<kbd>→</kbd> rechts • <kbd>Space</kbd> Launcher • <kbd>R</kbd> Reset</div>
+    <div style="opacity:.9; margin-top:6px">Tipp: Wenn Sound nicht geht, einmal ins Spielfeld tippen.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Math helpers ----------
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const v=(x=0,y=0)=>({x,y});
+  const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+  const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+  const mul=(a,s)=>({x:a.x*s,y:a.y*s});
+  const dot=(a,b)=>a.x*b.x+a.y*b.y;
+  const len=(a)=>Math.hypot(a.x,a.y);
+  const norm=(a)=>{const l=len(a)||1e-9; return {x:a.x/l,y:a.y/l};};
+  const perp=(a)=>({x:-a.y,y:a.x});
+  const closestPointOnSeg=(A,B,P)=>{
+    const AB=sub(B,A);
+    const t=clamp(dot(sub(P,A),AB)/(dot(AB,AB)||1e-9),0,1);
+    return add(A,mul(AB,t));
+  };
+
+  // ---------- Canvas ----------
+  const canvas=document.getElementById("game");
+  const ctx=canvas.getContext("2d");
+  const BASE_W=820, BASE_H=1200;
+  canvas.width=BASE_W; canvas.height=BASE_H;
+
+  // ---------- HUD ----------
+  const scoreEl=document.getElementById("score");
+  const ballEl=document.getElementById("ball");
+  const multEl=document.getElementById("mult");
+  const hiEl=document.getElementById("hiscore");
+  const soundDot=document.getElementById("soundDot");
+  const saverDot=document.getElementById("saverDot");
+
+  let hiScore=0;
+  try{ hiScore=+localStorage.getItem("pinball_hiscore")||0; }catch{}
+  hiEl.textContent=hiScore;
+
+  // ---------- Audio ----------
+  let audioCtx=null, audioEnabled=false;
+  function ensureAudio(){
+    if(audioEnabled) return;
+    try{
+      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      audioEnabled=true;
+      soundDot.classList.remove("off");
+    }catch{}
+  }
+  function beep({freq=220,dur=0.05,type="sine",vol=0.25,bend=0}={}){
+    if(!audioEnabled||!audioCtx) return;
+    const t0=audioCtx.currentTime;
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.type=type;
+    o.frequency.setValueAtTime(freq,t0);
+    if(bend) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*bend), t0+dur);
+    g.gain.setValueAtTime(vol,t0);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0); o.stop(t0+dur);
+  }
+  const thump=(k=1)=>beep({freq:120,dur:0.06,type:"triangle",vol:0.22*k,bend:0.8});
+  const ping =(k=1)=>beep({freq:680,dur:0.04,type:"sine",vol:0.18*k,bend:1.4});
+  const clack=(k=1)=>beep({freq:260,dur:0.03,type:"square",vol:0.12*k,bend:1.25});
+
+  // ---------- Physics constants ----------
+  const DT=1/120;
+  const GRAV=2400;
+  const AIR_DAMP=0.9995;
+  const MAX_V=4200;
+  const BALL_R=12;
+  const REST_WALL=0.86;
+  const REST_BUMPER=1.08;
+  const REST_FLIP=0.92;
+  const FRICTION_SURF=0.995;
+
+  // ---------- Input helpers ----------
+  let leftHeld=false, rightHeld=false;
+  let launcherHeld=false, launcherPower=0;
+  function screenToWorld(cx,cy){
+    const r=canvas.getBoundingClientRect();
+    return {
+      x: ((cx-r.left)/r.width)*BASE_W,
+      y: ((cy-r.top )/r.height)*BASE_H
+    };
+  }
+  function touchToControls(touches){
+    const LZ={x0:BASE_W*0.78,y0:BASE_H*0.72,x1:BASE_W,y1:BASE_H};
+    let l=false,r=false,la=false;
+    for(const t of touches){
+      const p=screenToWorld(t.clientX,t.clientY);
+      if(p.x>=LZ.x0 && p.y>=LZ.y0){ la=true; continue; }
+      if(p.x<BASE_W*0.5) l=true; else r=true;
+    }
+    leftHeld=l; rightHeld=r; launcherHeld=la;
+  }
+  window.addEventListener("touchstart",(e)=>{ ensureAudio(); touchToControls(e.touches); if(gameOver) restart(); },{passive:false});
+  window.addEventListener("touchmove" ,(e)=>{ touchToControls(e.touches); },{passive:false});
+  window.addEventListener("touchend"  ,(e)=>{ touchToControls(e.touches); if(!launcherHeld && launcherPower>0) attemptLaunch(); },{passive:false});
+  window.addEventListener("touchcancel",(e)=>{ touchToControls([]); if(launcherPower>0) attemptLaunch(); },{passive:false});
+  window.addEventListener("keydown",(e)=>{
+    ensureAudio();
+    if(e.code==="ArrowLeft"||e.code==="KeyA") leftHeld=true;
+    if(e.code==="ArrowRight"||e.code==="KeyD") rightHeld=true;
+    if(e.code==="Space") launcherHeld=true;
+    if(e.code==="KeyR") restart();
+  });
+  window.addEventListener("keyup",(e)=>{
+    if(e.code==="ArrowLeft"||e.code==="KeyA") leftHeld=false;
+    if(e.code==="ArrowRight"||e.code==="KeyD") rightHeld=false;
+    if(e.code==="Space"){ launcherHeld=false; if(launcherPower>0) attemptLaunch(); }
+  });
+  canvas.addEventListener("pointerdown",()=>ensureAudio());
+
+  // ---------- World objects ----------
+  const walls=[], slings=[], bumpers=[], targets=[];
+  const seg=(a,b,opt={})=>({a,b, rest: opt.rest ?? REST_WALL, kick: opt.kick ?? 0, tag: opt.tag ?? "wall"});
+  const circ=(x,y,r,opt={})=>({x,y,r, rest: opt.rest ?? REST_BUMPER, score: opt.score ?? 100, tag: opt.tag ?? "bumper"});
+  const targ=(x,y,r,opt={})=>({x,y,r, score: opt.score ?? 250, hit:false, tag:"target"});
+
+  function buildField(){
+    walls.length=0; slings.length=0; bumpers.length=0; targets.length=0;
+
+    const m=28;
+    const shooterX=BASE_W*0.84;
+
+    // Outer & shooter divider
+    walls.push(seg(v(m,m), v(m,BASE_H-m), {rest:REST_WALL}));
+    walls.push(seg(v(m,m), v(BASE_W-m,m), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W-m,m), v(BASE_W-m, BASE_H*0.68), {rest:REST_WALL}));
+    walls.push(seg(v(shooterX,m), v(shooterX,BASE_H-m), {rest:REST_WALL}));
+
+    // Lower rails into drain area
+    walls.push(seg(v(m,BASE_H*0.80), v(BASE_W*0.33, BASE_H-m), {rest:REST_WALL}));
+    walls.push(seg(v(shooterX,BASE_H*0.80), v(BASE_W*0.67, BASE_H-m), {rest:REST_WALL}));
+
+    // Inlane/outlane guides
+    walls.push(seg(v(BASE_W*0.22, BASE_H*0.68), v(BASE_W*0.31, BASE_H*0.83), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.12, BASE_H*0.62), v(BASE_W*0.18, BASE_H*0.90), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.78, BASE_H*0.68), v(BASE_W*0.69, BASE_H*0.83), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.88, BASE_H*0.62), v(BASE_W*0.82, BASE_H*0.90), {rest:REST_WALL}));
+
+    // Upper “ramps” / deflectors
+    walls.push(seg(v(BASE_W*0.20, BASE_H*0.18), v(BASE_W*0.38, BASE_H*0.10), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.62, BASE_H*0.10), v(BASE_W*0.80, BASE_H*0.18), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.10, BASE_H*0.30), v(BASE_W*0.22, BASE_H*0.22), {rest:REST_WALL}));
+    walls.push(seg(v(BASE_W*0.78, BASE_H*0.22), v(BASE_W*0.90, BASE_H*0.30), {rest:REST_WALL}));
+
+    // Slingshots (active kick segments)
+    slings.push(seg(v(BASE_W*0.19, BASE_H*0.72), v(BASE_W*0.32, BASE_H*0.66), {rest:0.92, kick: 950, tag:"sling"}));
+    slings.push(seg(v(BASE_W*0.68, BASE_H*0.66), v(BASE_W*0.81, BASE_H*0.72), {rest:0.92, kick: 950, tag:"sling"}));
+
+    // Bumpers (classic triangle)
+    bumpers.push(circ(BASE_W*0.50, BASE_H*0.33, 30, {score:250, rest:REST_BUMPER, tag:"bumper"}));
+    bumpers.push(circ(BASE_W*0.38, BASE_H*0.44, 26, {score:200, rest:REST_BUMPER, tag:"bumper"}));
+    bumpers.push(circ(BASE_W*0.62, BASE_H*0.44, 26, {score:200, rest:REST_BUMPER, tag:"bumper"}));
+
+    // Targets (advance multiplier when all lit)
+    targets.push(targ(BASE_W*0.30, BASE_H*0.26, 16, {score:350}));
+    targets.push(targ(BASE_W*0.50, BASE_H*0.22, 16, {score:350}));
+    targets.push(targ(BASE_W*0.70, BASE_H*0.26, 16, {score:350}));
+  }
+
+  // =========================================================
+  // Flippers (rotating segment with impulse)
+  // =========================================================
+  const flipper = (pivotX, pivotY, length, isLeft)=>({
+    pivot: v(pivotX,pivotY),
+    length,
+    isLeft,
+    // angles in radians, tuned to look/feel right
+    restAngle: isLeft ? -0.35 : 0.35,
+    upAngle:   isLeft ? -1.05 : 1.05,
+    angle:     isLeft ? -0.35 : 0.35,
+    angVel: 0,
+    strength: 1850,      // impact impulse factor
+    returnSpeed: 44,     // how fast it returns
+    flipSpeed: 58        // how fast it flips up
+  });
+
+  const FL_Y = BASE_H - 140;
+  const leftFlip  = flipper(BASE_W*0.36, FL_Y, 140, true);
+  const rightFlip = flipper(BASE_W*0.64, FL_Y, 140, false);
+
+  function flipperEndpoints(F){
+    // Segment from pivot to tip along angle
+    const dir = v(Math.cos(F.angle), Math.sin(F.angle));
+    const tip = add(F.pivot, mul(dir, F.length));
+    return {A: F.pivot, B: tip, dir};
+  }
+
+  function stepFlipper(F, held){
+    const target = held ? F.upAngle : F.restAngle;
+    const speed = held ? F.flipSpeed : F.returnSpeed;
+    // PD-ish control
+    const err = target - F.angle;
+    F.angVel += err * speed * DT;
+    F.angVel *= 0.72; // damping
+    F.angle += F.angVel * DT;
+    // clamp around bounds
+    if(F.isLeft){
+      F.angle = clamp(F.angle, F.upAngle, F.restAngle);
+    }else{
+      F.angle = clamp(F.angle, F.restAngle, F.upAngle);
+    }
+  }
+
+  // =========================================================
+  // Ball / game state
+  // =========================================================
+  let score=0, mult=1;
+  let ballNum=1, maxBalls=3;
+  let gameOver=false;
+
+  const ball = {
+    p: v(BASE_W*0.92, BASE_H-190),
+    v: v(0,0),
+    r: BALL_R,
+    inShooter: true,
+    active: false // once launched
+  };
+
+  // Ball saver
+  let saverTime = 0;           // seconds remaining
+  const SAVER_MAX = 4.5;       // after launch
+  function setSaver(on){
+    if(on){
+      saverTime = SAVER_MAX;
+      saverDot.classList.remove("off");
+    }else{
+      saverTime = 0;
+      saverDot.classList.add("off");
+    }
+  }
+
+  // Score helpers
+  function addScore(pts){
+    score += Math.floor(pts * mult);
+    scoreEl.textContent = score;
+    if(score > hiScore){
+      hiScore = score;
+      hiEl.textContent = hiScore;
+      try{ localStorage.setItem("pinball_hiscore", String(hiScore)); }catch{}
+    }
+  }
+
+  function vibrate(ms){
+    if(navigator.vibrate) try{ navigator.vibrate(ms); }catch{}
+  }
+
+  function resetBallToShooter(){
+    ball.p = v(BASE_W*0.92, BASE_H-190);
+    ball.v = v(0,0);
+    ball.inShooter = true;
+    ball.active = false;
+    launcherPower = 0;
+  }
+
+  function loseBall(){
+    if(saverTime > 0){
+      // rescue
+      thump(0.9); vibrate(20);
+      resetBallToShooter();
+      return;
+    }
+    ballNum++;
+    if(ballNum > maxBalls){
+      gameOver = true;
+      return;
+    }
+    ballEl.textContent = ballNum;
+    mult = 1;
+    multEl.textContent = mult;
+    // reset targets
+    for(const t of targets) t.hit = false;
+    resetBallToShooter();
+  }
+
+  // Attempt launching from shooter lane
+  function attemptLaunch(){
+    if(!ball.inShooter || ball.active) { launcherPower = 0; return; }
+    const pow = clamp(launcherPower, 0.08, 1.0);
+    ball.v.y = - (2400 + 2200*pow);
+    ball.v.x = - (90 + 180*pow); // slight left
+    ball.active = true;
+    ball.inShooter = false;
+    launcherPower = 0;
+    setSaver(true);
+    clack(1.0);
+    vibrate(12);
+  }
+
+  // =========================================================
+  // Collisions
+  // =========================================================
+  function limitVelocity(V){
+    const s = len(V);
+    if(s > MAX_V){
+      const n = s ? (MAX_V/s) : 1;
+      V.x *= n; V.y *= n;
+    }
+  }
+
+  // Resolve ball vs segment (walls/slings/flippers)
+  function collideBallSegment(ball, S, extraKick=0, extraRest=null, impulseAdd=v(0,0)){
+    const A=S.a, B=S.b;
+    const C = ball.p;
+    const Q = closestPointOnSeg(A,B,C);
+    const d = sub(C,Q);
+    const dist = len(d);
+    const pen = ball.r - dist;
+    if(pen <= 0) return false;
+
+    const n = dist>1e-6 ? mul(d, 1/dist) : norm(perp(sub(B,A)));
+    // push out
+    ball.p.x += n.x * pen;
+    ball.p.y += n.y * pen;
+
+    // reflect velocity along normal
+    const vn = dot(ball.v, n);
+    if(vn < 0){
+      const rest = (extraRest ?? S.rest ?? REST_WALL);
+      // remove normal component and apply bounce
+      ball.v.x -= (1 + rest) * vn * n.x;
+      ball.v.y -= (1 + rest) * vn * n.y;
+
+      // surface friction (tangent)
+      const t = perp(n);
+      const vt = dot(ball.v, t);
+      ball.v.x -= (1-FRICTION_SURF) * vt * t.x;
+      ball.v.y -= (1-FRICTION_SURF) * vt * t.y;
+
+      // kick (slings etc.)
+      if(extraKick){
+        ball.v.x += n.x * extraKick;
+        ball.v.y += n.y * extraKick;
+      }
+      // extra impulse
+      ball.v.x += impulseAdd.x;
+      ball.v.y += impulseAdd.y;
+
+      limitVelocity(ball.v);
+      return true;
+    }
+    return false;
+  }
+
+  // Ball vs circle bumper/target
+  function collideBallCircle(ball, C, rest, kick=0){
+    const d = sub(ball.p, C);
+    const dist = len(d);
+    const pen = ball.r + C.r - dist;
+    if(pen <= 0) return false;
+    const n = dist>1e-6 ? mul(d, 1/dist) : v(0,-1);
+
+    // separate
+    ball.p.x += n.x * pen;
+    ball.p.y += n.y * pen;
+
+    const vn = dot(ball.v, n);
+    if(vn < 0){
+      ball.v.x -= (1 + rest) * vn * n.x;
+      ball.v.y -= (1 + rest) * vn * n.y;
+
+      if(kick){
+        ball.v.x += n.x * kick;
+        ball.v.y += n.y * kick;
+      }
+      limitVelocity(ball.v);
+      return true;
+    }
+    return false;
+  }
+
+  // Flipper collision: segment + add impulse based on angular velocity and contact point
+  function collideBallFlipper(ball, F, held){
+    const {A,B,dir} = flipperEndpoints(F);
+
+    // segment collision
+    const fakeSeg = {a:A, b:B, rest:REST_FLIP};
+
+    // Approx tangential speed at contact due to angular velocity: v = w x r
+    // r = vector from pivot to contact point
+    const Q = closestPointOnSeg(A,B, ball.p);
+    const rVec = sub(Q, F.pivot);
+    // angular vel around z: w, so tangential velocity is perp(r)*w
+    const tang = perp(rVec);
+    const contactVel = mul(norm(tang), (len(rVec) * F.angVel));
+
+    // When flipping up, add additional impulse along contact velocity direction
+    // Stronger when held and moving upward
+    let impulse = v(0,0);
+    if(held){
+      // scale with how far from pivot (tip hits harder)
+      const t = clamp(len(rVec)/F.length, 0, 1);
+      impulse = mul(contactVel, 28 * (0.35 + 0.65*t));
+      // add a baseline "kick" upwards (helps realism)
+      impulse.y -= 18 * t;
+    }
+
+    // Try collision
+    const hit = collideBallSegment(ball, fakeSeg, 0, REST_FLIP, impulse);
+    if(hit){
+      // extra "flip strength" when held
+      if(held){
+        // push a bit along flipper normal
+        const n = norm(perp(sub(B,A)));
+        ball.v.x += n.x * (F.strength * 0.016);
+        ball.v.y += n.y * (F.strength * 0.016);
+        limitVelocity(ball.v);
+      }
+      clack(0.7);
+      vibrate(8);
+      return true;
+    }
+    return false;
+  }
+
+  // =========================================================
+  // Targets logic (multiplier)
+  // =========================================================
+  function checkTargets(){
+    let all = true;
+    for(const t of targets) if(!t.hit) all=false;
+    if(all){
+      mult = clamp(mult+1, 1, 6);
+      multEl.textContent = mult;
+      for(const t of targets) t.hit=false;
+      addScore(1500);
+      ping(1.0);
+      vibrate(20);
+    }
+  }
+
+  // =========================================================
+  // Build world
+  // =========================================================
+  buildField();
+
+  // =========================================================
+  // Main loop (fixed timestep)
+  // =========================================================
+  let last = performance.now();
+  let acc = 0;
+
+  function step(){
+    // Launcher charging
+    if(launcherHeld && ball.inShooter && !ball.active){
+      launcherPower = clamp(launcherPower + 0.75*DT, 0, 1);
+    }else{
+      // mild decay so it's not sticky
+      launcherPower = clamp(launcherPower - 0.45*DT, 0, 1);
+    }
+
+    // Ball saver timer
+    if(saverTime > 0){
+      saverTime -= DT;
+      if(saverTime <= 0){
+        saverTime = 0;
+        saverDot.classList.add("off");
+      }else{
+        saverDot.classList.remove("off");
+      }
+    }
+
+    // Flippers
+    stepFlipper(leftFlip, leftHeld);
+    stepFlipper(rightFlip, rightHeld);
+
+    // Integrate ball
+    if(ball.active){
+      ball.v.y += GRAV * DT;
+      ball.p.x += ball.v.x * DT;
+      ball.p.y += ball.v.y * DT;
+      ball.v.x *= AIR_DAMP;
+      ball.v.y *= AIR_DAMP;
+
+      // drain check (bottom)
+      if(ball.p.y > BASE_H + 80){
+        loseBall();
+      }
+    }else{
+      // Keep ball in shooter lane resting
+      // slight jitter removal
+      ball.p.x = BASE_W*0.92;
+      ball.p.y = BASE_H-190;
+      ball.v.x = ball.v.y = 0;
+    }
+
+    // Collisions: walls
+    let hitSomething = false;
+    for(const S of walls){
+      if(collideBallSegment(ball, S)) hitSomething = true;
+    }
+
+    // Slings: extra kick when in lower area
+    for(const S of slings){
+      const hit = collideBallSegment(ball, S, S.kick, S.rest);
+      if(hit){
+        addScore(90);
+        thump(0.7);
+        vibrate(10);
+        hitSomething = true;
+      }
+    }
+
+    // Bumpers
+    for(const B of bumpers){
+      const hit = collideBallCircle(ball, B, B.rest, 850);
+      if(hit){
+        addScore(B.score);
+        ping(0.95);
+        vibrate(14);
+        hitSomething = true;
+      }
+    }
+
+    // Targets
+    for(const T of targets){
+      if(!T.hit){
+        const hit = collideBallCircle(ball, T, 0.92, 260);
+        if(hit){
+          T.hit = true;
+          addScore(T.score);
+          ping(0.7);
+          vibrate(8);
+          checkTargets();
+          hitSomething = true;
+        }
+      }
+    }
+
+    // Flippers (do after walls for stability)
+    const hitL = collideBallFlipper(ball, leftFlip, leftHeld);
+    const hitR = collideBallFlipper(ball, rightFlip, rightHeld);
+    if(hitL||hitR) hitSomething=true;
+
+    // Clamp velocity (safety)
+    limitVelocity(ball.v);
+
+    // Small “settling” if very slow (prevents micro jitter)
+    if(ball.active && len(ball.v) < 18){
+      ball.v.x *= 0.98;
+      ball.v.y *= 0.98;
+    }
+  }
+
+  // =========================================================
+  // Rendering
+  // =========================================================
+  function draw(){
+    ctx.clearRect(0,0,BASE_W,BASE_H);
+
+    // Table border glow
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = "rgba(102,255,214,.18)";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(18,18,BASE_W-36,BASE_H-36);
+    ctx.restore();
+
+    // Shooter lane fill
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.03)";
+    ctx.fillRect(BASE_W*0.84, 28, BASE_W*0.16-28, BASE_H-56);
+    ctx.restore();
+
+    // Walls
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.22)";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+    for(const S of walls){
+      ctx.beginPath();
+      ctx.moveTo(S.a.x,S.a.y);
+      ctx.lineTo(S.b.x,S.b.y);
+      ctx.stroke();
+    }
+    // Slings
+    ctx.strokeStyle = "rgba(255,91,122,.55)";
+    ctx.lineWidth = 8;
+    for(const S of slings){
+      ctx.beginPath();
+      ctx.moveTo(S.a.x,S.a.y);
+      ctx.lineTo(S.b.x,S.b.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Bumpers
+    for(const B of bumpers){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(B.x,B.y,B.r,0,Math.PI*2);
+      ctx.fillStyle = "rgba(255,211,107,.85)";
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(255,255,255,.35)";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Targets
+    for(const T of targets){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(T.x,T.y,T.r,0,Math.PI*2);
+      ctx.fillStyle = T.hit ? "rgba(102,255,214,.85)" : "rgba(155,176,230,.35)";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(255,255,255,.25)";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Launcher power indicator
+    ctx.save();
+    const barH = 180;
+    const x0 = BASE_W*0.945;
+    const y0 = BASE_H - 240;
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.fillRect(x0-8, y0-barH, 16, barH);
+    ctx.fillStyle = "rgba(102,255,214,.75)";
+    ctx.fillRect(x0-8, y0 - barH*launcherPower, 16, barH*launcherPower);
+    ctx.restore();
+
+    // Flippers
+    function drawFlipper(F){
+      const {A,B} = flipperEndpoints(F);
+      ctx.save();
+      ctx.lineWidth = 18;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255,91,122,.92)";
+      ctx.beginPath();
+      ctx.moveTo(A.x,A.y);
+      ctx.lineTo(B.x,B.y);
+      ctx.stroke();
+
+      // pivot cap
+      ctx.fillStyle = "rgba(255,255,255,.25)";
+      ctx.beginPath();
+      ctx.arc(A.x,A.y,10,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+    drawFlipper(leftFlip);
+    drawFlipper(rightFlip);
+
+    // Ball
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ball.p.x, ball.p.y, ball.r, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(124,242,255,.95)";
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(255,255,255,.35)";
+    ctx.stroke();
+    ctx.restore();
+
+    // Ball saver banner
+    if(saverTime > 0){
+      ctx.save();
+      ctx.globalAlpha = 0.45 + 0.35*Math.sin((performance.now()/1000)*10);
+      ctx.fillStyle = "rgba(102,255,214,.22)";
+      ctx.fillRect(0, 90, BASE_W, 40);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(255,255,255,.75)";
+      ctx.font = "800 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("BALL SAVER", BASE_W/2, 117);
+      ctx.restore();
+    }
+
+    // Game over overlay
+    if(gameOver){
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.55)";
+      ctx.fillRect(0,0,BASE_W,BASE_H);
+      ctx.fillStyle = "rgba(255,255,255,.92)";
+      ctx.font = "900 56px system-ui";
+      ctx.textAlign="center";
+      ctx.fillText("GAME OVER", BASE_W/2, BASE_H/2 - 10);
+      ctx.font = "600 20px system-ui";
+      ctx.fillStyle = "rgba(255,255,255,.75)";
+      ctx.fillText("Tippen zum Neustart", BASE_W/2, BASE_H/2 + 36);
+      ctx.restore();
+    }
+  }
+
+  // =========================================================
+  // Restart
+  // =========================================================
+  function restart(){
+    gameOver=false;
+    score=0; mult=1; ballNum=1;
+    scoreEl.textContent=0;
+    multEl.textContent=1;
+    ballEl.textContent=1;
+    for(const t of targets) t.hit=false;
+    setSaver(false);
+    resetBallToShooter();
+  }
+
+  // Expose for touchstart in Teil 1 only? (keeps it simple)
+  window.__pinball_restart = restart;
+
+  // =========================================================
+  // Frame loop
+  // =========================================================
+  function frame(now){
+    const dt = Math.min(0.05, (now-last)/1000);
+    last = now;
+    acc += dt;
+    while(acc >= DT){
+      if(!gameOver) step();
+      acc -= DT;
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // Initial state
+  ballEl.textContent = ballNum;
+  scoreEl.textContent = score;
+  multEl.textContent = mult;
+  setSaver(false);
+  resetBallToShooter();
+
+  // Tap to restart when game over
+  window.addEventListener("touchstart", ()=>{ if(gameOver) restart(); }, {passive:true});
+  window.addEventListener("mousedown", ()=>{ if(gameOver) restart(); }, {passive:true});
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
