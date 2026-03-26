@@ -57,7 +57,6 @@
       margin:0 auto;
     }
 
-    /* Icon Buttons */
     .icon-btn{
       width:34px;
       height:34px;
@@ -90,10 +89,8 @@
       max-width:320px;
       border-radius:16px;
       display:block;
-
       filter:grayscale(100%);
       opacity:0.55;
-
       transition:opacity .35s ease, filter .35s ease;
     }
 
@@ -102,41 +99,31 @@
       filter:grayscale(60%);
     }
 
-    /* ===== Game Button ===== */
-    .game-btn{
+    /* ===== Countdown ===== */
+    .countdown{
       width:48%;
       max-width:320px;
       aspect-ratio:4/3;
-      border-radius:16px;
 
       display:flex;
       align-items:center;
       justify-content:center;
 
+      border-radius:16px;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
 
-      opacity:0.55;
-      text-decoration:none;
+      font-size:28px;
+      letter-spacing:2px;
+      font-weight:600;
 
-      transition:opacity .3s ease, transform .2s ease;
-    }
-
-    .game-btn::before{
-      content:"▶";
-      font-size:56px;
-      color:rgba(255,255,255,.9);
-      transform:translateX(4px);
-    }
-
-    .game-btn:hover{
-      opacity:0.85;
-      transform:scale(1.03);
+      opacity:0.65;
     }
 
     @media(min-width:900px){
       .gallery img,
-      .game-btn{
+      .game-btn,
+      .countdown{
         width:32%;
       }
     }
@@ -153,7 +140,6 @@
 
 <body>
 
-  <!-- Background Video -->
   <div class="bg-video">
     <video autoplay muted loop playsinline>
       <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
@@ -161,17 +147,14 @@
   </div>
   <div class="bg-overlay"></div>
 
-  <!-- Header -->
   <header>
     <div class="topbar">
 
-      <!-- Instagram -->
       <a class="icon-btn"
          href="https://www.instagram.com/dorfdulli.racing"
          target="_blank"
          aria-label="Instagram">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             xmlns="http://www.w3.org/2000/svg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <rect x="2" y="2" width="20" height="20" rx="5"
                 stroke="currentColor" stroke-width="2"/>
           <circle cx="12" cy="12" r="5"
@@ -181,12 +164,10 @@
         </svg>
       </a>
 
-      <!-- Logo -->
       <div class="logo">
         <img src="images/logo.PNG" alt="Dorfdulli Racing">
       </div>
 
-      <!-- Pizza -->
       <a class="icon-btn right"
          href="https://www.jhandpizzaservice.de"
          target="_blank"
@@ -195,22 +176,60 @@
     </div>
   </header>
 
-  <!-- Main -->
   <main>
     <section class="gallery">
 
       <img src="images/IMG_0673.jpeg" alt="">
       <img src="images/IMG_0674.jpeg" alt="">
+
+      <!-- COUNTDOWN -->
+      <div class="countdown" id="countdown">
+        <span id="time">00:00:00</span>
+      </div>
+
       <img src="images/IMG_0662.jpeg" alt="">
       <img src="images/IMG_0663.jpeg" alt="">
 
     </section>
   </main>
 
-  <!-- Footer -->
   <footer>
     © 2026 Dorfdulli Racing
   </footer>
+
+  <script>
+  function updateCountdown() {
+    const now = new Date();
+
+    const berlinNow = new Date(
+      now.toLocaleString("en-US", { timeZone: "Europe/Berlin" })
+    );
+
+    let target = new Date(berlinNow);
+    target.setHours(20, 15, 0, 0);
+
+    if (berlinNow > target) {
+      target.setDate(target.getDate() + 1);
+    }
+
+    const diff = target - berlinNow;
+
+    if (diff <= 0) {
+      document.getElementById("time").textContent = "DEJA";
+      return;
+    }
+
+    const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+    const minutes = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0');
+    const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+    document.getElementById("time").textContent =
+      `${hours}:${minutes}:${seconds}`;
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+  </script>
 
 </body>
 </html>
