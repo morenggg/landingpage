@@ -72,7 +72,6 @@
       border: 0;
     }
 
-    /* Background */
     .bg-wrap {
       position: fixed;
       inset: 0;
@@ -92,8 +91,8 @@
       min-height: 100%;
       transform: translate(-50%, -50%);
       object-fit: cover;
-      object-position: center;
-      filter: grayscale(100%) brightness(0.34);
+      object-position: center center;
+      filter: grayscale(100%) brightness(0.22) blur(2px);
       pointer-events: none;
       -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
@@ -103,11 +102,16 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 18%, rgba(0,0,0,0.12) 36%, rgba(0,0,0,0.72) 100%);
+        linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.35) 0%,
+          rgba(0,0,0,0.18) 20%,
+          rgba(0,0,0,0.55) 55%,
+          rgba(0,0,0,0.9) 100%
+        );
       pointer-events: none;
     }
 
-    /* Header */
     header {
       position: fixed;
       top: 0;
@@ -189,12 +193,11 @@
       filter: invert(1) brightness(10);
     }
 
-    /* Main layout */
     main {
       position: relative;
       z-index: 10;
       min-height: 100vh;
-      padding-top: calc(64px + 24vh);
+      padding-top: calc(64px + 20vh);
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 24px));
@@ -211,9 +214,10 @@
 
     .gallery {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      width: min(78vw, 320px);
+      grid-template-columns: 1fr;
+      gap: 14px;
+      width: min(68vw, 260px);
+      margin: 0 auto;
       opacity: 0;
       transform: translateY(24px);
       transition:
@@ -226,31 +230,15 @@
       transform: translateY(0);
     }
 
-    @media (min-width: 520px) {
-      main {
-        padding-top: calc(64px + 26vh);
-      }
-
-      .gallery {
-        width: min(52vw, 360px);
-        gap: 10px;
-      }
-    }
-
     @media (min-width: 900px) {
       main {
-        padding-top: calc(64px + 28vh);
+        padding-top: calc(64px + 22vh);
       }
 
       .gallery {
-        width: min(28vw, 380px);
-        gap: 12px;
-      }
-    }
-
-    @media (min-width: 1400px) {
-      .gallery {
-        width: min(24vw, 400px);
+        grid-template-columns: 1fr 1fr;
+        width: min(34vw, 420px);
+        gap: 16px;
       }
     }
 
@@ -268,8 +256,8 @@
       object-fit: cover;
       object-position: center;
       filter: grayscale(100%);
-      opacity: 0.56;
-      transform: scale(1.03);
+      opacity: 0.58;
+      transform: scale(1.02);
       transition:
         opacity 0.7s ease,
         filter 0.7s ease,
@@ -289,7 +277,6 @@
       transform: scale(1.01);
     }
 
-    /* Footer */
     footer {
       position: relative;
       z-index: 10;
