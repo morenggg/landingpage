@@ -3,7 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dorfdulli Racing</title>
+  <meta name="description" content="Dorfdulli Racing ist eine Motocross- und Enduro-Community für Offroad-Fans. Entdecke Treffen, Events, Bikes, Countdown und echte Offroad-Vibes rund um Motocross und Enduro.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#000000">
+
+  <title>Dorfdulli Racing | Motocross & Enduro Community</title>
+
+  <!-- Optional: Domain anpassen, sobald final -->
+  <!-- <link rel="canonical" href="https://deinedomain.de/"> -->
+
+  <!-- Favicon / App Icons -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Dorfdulli Racing | Motocross & Enduro Community">
+  <meta property="og:description" content="Motocross- und Enduro-Community mit Offroad-Vibes, Treffen, Events und Content rund um Bikes und Racing.">
+  <meta property="og:image" content="images/IMG_0673.jpeg">
+  <!-- <meta property="og:url" content="https://deinedomain.de/"> -->
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Dorfdulli Racing | Motocross & Enduro Community">
+  <meta name="twitter:description" content="Motocross- und Enduro-Community mit Treffen, Bikes, Events und Offroad-Content.">
+  <meta name="twitter:image" content="images/IMG_0673.jpeg">
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-N68H1PYZXY"></script>
@@ -15,234 +39,615 @@
   </script>
 
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{height:100%;}
-    body{
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#000;
-      color:#fff;
-      overflow-x:hidden;
+      background: #000;
+      color: #fff;
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    .bg-video{
-      position:fixed;
-      inset:0;
-      z-index:-2;
-      overflow:hidden;
-    }
-    .bg-video video{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      filter:grayscale(100%) brightness(.55);
-    }
-    .bg-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.6);
-      z-index:-1;
+    a {
+      color: #fff;
+      text-decoration: none;
     }
 
-    header{
-      position:sticky;
-      top:0;
-      backdrop-filter:blur(12px);
-      background:rgba(0,0,0,.55);
-      z-index:10;
-    }
-    .topbar{
-      height:64px;
-      padding:0 16px;
-      display:grid;
-      grid-template-columns:1fr auto 1fr;
-      align-items:center;
-    }
-    .logo img{
-      height:42px;
-      filter:invert(1);
-      display:block;
-      margin:0 auto;
+    img {
+      max-width: 100%;
+      display: block;
     }
 
-    .icon-btn{
-      width:34px;
-      height:34px;
-      border-radius:50%;
-      background:#fff;
-      color:#000;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-decoration:none;
-    }
-    .icon-btn.right{justify-self:end;}
-
-    main{
-      padding:50px 0 80px;
-      display:flex;
-      justify-content:center;
-    }
-    .gallery{
-      width:100%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:22px;
+    .bg-video {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
     }
 
-    .gallery img{
-      width:48%;
-      max-width:320px;
-      border-radius:16px;
-      display:block;
-      filter:grayscale(100%);
-      opacity:0.55;
-      transition:opacity .35s ease, filter .35s ease;
+    .bg-video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%) brightness(.45);
     }
 
-    .gallery img:hover{
-      opacity:0.8;
-      filter:grayscale(60%);
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .62);
+      z-index: -1;
     }
 
-    .countdown{
-      width:48%;
-      max-width:320px;
-      aspect-ratio:4/3;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      border-radius:16px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      opacity:0.7;
-      text-align:center;
-      padding:18px;
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, .58);
+      border-bottom: 1px solid rgba(255,255,255,.08);
     }
 
-    .countdown-label{
-      font-size:12px;
-      letter-spacing:1.5px;
-      color:rgba(255,255,255,.6);
-      margin-bottom:6px;
+    .topbar {
+      min-height: 72px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
     }
 
-    .countdown-time{
-      font-size:28px;
-      letter-spacing:2px;
-      font-weight:600;
-      margin-bottom:10px;
+    .logo img {
+      height: 46px;
+      filter: invert(1);
+      display: block;
+      margin: 0 auto;
     }
 
-    .location-info{
-      font-size:11px;
-      line-height:1.45;
-      color:rgba(255,255,255,.72);
-      max-width:90%;
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #fff;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: transform .2s ease, opacity .2s ease;
     }
 
-    .location-info .muted{
-      color:rgba(255,255,255,.5);
+    .icon-btn:hover {
+      transform: scale(1.05);
+      opacity: .92;
     }
 
-    @media(min-width:900px){
-      .gallery img,
-      .countdown{
-        width:32%;
+    .icon-btn.right {
+      justify-self: end;
+    }
+
+    .main-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 12px 14px;
+      flex-wrap: wrap;
+    }
+
+    .main-nav a {
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.88);
+    }
+
+    .main-nav a:hover {
+      background: rgba(255,255,255,.12);
+    }
+
+    main {
+      width: min(1100px, 92%);
+      margin: 0 auto;
+      padding: 44px 0 90px;
+    }
+
+    .hero {
+      min-height: 52vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px 0 30px;
+    }
+
+    .eyebrow {
+      letter-spacing: 2px;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.68);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 7vw, 68px);
+      line-height: 1.02;
+      letter-spacing: -1px;
+      max-width: 900px;
+      margin-bottom: 16px;
+    }
+
+    .hero-text {
+      max-width: 760px;
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: rgba(255,255,255,.82);
+      margin-bottom: 26px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 26px;
+    }
+
+    .btn {
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.10);
+      color: #fff;
+      font-weight: 600;
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,.16);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: #fff;
+      color: #000;
+    }
+
+    .btn.primary:hover {
+      background: rgba(255,255,255,.9);
+    }
+
+    .countdown-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .countdown {
+      width: min(380px, 100%);
+      aspect-ratio: 4 / 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      text-align: center;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    }
+
+    .countdown-label {
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,.62);
+      margin-bottom: 8px;
+    }
+
+    .countdown-time {
+      font-size: clamp(28px, 6vw, 42px);
+      letter-spacing: 2px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .location-info {
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(255,255,255,.76);
+      max-width: 95%;
+    }
+
+    .location-info .muted {
+      color: rgba(255,255,255,.54);
+    }
+
+    section {
+      margin-top: 90px;
+    }
+
+    .section-head {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: clamp(24px, 5vw, 38px);
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .section-head p {
+      color: rgba(255,255,255,.72);
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .card h3 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .card p,
+    .card li {
+      color: rgba(255,255,255,.78);
+    }
+
+    .card ul {
+      padding-left: 18px;
+      margin-top: 10px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .gallery figure {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .gallery img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%);
+      opacity: .72;
+      transition: opacity .35s ease, filter .35s ease, transform .35s ease;
+      min-height: 260px;
+    }
+
+    .gallery img:hover {
+      opacity: .95;
+      filter: grayscale(45%);
+      transform: scale(1.02);
+    }
+
+    .gallery figcaption {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,.70);
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .seo-text {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .seo-text p {
+      margin-bottom: 16px;
+      color: rgba(255,255,255,.80);
+    }
+
+    .mini-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 26px;
+    }
+
+    .mini-links a {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.88);
+    }
+
+    footer {
+      margin-top: 90px;
+      padding: 26px 0 36px;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    footer p {
+      font-size: 14px;
+      color: rgba(255,255,255,.66);
+    }
+
+    .footer-mini {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,.46);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 780px) {
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .gallery {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
 
-    footer{
-      padding:24px 0 30px;
-      text-align:center;
-      font-size:13px;
-      color:rgba(255,255,255,.6);
-    }
-
-    .footer-mini{
-      display:block;
-      margin-top:4px;
-      font-size:10px;
-      color:rgba(255,255,255,.4);
-      text-decoration:none;
-    }
-
-    .footer-mini:hover{
-      opacity:0.8;
+    @media (min-width: 1024px) {
+      .gallery {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
   </style>
 </head>
 
 <body>
-
-  <div class="bg-video">
+  <div class="bg-video" aria-hidden="true">
     <video autoplay muted loop playsinline>
       <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
     </video>
   </div>
-  <div class="bg-overlay"></div>
+  <div class="bg-overlay" aria-hidden="true"></div>
 
   <header>
     <div class="topbar">
-
       <a class="icon-btn"
          href="https://www.instagram.com/dorfdulli.racing"
-         target="_blank">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="5"
-                stroke="currentColor" stroke-width="2"/>
-          <circle cx="12" cy="12" r="5"
-                  stroke="currentColor" stroke-width="2"/>
-          <circle cx="17.5" cy="6.5" r="1.5"
-                  fill="currentColor"/>
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Dorfdulli Racing auf Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/>
         </svg>
       </a>
 
       <div class="logo">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing">
+        <a href="#top" aria-label="Zur Startseite">
+          <img src="images/logo.PNG" alt="Dorfdulli Racing Logo">
+        </a>
       </div>
 
       <a class="icon-btn right"
          href="https://www.jhandpizzaservice.de"
-         target="_blank">🍕</a>
-
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="JH and Pizza Service besuchen">🍕</a>
     </div>
+
+    <nav class="main-nav" aria-label="Hauptnavigation">
+      <a href="#about">About</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#community">Community</a>
+      <a href="#location">Location</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
   </header>
 
-  <main>
-    <section class="gallery">
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="eyebrow">Motocross • Enduro • Offroad</div>
+      <h1 id="hero-title">Dorfdulli Racing ist deine Motocross- und Enduro-Community mit echtem Offroad-Vibe</h1>
+      <p class="hero-text">
+        Dorfdulli Racing verbindet Motocross, Enduro, Community und rohe Gelände-Energie in einer Seite.
+        Hier geht es nicht um Hochglanz-Marketing, sondern um Bikes, Treffen, Offroad-Feeling, Countdown,
+        gemeinsame Sessions und echten Dreck unter den Stiefeln.
+      </p>
 
-      <img src="images/IMG_0673.jpeg" alt="">
-      <img src="images/IMG_0674.jpeg" alt="">
-
-      <div class="countdown">
-        <div class="countdown-label">COUNTDOWN BIS 20:00 UHR</div>
-        <div class="countdown-time" id="time">00:00:00</div>
-        <div class="location-info" id="locationInfo">
-          Standort wird angefragt...
-        </div>
+      <div class="hero-actions">
+        <a class="btn primary" href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer">Instagram ansehen</a>
+        <a class="btn" href="#about">Mehr erfahren</a>
+        <a class="btn" href="#gallery">Zur Gallery</a>
       </div>
 
-      <img src="images/IMG_0662.jpeg" alt="">
-      <img src="images/IMG_0663.jpeg" alt="">
+      <div class="countdown-wrap" id="location">
+        <div class="countdown">
+          <div class="countdown-label">COUNTDOWN BIS 20:00 UHR</div>
+          <div class="countdown-time" id="time">00:00:00</div>
+          <div class="location-info" id="locationInfo">
+            Standort wird angefragt...
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <section id="about">
+      <div class="section-head">
+        <h2>Über Dorfdulli Racing</h2>
+        <p>Motocross und Enduro sind mehr als nur ein Hobby. Sie sind Bewegung, Technik, Strecke, Staub und Community.</p>
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <h3>Was Dorfdulli Racing ausmacht</h3>
+          <p>
+            Dorfdulli Racing steht für Motocross- und Enduro-Content mit Charakter. Die Seite ist als Landingpage
+            für Leute gedacht, die Bock auf Offroad, Bikes, Treffen und echte Racing-Vibes haben. Im Mittelpunkt
+            stehen die Atmosphäre, die Community und die Leidenschaft für Gelände, Tracks und Maschinen.
+          </p>
+          <p>
+            Egal ob du bereits aktiv Motocross fährst, Enduro liebst oder einfach den Style und das Lebensgefühl
+            feierst: Hier findest du einen direkten Einstieg in die Welt von Dorfdulli Racing.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Worum es hier geht</h3>
+          <ul>
+            <li>Motocross und Enduro mit klarer Offroad-Ausrichtung</li>
+            <li>Treffen, Sessions, Community-Momente und Gelände-Vibes</li>
+            <li>Bildsprache, Bikes und Atmosphäre statt sterilem Standard</li>
+            <li>Ein schneller Einstiegspunkt für neue Leute und bestehende Crew</li>
+            <li>Verbindung aus Stil, Szene und echter Leidenschaft fürs Fahren</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="gallery">
+      <div class="section-head">
+        <h2>Gallery</h2>
+        <p>Ein Eindruck von Dorfdulli Racing, Motocross, Enduro und der Stimmung zwischen Treffpunkt, Bike und Strecke.</p>
+      </div>
+
+      <div class="gallery">
+        <figure>
+          <img src="images/IMG_0673.jpeg" alt="Motocross Bike von Dorfdulli Racing in dunkler Offroad-Atmosphäre">
+          <figcaption>Motocross-Vibes und rohe Offroad-Optik.</figcaption>
+        </figure>
+
+        <figure>
+          <img src="images/IMG_0674.jpeg" alt="Enduro Motorrad im Stil von Dorfdulli Racing">
+          <figcaption>Enduro-Style, Szene und Community-Feeling.</figcaption>
+        </figure>
+
+        <figure>
+          <img src="images/IMG_0662.jpeg" alt="Dorfdulli Racing Treffen mit Motocross und Enduro Bezug">
+          <figcaption>Treffen, Bewegung und echte Dorfdulli Racing Energie.</figcaption>
+        </figure>
+
+        <figure>
+          <img src="images/IMG_0663.jpeg" alt="Motocross und Enduro Stimmung bei Dorfdulli Racing">
+          <figcaption>Zwischen Gelände, Bike und Atmosphäre.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="community">
+      <div class="section-head">
+        <h2>Community, Treffen und Offroad-Lifestyle</h2>
+        <p>Diese Landingpage soll nicht nur gut aussehen, sondern auch klar zeigen, wofür Dorfdulli Racing steht.</p>
+      </div>
+
+      <div class="seo-text">
+        <p>
+          Dorfdulli Racing ist eine Motocross- und Enduro-Community für Menschen, die Offroad fahren, Schrauben,
+          Bikes feiern und eine Szene suchen, die nicht künstlich wirkt. Die Seite funktioniert als zentrale
+          Landingpage für alle, die schnell verstehen wollen, worum es geht: Motocross, Enduro, Offroad-Style,
+          Treffen, Countdown, Standortbezug und eine direkte Verbindung zur Community.
+        </p>
+        <p>
+          Für Suchmaschinen ist wichtig, dass eine Seite nicht nur aus Bildern und Effekten besteht. Deshalb
+          beschreibt dieser Bereich klar den Inhalt: Dorfdulli Racing steht für Motocross und Enduro, für
+          gemeinsame Sessions, für Offroad-Treffen und für eine Community, die Bikes und Racing lebt. Dadurch
+          wird die Seite besser einordenbar für Begriffe wie Motocross Community, Enduro Community, Offroad
+          Treffen oder Motocross Landingpage.
+        </p>
+        <p>
+          Gleichzeitig bleibt der Stil erhalten: dunkler Look, Video-Hintergrund, reduzierte Bildsprache und eine
+          direkte Ansprache. So entsteht eine moderne Landingpage, die nicht wie eine klassische Vereinsseite
+          wirkt, aber trotzdem genug Inhalt bietet, damit Besucher und Suchmaschinen den Zweck der Website
+          sofort verstehen.
+        </p>
+
+        <div class="mini-links" aria-label="Schnelllinks">
+          <a href="#about">Mehr über Dorfdulli Racing</a>
+          <a href="#gallery">Motocross & Enduro Bilder</a>
+          <a href="#kontakt">Kontakt & Socials</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt">
+      <div class="section-head">
+        <h2>Kontakt & Links</h2>
+        <p>Direkter Kontaktpunkt für alle, die Dorfdulli Racing folgen oder mit der Community connected bleiben wollen.</p>
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <h3>Social</h3>
+          <p>
+            Folge Dorfdulli Racing auf Instagram, um neue Eindrücke, Motocross- und Enduro-Content,
+            Community-Momente und kommende Aktionen direkt zu sehen.
+          </p>
+          <p style="margin-top: 12px;">
+            <a class="btn primary" href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer">
+              @dorfdulli.racing
+            </a>
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Szene & Support</h3>
+          <p>
+            Diese Seite lebt vom Vibe, von Leuten aus der Szene und von gemeinsamen Bezugspunkten. Externe Links
+            können dabei Teil des Stils oder Teil des Umfelds von Dorfdulli Racing sein.
+          </p>
+          <p style="margin-top: 12px;">
+            <a class="btn" href="https://www.jhandpizzaservice.de" target="_blank" rel="noopener noreferrer">
+              Externer Link
+            </a>
+          </p>
+        </article>
+      </div>
     </section>
   </main>
 
   <footer>
-    © 2026 Dorfdulli Racing
+    <p>© 2026 Dorfdulli Racing · Motocross & Enduro Community</p>
     <a href="https://www.instagram.com/ultrafuckingviolett"
        target="_blank"
+       rel="noopener noreferrer"
        class="footer-mini">
-       @ULTRAFUCKINGVIOLETT
+      @ULTRAFUCKINGVIOLETT
     </a>
   </footer>
 
   <script>
     function updateCountdown() {
       const now = new Date();
-
       const berlinNow = new Date(
         now.toLocaleString("en-US", { timeZone: "Europe/Berlin" })
       );
@@ -257,9 +662,9 @@
         return;
       }
 
-      const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
-      const minutes = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0');
-      const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+      const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, "0");
+      const minutes = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, "0");
+      const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, "0");
 
       document.getElementById("time").textContent = `${hours}:${minutes}:${seconds}`;
     }
@@ -309,7 +714,7 @@
 
           setLocationText(
             'Bis Ritterstraße 6, 04860 Torgau:<br>' +
-            distanceKm.toFixed(1).replace('.', ',') + ' km · ca. ' +
+            distanceKm.toFixed(1).replace(".", ",") + ' km · ca. ' +
             driveMinutes + ' Min <span class="muted">(geschätzt)</span>'
           );
         },
@@ -331,10 +736,9 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
-    window.addEventListener('load', function() {
+    window.addEventListener("load", function() {
       requestLocationInfo();
     });
   </script>
-
 </body>
 </html>
