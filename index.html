@@ -72,6 +72,7 @@
       border: 0;
     }
 
+    /* Background */
     .bg-wrap {
       position: fixed;
       inset: 0;
@@ -93,68 +94,68 @@
       object-fit: cover;
       object-position: center;
       filter: grayscale(100%) brightness(0.34);
-      -webkit-mask-image: -webkit-radial-gradient(white, black);
       pointer-events: none;
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
 
     .bg-wrap::after {
-      content: '';
+      content: "";
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.05) 20%),
-        linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.72) 36%, rgba(0,0,0,0.18) 72%);
+        linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 18%, rgba(0,0,0,0.12) 36%, rgba(0,0,0,0.72) 100%);
       pointer-events: none;
     }
 
+    /* Header */
     header {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 100;
-      height: 60px;
+      height: 64px;
       display: grid;
       grid-template-columns: 44px 1fr 44px;
       align-items: center;
       padding: 0 16px;
       padding-left: max(16px, env(safe-area-inset-left));
       padding-right: max(16px, env(safe-area-inset-right));
-      transition:
-        background 0.45s ease,
-        backdrop-filter 0.45s ease,
-        -webkit-backdrop-filter 0.45s ease,
-        border-color 0.45s ease;
       border-bottom: 1px solid transparent;
+      transition:
+        background 0.4s ease,
+        border-color 0.4s ease,
+        backdrop-filter 0.4s ease,
+        -webkit-backdrop-filter 0.4s ease;
     }
 
     header.scrolled {
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border-color: rgba(255, 255, 255, 0.07);
+      background: rgba(0, 0, 0, 0.34);
+      border-color: rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
     }
 
     .nav-btn {
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.09);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
-      color: rgba(255, 255, 255, 0.88);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      cursor: pointer;
+      color: rgba(255,255,255,0.9);
+      transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
       -webkit-touch-callout: none;
     }
 
     .nav-btn:hover,
     .nav-btn:active {
-      opacity: 0.7;
+      opacity: 0.75;
       transform: scale(0.98);
+      background: rgba(255,255,255,0.11);
     }
 
     .nav-btn svg {
@@ -181,113 +182,128 @@
     }
 
     .logo-wrap img {
-      height: 36px;
+      height: 34px;
+      max-width: 150px;
       display: block;
-      filter: invert(1) brightness(10);
       object-fit: contain;
-      max-width: 140px;
+      filter: invert(1) brightness(10);
     }
 
+    /* Main layout */
     main {
       position: relative;
       z-index: 10;
-      padding-top: calc(60px + 8vw);
+      min-height: 100vh;
+      padding-top: calc(64px + 24vh);
       padding-left: 16px;
       padding-right: 16px;
-      padding-bottom: max(10vh, calc(env(safe-area-inset-bottom) + 40px));
+      padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 24px));
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .gallery-shell {
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
 
     .gallery {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-      max-width: 420px;
-      margin: 0 auto;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: min(78vw, 320px);
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @media (min-width: 600px) {
+    .gallery.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (min-width: 520px) {
+      main {
+        padding-top: calc(64px + 26vh);
+      }
+
       .gallery {
-        grid-template-columns: 1fr 1fr;
-        max-width: 760px;
-        gap: 16px;
+        width: min(52vw, 360px);
+        gap: 10px;
       }
     }
 
     @media (min-width: 900px) {
       main {
-        padding-top: calc(60px + 6vh);
+        padding-top: calc(64px + 28vh);
       }
 
       .gallery {
-        max-width: 920px;
-        gap: 22px;
+        width: min(28vw, 380px);
+        gap: 12px;
+      }
+    }
+
+    @media (min-width: 1400px) {
+      .gallery {
+        width: min(24vw, 400px);
       }
     }
 
     .gallery-item {
       overflow: hidden;
-      border-radius: 4px;
-      opacity: 0;
-      transform: translateY(30px);
-      transition:
-        opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 2px;
       background: rgba(255,255,255,0.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.14);
     }
-
-    .gallery-item.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .gallery-item:nth-child(1) { transition-delay: 0.00s; }
-    .gallery-item:nth-child(2) { transition-delay: 0.06s; }
-    .gallery-item:nth-child(3) { transition-delay: 0.12s; }
-    .gallery-item:nth-child(4) { transition-delay: 0.18s; }
 
     .gallery-item img {
       display: block;
       width: 100%;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 1 / 1;
       object-fit: cover;
-      object-position: center top;
+      object-position: center;
       filter: grayscale(100%);
-      opacity: 0.72;
-      transform: scale(1.02);
+      opacity: 0.56;
+      transform: scale(1.03);
       transition:
-        filter 0.75s ease,
-        opacity 0.75s ease,
-        transform 0.85s ease;
-      will-change: transform;
+        opacity 0.7s ease,
+        filter 0.7s ease,
+        transform 0.7s ease;
     }
 
     @media (hover: hover) {
       .gallery-item:hover img {
-        filter: grayscale(20%);
-        opacity: 0.96;
+        opacity: 0.9;
+        filter: grayscale(18%);
         transform: scale(1);
       }
     }
 
     .gallery-item:active img {
-      opacity: 0.88;
+      opacity: 0.78;
       transform: scale(1.01);
     }
 
+    /* Footer */
     footer {
       position: relative;
       z-index: 10;
-      padding: 22px 20px;
-      padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 20px));
+      padding: 20px;
+      padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 18px));
       text-align: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(0, 0, 0, 0.75);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.72);
     }
 
     .footer-copy {
       font-size: 11px;
       letter-spacing: 0.18em;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(255,255,255,0.34);
       text-transform: uppercase;
     }
 
@@ -296,14 +312,14 @@
       margin-top: 5px;
       font-size: 9px;
       letter-spacing: 0.14em;
-      color: rgba(255, 255, 255, 0.18);
+      color: rgba(255,255,255,0.2);
       text-transform: uppercase;
       text-decoration: none;
       transition: color 0.3s ease;
     }
 
     .footer-credit:hover {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255,255,255,0.5);
     }
   </style>
 </head>
@@ -333,9 +349,9 @@
        rel="noopener noreferrer"
        aria-label="Instagram">
       <svg viewBox="0 0 24 24">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.5" cy="6.5" r="0.1" fill="currentColor" stroke-width="3"/>
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <circle cx="12" cy="12" r="4"></circle>
+        <circle cx="17.5" cy="6.5" r="0.1" fill="currentColor" stroke-width="3"></circle>
       </svg>
     </a>
 
@@ -353,23 +369,25 @@
   </header>
 
   <main>
-    <section class="gallery" aria-label="Dorfdulli Racing Gallery">
-      <div class="gallery-item">
-        <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy" decoding="async">
-      </div>
+    <div class="gallery-shell">
+      <section class="gallery" id="gallery" aria-label="Dorfdulli Racing Gallery">
+        <div class="gallery-item">
+          <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy" decoding="async">
+        </div>
 
-      <div class="gallery-item">
-        <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy" decoding="async">
-      </div>
+        <div class="gallery-item">
+          <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy" decoding="async">
+        </div>
 
-      <div class="gallery-item">
-        <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy" decoding="async">
-      </div>
+        <div class="gallery-item">
+          <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy" decoding="async">
+        </div>
 
-      <div class="gallery-item">
-        <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy" decoding="async">
-      </div>
-    </section>
+        <div class="gallery-item">
+          <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy" decoding="async">
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer>
@@ -388,17 +406,17 @@
       header.classList.toggle('scrolled', window.scrollY > 20);
     }, { passive: true });
 
-    const items = document.querySelectorAll('.gallery-item');
-    const io = new IntersectionObserver((entries) => {
+    const gallery = document.getElementById('gallery');
+    const galleryObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          io.unobserve(entry.target);
+          gallery.classList.add('visible');
+          galleryObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+    }, { threshold: 0.08 });
 
-    items.forEach((item) => io.observe(item));
+    galleryObserver.observe(gallery);
 
     const video = document.querySelector('.bg-wrap video');
     if (video) {
