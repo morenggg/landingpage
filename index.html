@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <title>Dorfdulli Racing | Motocross & Enduro</title>
 
@@ -16,6 +16,10 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://dorfdulliracing.de/">
 
+  <!-- iOS / Safari meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-N68H1PYZXY"></script>
   <script>
@@ -27,19 +31,21 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
 
   <style>
     *, *::before, *::after {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html {
       scroll-behavior: smooth;
       -ms-overflow-style: none;
       scrollbar-width: none;
+      height: -webkit-fill-available;
     }
 
     html::-webkit-scrollbar {
@@ -52,6 +58,8 @@
       color: #fff;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
     }
 
     .sr-only {
@@ -66,32 +74,37 @@
       border: 0;
     }
 
-    /* ── BG VIDEO ── */
+    /* ── BACKGROUND VIDEO ── */
     .bg-wrap {
       position: fixed;
       inset: 0;
       z-index: 0;
-      pointer-events: none;
       overflow: hidden;
     }
 
     .bg-wrap video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
       width: 100%;
       height: 100%;
+      min-width: 100%;
+      min-height: 100%;
+      transform: translate(-50%, -50%);
       object-fit: cover;
-      filter: grayscale(100%) brightness(0.42);
+      object-position: center;
+      filter: grayscale(100%) brightness(0.38);
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
 
     .bg-wrap::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to top,
-        rgba(0, 0, 0, 1) 0%,
-        rgba(0, 0, 0, 0.6) 40%,
-        rgba(0, 0, 0, 0.25) 100%
-      );
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 20%),
+        linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 35%, rgba(0,0,0,0.1) 70%);
+      pointer-events: none;
     }
 
     /* ── HEADER ── */
@@ -101,58 +114,64 @@
       left: 0;
       right: 0;
       z-index: 100;
-      height: 64px;
+      height: 60px;
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: 44px 1fr 44px;
       align-items: center;
-      padding: 0 18px;
-      transition: background 0.5s ease, backdrop-filter 0.5s ease, border-color 0.5s ease;
+      padding: 0 16px;
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      transition:
+        background 0.45s ease,
+        backdrop-filter 0.45s ease,
+        -webkit-backdrop-filter 0.45s ease,
+        border-color 0.45s ease;
       border-bottom: 1px solid transparent;
     }
 
     header.scrolled {
-      background: rgba(0, 0, 0, 0.52);
-      backdrop-filter: blur(20px) saturate(160%);
-      -webkit-backdrop-filter: blur(20px) saturate(160%);
-      border-color: rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-color: rgba(255, 255, 255, 0.07);
     }
 
     .nav-btn {
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.13);
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
-      color: #fff;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      transition: opacity 0.3s ease;
+      color: rgba(255, 255, 255, 0.88);
+      transition: opacity 0.25s ease;
+      cursor: pointer;
+      -webkit-touch-callout: none;
     }
 
-    .nav-btn:hover {
-      opacity: 0.55;
+    .nav-btn:hover,
+    .nav-btn:active {
+      opacity: 0.5;
     }
 
     .nav-btn svg {
-      width: 17px;
-      height: 17px;
+      width: 16px;
+      height: 16px;
       stroke: currentColor;
-      stroke-width: 1.7;
+      stroke-width: 1.75;
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
+      pointer-events: none;
     }
 
     .nav-btn.right {
       justify-self: end;
-      font-size: 17px;
+      font-size: 16px;
+      line-height: 1;
     }
 
     .logo-wrap {
@@ -162,47 +181,63 @@
     }
 
     .logo-wrap img {
-      height: 40px;
+      height: 36px;
       display: block;
-      filter: invert(1) brightness(2);
+      filter: invert(1) brightness(10);
       object-fit: contain;
+      max-width: 140px;
     }
 
-    /* ── MAIN / GALLERY ── */
+    /* ── GALLERY ── */
     main {
       position: relative;
       z-index: 10;
-      padding: 36vh 20px 14vh;
+      padding-top: calc(60px + 8vw);
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-bottom: max(10vh, calc(env(safe-area-inset-bottom) + 40px));
     }
 
     .gallery {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      max-width: 960px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      max-width: 480px;
       margin: 0 auto;
     }
 
-    @media (min-width: 600px) {
+    @media (min-width: 520px) {
       .gallery {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 28px;
+        max-width: 680px;
+        gap: 16px;
       }
     }
 
-    @media (min-width: 900px) {
+    @media (min-width: 780px) {
+      main {
+        padding-top: calc(60px + 6vh);
+      }
       .gallery {
-        gap: 44px;
+        max-width: 860px;
+        gap: 24px;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      .gallery {
+        max-width: 960px;
+        gap: 32px;
       }
     }
 
     .gallery-item {
       overflow: hidden;
-      border-radius: 1px;
+      border-radius: 2px;
       opacity: 0;
-      transform: translateY(50px);
-      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(36px);
+      transition:
+        opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .gallery-item.visible {
@@ -210,59 +245,72 @@
       transform: translateY(0);
     }
 
-    .gallery-item:nth-child(1) { transition-delay: 0s; }
-    .gallery-item:nth-child(2) { transition-delay: 0.07s; }
-    .gallery-item:nth-child(3) { transition-delay: 0.14s; }
-    .gallery-item:nth-child(4) { transition-delay: 0.21s; }
+    .gallery-item:nth-child(1) { transition-delay: 0.00s; }
+    .gallery-item:nth-child(2) { transition-delay: 0.06s; }
+    .gallery-item:nth-child(3) { transition-delay: 0.12s; }
+    .gallery-item:nth-child(4) { transition-delay: 0.18s; }
 
     .gallery-item img {
       display: block;
       width: 100%;
       aspect-ratio: 3 / 4;
       object-fit: cover;
+      object-position: center top;
       filter: grayscale(100%);
-      opacity: 0.58;
+      opacity: 0.6;
       transform: scale(1.04);
-      transition: filter 0.8s ease, opacity 0.8s ease, transform 0.9s ease;
+      transition:
+        filter 0.75s ease,
+        opacity 0.75s ease,
+        transform 0.85s ease;
       will-change: transform;
+      image-rendering: -webkit-optimize-contrast;
     }
 
-    .gallery-item:hover img {
-      filter: grayscale(25%);
-      opacity: 0.95;
-      transform: scale(1);
+    @media (hover: hover) {
+      .gallery-item:hover img {
+        filter: grayscale(20%);
+        opacity: 0.96;
+        transform: scale(1);
+      }
+    }
+
+    .gallery-item:active img {
+      opacity: 0.85;
+      transform: scale(1.01);
     }
 
     /* ── FOOTER ── */
     footer {
       position: relative;
       z-index: 10;
-      padding: 26px 20px 32px;
+      padding: 22px 20px;
+      padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 20px));
       text-align: center;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
     }
 
     .footer-copy {
-      font-size: 12px;
-      letter-spacing: 0.16em;
-      color: rgba(255, 255, 255, 0.38);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: rgba(255, 255, 255, 0.35);
       text-transform: uppercase;
     }
 
     .footer-credit {
-      display: block;
-      margin-top: 6px;
-      font-size: 10px;
-      letter-spacing: 0.13em;
-      color: rgba(255, 255, 255, 0.2);
+      display: inline-block;
+      margin-top: 5px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: rgba(255, 255, 255, 0.18);
       text-transform: uppercase;
       text-decoration: none;
       transition: color 0.3s ease;
     }
 
     .footer-credit:hover {
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
@@ -271,8 +319,17 @@
 
   <h1 class="sr-only">Dorfdulli Racing – Motocross &amp; Enduro Community</h1>
 
-  <div class="bg-wrap">
-    <video autoplay muted loop playsinline>
+  <div class="bg-wrap" aria-hidden="true">
+    <video
+      autoplay
+      muted
+      loop
+      playsinline
+      disablePictureInPicture
+      disableRemotePlayback
+      x-webkit-airplay="deny"
+      preload="auto"
+    >
       <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
     </video>
   </div>
@@ -307,19 +364,19 @@
     <section class="gallery" aria-label="Dorfdulli Racing Gallery">
 
       <div class="gallery-item">
-        <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
+        <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy" decoding="async">
       </div>
 
       <div class="gallery-item">
-        <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
+        <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy" decoding="async">
       </div>
 
       <div class="gallery-item">
-        <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
+        <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy" decoding="async">
       </div>
 
       <div class="gallery-item">
-        <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
+        <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy" decoding="async">
       </div>
 
     </section>
@@ -336,24 +393,31 @@
   </footer>
 
   <script>
-    // Header glass on scroll
+    // Glassy header on scroll
     const header = document.getElementById('site-header');
     window.addEventListener('scroll', () => {
-      header.classList.toggle('scrolled', window.scrollY > 40);
+      header.classList.toggle('scrolled', window.scrollY > 20);
     }, { passive: true });
 
     // Gallery scroll-in animations
     const items = document.querySelectorAll('.gallery-item');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+    items.forEach(item => io.observe(item));
 
-    items.forEach(item => observer.observe(item));
+    // iOS video autoplay fallback
+    const video = document.querySelector('.bg-wrap video');
+    if (video) {
+      video.play().catch(() => {});
+      document.addEventListener('touchstart', () => video.play().catch(() => {}), { once: true, passive: true });
+      document.addEventListener('click', () => video.play().catch(() => {}), { once: true, passive: true });
+    }
   </script>
 
 </body>
