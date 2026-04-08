@@ -41,6 +41,7 @@
       -webkit-font-smoothing: antialiased;
       min-height: 100vh;
       min-height: -webkit-fill-available;
+      position: relative;
     }
 
     ::-webkit-scrollbar { display: none; }
@@ -49,7 +50,7 @@
     .hero-video-wrapper {
       position: fixed;
       inset: 0;
-      z-index: -3;
+      z-index: 0;
       overflow: hidden;
       background: #000;
       pointer-events: none;
@@ -73,11 +74,16 @@
     .vignette-overlay {
       position: fixed;
       inset: 0;
-      z-index: -2;
+      z-index: 1;
       background:
         radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.28) 45%, rgba(0,0,0,0.72) 100%),
         linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.08) 25%, rgba(0,0,0,0.2) 55%, rgba(5,5,5,0.82) 100%);
       pointer-events: none;
+    }
+
+    header, main, footer {
+      position: relative;
+      z-index: 10;
     }
 
     .glass-nav {
@@ -169,7 +175,6 @@
       loop
       playsinline
       preload="metadata"
-      poster=""
     >
       <source src="images/hero.MP4" type="video/mp4">
     </video>
@@ -177,7 +182,7 @@
 
   <div class="vignette-overlay"></div>
 
-  <header class="fixed top-0 left-0 w-full z-50 glass-nav pt-safe">
+  <header class="fixed top-0 left-0 w-full glass-nav pt-safe">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center">
         <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto logo-white">
@@ -216,7 +221,7 @@
       </div>
     </section>
 
-    <section id="gallery" class="relative z-10 bg-[#050505] py-32 px-6">
+    <section id="gallery" class="relative py-32 px-6">
       <div class="max-w-7xl mx-auto">
         <div class="mb-20 reveal">
           <h2 class="text-6xl md:text-8xl font-black italic uppercase leading-none">The Crew</h2>
@@ -241,7 +246,7 @@
     </section>
   </main>
 
-  <footer class="relative z-10 bg-black border-t border-white/5 py-12 px-6 pb-safe">
+  <footer class="bg-black/60 border-t border-white/5 py-12 px-6 pb-safe">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
       <div class="flex items-center gap-3">
         <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto logo-white">
@@ -274,15 +279,11 @@
 
     function startVideo() {
       if (!video) return;
-
       video.muted = true;
       video.defaultMuted = true;
       video.playsInline = true;
-
       const p = video.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {});
-      }
+      if (p && typeof p.catch === 'function') p.catch(() => {});
     }
 
     window.addEventListener('load', startVideo);
@@ -290,7 +291,6 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) startVideo();
     });
-
     document.addEventListener('touchstart', startVideo, { passive: true });
     document.addEventListener('click', startVideo, { passive: true });
   </script>
