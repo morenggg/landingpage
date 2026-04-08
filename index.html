@@ -154,10 +154,6 @@
     .pt-safe { padding-top: env(safe-area-inset-top); }
 
     @media (max-width: 767px) {
-      .mobile-header-logo {
-        height: 26px;
-      }
-
       .hero-logo {
         width: min(92vw, 520px);
       }
@@ -169,17 +165,16 @@
   <div class="hero-video-wrapper" aria-hidden="true">
     <video
       id="bg-video"
-      autoplay
       muted
+      autoplay
       loop
       playsinline
-      webkit-playsinline="true"
       preload="auto"
+      poster="images/IMG_0673.jpeg"
       disablepictureinpicture
       disableremoteplayback
-      x-webkit-airplay="deny"
     >
-      <source src="images/IMG_7169.mp4" type="video/mp4">
+      <source src="images/IMG_7169.mp4.MP4" type="video/mp4">
     </video>
   </div>
 
@@ -262,49 +257,71 @@
     </div>
   </footer>
 
-<script>
-  const video = document.getElementById('bg-video');
+  <script>
+    const observerOptions = {
+      threshold: 0.15,
+      rootMargin: "0px 0px -50px 0px"
+    };
 
-  function forcePlayVideo() {
-    if (!video) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
 
-    video.muted = true;
-    video.defaultMuted = true;
-    video.setAttribute('muted', '');
-    video.setAttribute('autoplay', '');
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', '');
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {});
+    const video = document.getElementById('bg-video');
+
+    function startVideo() {
+      if (!video) return;
+
+      video.muted = true;
+      video.defaultMuted = true;
+      video.volume = 0;
+
+      video.setAttribute('muted', '');
+      video.setAttribute('autoplay', '');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise.catch(() => {});
+      }
     }
-  }
 
-  // sofort versuchen
-  forcePlayVideo();
+    if (video) {
+      startVideo();
 
-  // mehrfach absichern (iPhone wichtig)
-  window.addEventListener('load', forcePlayVideo);
-  document.addEventListener('DOMContentLoaded', forcePlayVideo);
-  document.addEventListener('touchstart', forcePlayVideo, { passive: true });
-  document.addEventListener('click', forcePlayVideo, { passive: true });
+      window.addEventListener('load', startVideo);
+      document.addEventListener('DOMContentLoaded', startVideo);
 
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) forcePlayVideo();
-  });
+      document.addEventListener('touchstart', startVideo, { passive: true });
+      document.addEventListener('touchmove', startVideo, { passive: true });
+      document.addEventListener('touchend', startVideo, { passive: true });
+      document.addEventListener('click', startVideo, { passive: true });
 
-  if (video) {
-    video.addEventListener('canplay', forcePlayVideo);
-    video.addEventListener('loadeddata', forcePlayVideo);
-  }
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) startVideo();
+      });
 
-  // dein Scroll Effekt bleibt
-  window.addEventListener('scroll', () => {
-    if (!video) return;
-    const offset = window.pageYOffset;
-    video.style.transform = `translate(-50%, -50%) scale(1.02) translateY(${offset * 0.18}px)`;
-  }, { passive: true });
-</script>
+      video.addEventListener('loadedmetadata', startVideo);
+      video.addEventListener('loadeddata', startVideo);
+      video.addEventListener('canplay', startVideo);
+      video.addEventListener('canplaythrough', startVideo);
+      video.addEventListener('suspend', startVideo);
+      video.addEventListener('stalled', startVideo);
+      video.addEventListener('pause', startVideo);
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!video) return;
+      const offset = window.pageYOffset;
+      video.style.transform = `translate(-50%, -50%) scale(1.02) translateY(${offset * 0.18}px)`;
+    }, { passive: true });
+  </script>
 </body>
 </html>
