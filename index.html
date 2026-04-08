@@ -9,16 +9,13 @@
   <meta name="description" content="Dorfdulli Racing – Motocross & Enduro Community. Offroad, Bikes und Szene.">
   <link rel="icon" type="image/png" href="images/favicon.png">
 
-  <!-- Apple Specific -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
@@ -35,11 +32,9 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Hide Scrollbar */
     ::-webkit-scrollbar { display: none; }
     * { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Background Video Engine */
     .hero-video-wrapper {
       position: fixed;
       inset: 0;
@@ -64,7 +59,6 @@
       pointer-events: none;
     }
 
-    /* Typography & Visuals */
     .hero-title {
       font-size: clamp(3.5rem, 15vw, 12rem);
       line-height: 0.8;
@@ -86,7 +80,6 @@
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
-    /* Gallery Styling */
     .gallery-item {
       position: relative;
       overflow: hidden;
@@ -108,7 +101,6 @@
       transform: scale(1.05);
     }
 
-    /* Scroll Reveal */
     .reveal {
       opacity: 0;
       transform: translateY(30px);
@@ -143,19 +135,17 @@
 </head>
 <body>
 
-  <!-- Cinematic Background Assets -->
   <div class="hero-video-wrapper">
     <video autoplay muted loop playsinline>
-      <source src="videos/hero.mp4" type="video/mp4">
+      <source src="images/IMG_7169.mp4" type="video/mp4">
     </video>
   </div>
   <div class="vignette-overlay"></div>
 
-  <!-- Header -->
   <header class="fixed top-0 left-0 w-full z-50 glass-nav pt-safe">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <img src="images/favicon.png" alt="Logo" class="h-8 md:h-10 w-auto">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto">
         <span class="font-black text-xl italic tracking-tighter uppercase">Dorfdulli <span class="outline-text">Racing</span></span>
       </div>
       <nav class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-[0.2em]">
@@ -171,7 +161,6 @@
   </header>
 
   <main>
-    <!-- Hero Section -->
     <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6">
       <div class="max-w-7xl mx-auto w-full">
         <div class="reveal">
@@ -189,7 +178,6 @@
       </div>
     </section>
 
-    <!-- Gallery Section -->
     <section id="gallery" class="relative z-10 bg-[#050505] py-32 px-6">
       <div class="max-w-7xl mx-auto">
         <div class="mb-20 reveal">
@@ -197,25 +185,27 @@
           <div class="h-1 w-20 bg-white mt-4"></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           <div class="gallery-item reveal" style="transition-delay: 0.1s;">
-            <img src="images/gallery-1.jpg" alt="Action Shot 1">
+            <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing">
           </div>
           <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.2s;">
-            <img src="images/gallery-2.jpg" alt="Action Shot 2">
+            <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad">
           </div>
           <div class="gallery-item reveal" style="transition-delay: 0.3s;">
-            <img src="images/gallery-3.jpg" alt="Action Shot 3">
+            <img src="images/IMG_0662.jpeg" alt="Motocross Treffen">
+          </div>
+          <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.4s;">
+            <img src="images/IMG_0663.jpeg" alt="Enduro Szene">
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Final CTA -->
     <section class="relative z-10 bg-[#050505] pt-20 pb-40 px-6 overflow-hidden">
       <div class="max-w-7xl mx-auto text-center reveal">
         <div class="mb-12 inline-block">
-            <img src="images/favicon.png" alt="Icon" class="h-24 w-auto opacity-30 grayscale mx-auto">
+          <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-24 w-auto opacity-30 grayscale mx-auto">
         </div>
         <h2 class="text-5xl md:text-7xl font-black italic uppercase mb-8">Ready to send it?</h2>
         <p class="text-gray-500 font-bold uppercase tracking-[0.3em] text-sm">Join the Dorfdulli Movement</p>
@@ -226,7 +216,7 @@
   <footer class="relative z-10 bg-black border-t border-white/5 py-12 px-6 pb-safe">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
       <div class="flex items-center gap-3">
-        <img src="images/favicon.png" alt="Footer Logo" class="h-6 w-auto">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto">
         <span class="text-xs font-bold uppercase tracking-widest text-gray-400">© 2024 Dorfdulli Racing</span>
       </div>
       <div class="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
@@ -238,7 +228,6 @@
   </footer>
 
   <script>
-    // Reveal Animations on Scroll
     const observerOptions = {
       threshold: 0.15,
       rootMargin: "0px 0px -50px 0px"
@@ -254,11 +243,12 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // Parallax effect on video for smoothness
     window.addEventListener('scroll', () => {
       const video = document.querySelector('.hero-video-wrapper video');
-      let offset = window.pageYOffset;
-      video.style.transform = `scale(1.02) translateY(${offset * 0.4}px)`;
+      if (video) {
+        let offset = window.pageYOffset;
+        video.style.transform = `scale(1.02) translateY(${offset * 0.4}px)`;
+      }
     });
   </script>
 </body>
