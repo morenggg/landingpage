@@ -67,7 +67,7 @@
       object-fit: cover;
       object-position: center;
       transform: translate(-50%, -50%);
-      filter: grayscale(100%) brightness(0.38) contrast(1.08);
+      filter: grayscale(100%) brightness(0.52) contrast(1.08);
       background: #000;
     }
 
@@ -76,8 +76,8 @@
       inset: 0;
       z-index: 1;
       background:
-        radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.28) 45%, rgba(0,0,0,0.72) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.08) 25%, rgba(0,0,0,0.2) 55%, rgba(5,5,5,0.82) 100%);
+        radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.24) 45%, rgba(0,0,0,0.68) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.12) 55%, rgba(5,5,5,0.62) 100%);
       pointer-events: none;
     }
 
@@ -97,13 +97,22 @@
       filter: brightness(0) invert(1) contrast(1.12);
     }
 
-    .hero-logo {
-      width: min(92vw, 760px);
-      display: block;
+    .hero-subcopy {
+      max-width: 34rem;
     }
 
-    .hero-subcopy {
-      max-width: 30rem;
+    .quote-style {
+      font-size: clamp(2.2rem, 6vw, 5rem);
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+    }
+
+    .gallery-wrap {
+      max-width: 70rem;
+      margin: 0 auto;
     }
 
     .gallery-item {
@@ -159,8 +168,8 @@
     .pt-safe { padding-top: env(safe-area-inset-top); }
 
     @media (max-width: 767px) {
-      .hero-logo {
-        width: min(92vw, 520px);
+      .quote-style {
+        font-size: clamp(2rem, 9vw, 3.5rem);
       }
     }
   </style>
@@ -205,15 +214,9 @@
     <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6">
       <div class="max-w-7xl mx-auto w-full">
         <div class="reveal">
-          <img
-            src="images/logo.PNG"
-            alt="Dorfdulli Racing"
-            class="hero-logo logo-white"
-          >
-
           <div class="mt-8 flex flex-col md:flex-row md:items-end justify-between gap-10">
-            <p class="hero-subcopy text-xl md:text-2xl font-bold uppercase italic leading-tight text-gray-300">
-              Motocross & Enduro Community.<br>Offroad, Bikes und Szene.
+            <p class="hero-subcopy quote-style text-gray-100">
+              „Halbgas ist verschwendete Lebenszeit.“ - Erich Honecker
             </p>
             <a href="#gallery" class="btn-racing">Explore the Crew</a>
           </div>
@@ -228,18 +231,20 @@
           <div class="h-1 w-20 bg-white mt-4"></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-          <div class="gallery-item reveal" style="transition-delay: 0.1s;">
-            <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
-          </div>
-          <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.2s;">
-            <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
-          </div>
-          <div class="gallery-item reveal" style="transition-delay: 0.3s;">
-            <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
-          </div>
-          <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.4s;">
-            <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
+        <div class="gallery-wrap">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
+            <div class="gallery-item reveal" style="transition-delay: 0.1s;">
+              <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
+            </div>
+            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.2s;">
+              <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
+            </div>
+            <div class="gallery-item reveal" style="transition-delay: 0.3s;">
+              <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
+            </div>
+            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.4s;">
+              <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
+            </div>
           </div>
         </div>
       </div>
