@@ -262,59 +262,49 @@
     </div>
   </footer>
 
-  <script>
-    const observerOptions = {
-      threshold: 0.15,
-      rootMargin: "0px 0px -50px 0px"
-    };
+<script>
+  const video = document.getElementById('bg-video');
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
-    }, observerOptions);
+  function forcePlayVideo() {
+    if (!video) return;
 
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
 
-    const video = document.getElementById('bg-video');
-
-    function forcePlayVideo() {
-      if (!video) return;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {});
-      }
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
     }
+  }
 
-    if (video) {
-      forcePlayVideo();
+  // sofort versuchen
+  forcePlayVideo();
 
-      window.addEventListener('load', forcePlayVideo, { once: true });
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) forcePlayVideo();
-      });
+  // mehrfach absichern (iPhone wichtig)
+  window.addEventListener('load', forcePlayVideo);
+  document.addEventListener('DOMContentLoaded', forcePlayVideo);
+  document.addEventListener('touchstart', forcePlayVideo, { passive: true });
+  document.addEventListener('click', forcePlayVideo, { passive: true });
 
-      document.addEventListener('touchstart', forcePlayVideo, { passive: true });
-      document.addEventListener('touchend', forcePlayVideo, { passive: true });
-      document.addEventListener('click', forcePlayVideo, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) forcePlayVideo();
+  });
 
-      video.addEventListener('canplay', forcePlayVideo);
-      video.addEventListener('loadeddata', forcePlayVideo);
-      video.addEventListener('suspend', forcePlayVideo);
-      video.addEventListener('stalled', forcePlayVideo);
-    }
+  if (video) {
+    video.addEventListener('canplay', forcePlayVideo);
+    video.addEventListener('loadeddata', forcePlayVideo);
+  }
 
-    window.addEventListener('scroll', () => {
-      if (!video) return;
-      const offset = window.pageYOffset;
-      video.style.transform = `translate(-50%, -50%) scale(1.02) translateY(${offset * 0.18}px)`;
-    }, { passive: true });
-  </script>
+  // dein Scroll Effekt bleibt
+  window.addEventListener('scroll', () => {
+    if (!video) return;
+    const offset = window.pageYOffset;
+    video.style.transform = `translate(-50%, -50%) scale(1.02) translateY(${offset * 0.18}px)`;
+  }, { passive: true });
+</script>
 </body>
 </html>
