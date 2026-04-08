@@ -3,21 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
   <title>Dorfdulli Racing | Motocross & Enduro</title>
 
   <meta name="description" content="Dorfdulli Racing – Motocross & Enduro Community. Offroad, Bikes und Szene.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://dorfdulliracing.de/">
-  <link rel="icon" type="image/png" href="images/favicon.png">
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Dorfdulli Racing | Motocross & Enduro">
-  <meta property="og:description" content="Dorfdulli Racing – Motocross & Enduro Community. Offroad, Bikes und Szene.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://dorfdulliracing.de/">
-
-  <!-- Apple Specific -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -33,6 +21,7 @@
     :root {
       --accent: #ffffff;
       --bg-dark: #050505;
+      --border-white: rgba(255, 255, 255, 0.1);
     }
 
     body {
@@ -40,100 +29,64 @@
       background-color: var(--bg-dark);
       color: #fff;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Hide Scrollbar */
+    /* Scrollbar Hidden */
     ::-webkit-scrollbar { display: none; }
     * { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Cinematic Background */
-    .bg-video-container {
+    /* Cinematic Background Video */
+    .video-bg {
       position: fixed;
       inset: 0;
-      z-index: -1;
+      z-index: -10;
       overflow: hidden;
     }
 
-    .bg-video-container video {
+    .video-bg video {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: grayscale(100%) brightness(0.4) contrast(1.1);
-      transform: scale(1.05); /* Avoid edge artifacts */
+      filter: grayscale(100%) brightness(0.3) contrast(1.2);
+      transform: scale(1.1);
     }
 
     .vignette {
-      position: absolute;
+      position: fixed;
       inset: 0;
+      z-index: -9;
       background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%),
-                  linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, #050505 100%);
+                  linear-gradient(to bottom, transparent 70%, #050505 100%);
     }
 
-    /* Glassmorphism Header */
-    header {
-      backdrop-filter: blur(12px) saturate(180%);
-      -webkit-backdrop-filter: blur(12px) saturate(180%);
-      background: rgba(0, 0, 0, 0.4);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    /* Typography & Visual Effects */
+    /* Typography & Visuals */
     .hero-title {
-      font-size: clamp(3rem, 12vw, 9rem);
-      line-height: 0.85;
-      letter-spacing: -0.04em;
+      font-size: clamp(4rem, 18vw, 14rem);
+      line-height: 0.8;
+      letter-spacing: -0.05em;
       text-transform: uppercase;
       font-weight: 900;
       font-style: italic;
     }
 
     .outline-text {
-      -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+      -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4);
       color: transparent;
+      transition: all 0.5s ease;
     }
 
-    /* Modern Grid Image Cards */
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
+    .glass-header {
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(0, 0, 0, 0.7);
+      border-bottom: 1px solid var(--border-white);
     }
 
-    .card-zoom {
-      overflow: hidden;
-      position: relative;
-      aspect-ratio: 4/5;
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-
-    .card-zoom img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1), filter 0.8s;
-      filter: grayscale(100%);
-    }
-
-    .card-zoom:hover img {
-      transform: scale(1.1);
-      filter: grayscale(0%);
-    }
-
-    .card-zoom::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-      opacity: 0.6;
-    }
-
-    /* Scroll Reveal Animation */
     .reveal {
       opacity: 0;
       transform: translateY(30px);
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+      transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
     }
 
     .reveal.active {
@@ -141,145 +94,161 @@
       transform: translateY(0);
     }
 
-    /* Interactive Elements */
-    .btn-racing {
+    .gallery-card {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4/5;
+      border: 1px solid var(--border-white);
+    }
+
+    .gallery-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%);
+      transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gallery-card:hover img {
+      filter: grayscale(0%);
+      transform: scale(1.08);
+    }
+
+    .racing-btn {
       position: relative;
       padding: 1rem 2.5rem;
-      background: white;
-      color: black;
-      font-weight: 700;
+      background: #fff;
+      color: #000;
+      font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      font-style: italic;
       overflow: hidden;
-      transition: 0.3s;
+      transition: all 0.3s ease;
     }
 
-    .btn-racing:hover {
-      background: transparent;
-      color: white;
-      outline: 1px solid white;
+    .racing-btn:hover {
+      background: #e5e5e5;
+      transform: skewX(-5deg);
     }
 
+    /* Custom safe area padding for iPhone */
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .pt-safe { padding-top: env(safe-area-inset-top); }
   </style>
 </head>
+<body>
 
-<body class="antialiased">
-
-  <!-- Background Video Layer -->
-  <div class="bg-video-container">
+  <!-- Fixed Assets -->
+  <div class="video-bg">
+    <!-- Replace source with your actual original video path -->
     <video autoplay muted loop playsinline>
-      <!-- Replace with actual source if available -->
-      <source src="your-video.mp4" type="video/mp4">
+      <source src="videos/hero.mp4" type="video/mp4">
     </video>
-    <div class="vignette"></div>
   </div>
+  <div class="vignette"></div>
 
   <!-- Header -->
-  <header class="fixed w-full top-0 z-[100] px-6 py-4 flex justify-between items-center">
-    <div class="text-xl font-black tracking-tighter uppercase">
-      Dorfdulli<span class="text-gray-500">Racing</span>
-    </div>
-    <nav class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest">
-      <a href="#" class="hover:text-gray-400 transition">Community</a>
-      <a href="#" class="hover:text-gray-400 transition">Bikes</a>
-      <a href="#" class="hover:text-gray-400 transition">Szene</a>
-    </nav>
-    <div class="flex items-center gap-4">
-      <div class="w-6 h-0.5 bg-white"></div>
+  <header class="fixed top-0 w-full z-50 pt-safe glass-header">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <img src="images/favicon.png" alt="Logo" class="h-10 w-auto brightness-100">
+        <span class="font-black text-xl tracking-tighter italic uppercase">Dorfdulli <span class="outline-text">Racing</span></span>
+      </div>
+      <nav class="hidden md:flex gap-8 text-sm font-bold uppercase tracking-widest">
+        <a href="#" class="hover:text-gray-400 transition">Enduro</a>
+        <a href="#" class="hover:text-gray-400 transition">Motocross</a>
+        <a href="#" class="hover:text-gray-400 transition">Community</a>
+      </nav>
+      <div class="h-10 w-10 flex flex-col justify-center items-end gap-1.5 cursor-pointer group">
+        <div class="w-8 h-0.5 bg-white transition-all group-hover:w-10"></div>
+        <div class="w-10 h-0.5 bg-white"></div>
+        <div class="w-6 h-0.5 bg-white transition-all group-hover:w-10"></div>
+      </div>
     </div>
   </header>
 
   <main>
     <!-- Hero Section -->
-    <section class="relative min-h-screen flex flex-col justify-end px-6 pb-20 pt-32 lg:px-20 overflow-hidden">
-      <div class="reveal">
-        <h2 class="text-lg font-bold tracking-[0.3em] uppercase text-gray-400 mb-4">Established Community</h2>
-        <h1 class="hero-title">
-          Dorfdulli<br>
-          <span class="outline-text italic">Racing</span>
-        </h1>
-        <p class="max-w-xl mt-8 text-lg md:text-xl text-gray-300 font-medium leading-relaxed">
-          Motocross & Enduro Community. Offroad, Bikes und Szene. Erlebe die pure Adrenalin-Kultur direkt auf dem Track.
-        </p>
-        <div class="mt-10">
-          <button class="btn-racing">Explore Now</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Content / Gallery Section -->
-    <section class="relative z-10 px-6 py-24 lg:px-20 bg-[#050505]">
-      <div class="flex justify-between items-end mb-16 reveal">
-        <div>
-          <h3 class="text-4xl md:text-6xl font-black uppercase italic leading-none">The Scene</h3>
-          <p class="text-gray-500 font-bold uppercase tracking-widest mt-2">Latest Action & Community Highlights</p>
-        </div>
-      </div>
-
-      <!-- Grid Layout -->
-      <div class="gallery-grid">
-        <!-- Card 1 -->
-        <div class="card-zoom reveal" style="transition-delay: 100ms;">
-          <img src="https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=2070" alt="Racing">
-          <div class="absolute bottom-6 left-6 z-20">
-            <span class="text-xs font-bold bg-white text-black px-2 py-1 uppercase italic">High Speed</span>
-            <h4 class="text-2xl font-black uppercase mt-2">Enduro Tracks</h4>
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="card-zoom reveal md:mt-12" style="transition-delay: 200ms;">
-          <img src="https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=1974" alt="Bike">
-          <div class="absolute bottom-6 left-6 z-20">
-            <span class="text-xs font-bold bg-white text-black px-2 py-1 uppercase italic">Lifestyle</span>
-            <h4 class="text-2xl font-black uppercase mt-2">Bike Culture</h4>
-          </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="card-zoom reveal" style="transition-delay: 300ms;">
-          <img src="https://images.unsplash.com/photo-1547610058-2940263f3cc6?q=80&w=1935" alt="Mud">
-          <div class="absolute bottom-6 left-6 z-20">
-            <span class="text-xs font-bold bg-white text-black px-2 py-1 uppercase italic">Offroad</span>
-            <h4 class="text-2xl font-black uppercase mt-2">Pure Grit</h4>
+    <section class="relative min-h-screen flex items-end pb-24 px-6">
+      <div class="max-w-7xl mx-auto w-full">
+        <div class="reveal">
+          <h1 class="hero-title mb-6">
+            DORFDULLI<br>
+            <span class="outline-text">RACING</span>
+          </h1>
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <p class="max-w-md text-xl md:text-2xl font-medium leading-tight text-gray-300 uppercase italic">
+              Motocross & Enduro Community.<br>Offroad, Bikes und Szene.
+            </p>
+            <button class="racing-btn self-start">Join the Crew</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Info Section -->
-    <section class="relative px-6 py-24 lg:px-20 border-t border-white/5">
-        <div class="grid md:grid-cols-2 gap-12 items-center reveal">
-            <div>
-                <h2 class="text-5xl md:text-7xl font-black italic uppercase leading-[0.9]">Build your<br>Own Legacy.</h2>
-            </div>
-            <div class="text-gray-400 text-lg space-y-6 uppercase font-medium">
-                <p>Von Schlamm bis Staub. Wir sind mehr als nur ein Name – wir sind das Herz der Offroad-Szene.</p>
-                <a href="#" class="inline-block border-b-2 border-white pb-1 text-white tracking-widest hover:text-gray-400 transition">Learn More &rarr;</a>
-            </div>
+    <!-- Gallery Section -->
+    <section class="py-32 px-6 bg-[#050505]">
+      <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 reveal">
+          <h2 class="text-6xl md:text-8xl font-black italic uppercase leading-none">The <span class="outline-text">Gallery</span></h2>
+          <p class="text-gray-500 uppercase font-bold tracking-widest text-sm">Est. 2024 / Raw Moments</p>
         </div>
+
+        <!-- Grid using original asset logic -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Card 1 -->
+          <div class="gallery-card reveal" style="transition-delay: 0.1s;">
+            <img src="images/gallery-1.jpg" alt="Racing 1">
+            <div class="absolute bottom-6 left-6">
+              <span class="text-xs font-bold tracking-widest uppercase bg-white text-black px-2 py-1 italic">Action</span>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div class="gallery-card reveal lg:mt-12" style="transition-delay: 0.2s;">
+            <img src="images/gallery-2.jpg" alt="Racing 2">
+            <div class="absolute bottom-6 left-6">
+              <span class="text-xs font-bold tracking-widest uppercase bg-white text-black px-2 py-1 italic">Enduro</span>
+            </div>
+          </div>
+          <!-- Card 3 -->
+          <div class="gallery-card reveal" style="transition-delay: 0.3s;">
+            <img src="images/gallery-3.jpg" alt="Racing 3">
+            <div class="absolute bottom-6 left-6">
+              <span class="text-xs font-bold tracking-widest uppercase bg-white text-black px-2 py-1 italic">Paddock</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-32 px-6 relative overflow-hidden border-t border-white/5">
+      <div class="max-w-4xl mx-auto text-center reveal">
+        <h3 class="text-5xl md:text-7xl font-black italic uppercase mb-8 leading-none">Ready to <span class="outline-text">Send it?</span></h3>
+        <p class="text-gray-400 mb-12 text-lg uppercase tracking-wider">Stay tuned for the next ride.</p>
+        <div class="flex justify-center">
+            <img src="images/favicon.png" alt="Bottom Logo" class="h-24 w-auto opacity-20 grayscale">
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="relative z-10 px-6 py-12 lg:px-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-    <div class="text-sm font-bold tracking-[0.2em] text-gray-500 uppercase">
-      &copy; 2024 Dorfdulli Racing. Built for the wild.
-    </div>
-    <div class="flex gap-6">
-        <a href="#" class="w-10 h-10 flex items-center justify-center rounded-full border border-white/20 hover:bg-white hover:text-black transition duration-500">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
-        </a>
-        <a href="#" class="w-10 h-10 flex items-center justify-center rounded-full border border-white/20 hover:bg-white hover:text-black transition duration-500">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-        </a>
+  <footer class="py-12 border-t border-white/5 px-6 pb-safe">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+      <p class="text-xs text-gray-500 uppercase tracking-widest">© 2024 Dorfdulli Racing. All Rights Reserved.</p>
+      <div class="flex gap-8 text-xs font-bold uppercase tracking-widest">
+        <a href="#" class="hover:text-white transition">Instagram</a>
+        <a href="#" class="hover:text-white transition">TikTok</a>
+        <a href="#" class="hover:text-white transition">Impressum</a>
+      </div>
     </div>
   </footer>
 
   <script>
-    // Intersection Observer for Scroll Reveals
+    // Intersection Observer for Reveal Animations
     const observerOptions = {
       threshold: 0.1,
-      rootMargin: "0px 0px -50px 0px"
+      rootMargin: '0px 0px -50px 0px'
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -292,13 +261,14 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // Simple Parallax for Hero
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const heroTitle = document.querySelector('.hero-title');
-        if (heroTitle) {
-            heroTitle.style.transform = `translateY(${scrolled * 0.15}px)`;
-        }
+    // Smooth Scroll Behavior for modern browsers
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
     });
   </script>
 </body>
