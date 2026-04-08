@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <title>Dorfdulli Racing | Motocross & Enduro</title>
-
   <meta name="description" content="Dorfdulli Racing – Motocross & Enduro Community. Offroad, Bikes und Szene.">
   <link rel="icon" type="image/png" href="images/favicon.png">
 
@@ -21,7 +20,17 @@
   <style>
     :root {
       --bg-dark: #050505;
-      --accent: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #050505;
     }
 
     body {
@@ -30,6 +39,8 @@
       color: #fff;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
     }
 
     ::-webkit-scrollbar { display: none; }
@@ -38,46 +49,56 @@
     .hero-video-wrapper {
       position: fixed;
       inset: 0;
-      z-index: -2;
+      z-index: -3;
       overflow: hidden;
       background: #000;
+      pointer-events: none;
     }
 
     .hero-video-wrapper video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
       width: 100%;
       height: 100%;
+      min-width: 100%;
+      min-height: 100%;
       object-fit: cover;
-      filter: grayscale(100%) brightness(0.35) contrast(1.1);
-      transform: scale(1.02);
+      object-position: center;
+      transform: translate(-50%, -50%) scale(1.02);
+      filter: grayscale(100%) brightness(0.38) contrast(1.08);
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      background: #000;
     }
 
     .vignette-overlay {
       position: fixed;
       inset: 0;
-      z-index: -1;
-      background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 50%, #050505 100%);
+      z-index: -2;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.28) 45%, rgba(0,0,0,0.72) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.08) 25%, rgba(0,0,0,0.2) 55%, rgba(5,5,5,0.82) 100%);
       pointer-events: none;
-    }
-
-    .hero-title {
-      font-size: clamp(3.5rem, 15vw, 12rem);
-      line-height: 0.8;
-      letter-spacing: -0.04em;
-      text-transform: uppercase;
-      font-weight: 900;
-      font-style: italic;
-    }
-
-    .outline-text {
-      -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.6);
-      color: transparent;
     }
 
     .glass-nav {
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
-      background: rgba(0,0,0,0.6);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(0,0,0,0.58);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .logo-white {
+      filter: brightness(0) invert(1) contrast(1.12);
+    }
+
+    .hero-logo {
+      width: min(92vw, 760px);
+      display: block;
+    }
+
+    .hero-subcopy {
+      max-width: 30rem;
     }
 
     .gallery-item {
@@ -126,34 +147,57 @@
 
     .btn-racing:hover {
       transform: skewX(-6deg);
-      background: #cccccc;
+      background: #d9d9d9;
     }
 
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .pt-safe { padding-top: env(safe-area-inset-top); }
+
+    @media (max-width: 767px) {
+      .mobile-header-logo {
+        height: 26px;
+      }
+
+      .hero-logo {
+        width: min(92vw, 520px);
+      }
+    }
   </style>
 </head>
 <body>
 
-  <div class="hero-video-wrapper">
-    <video autoplay muted loop playsinline>
+  <div class="hero-video-wrapper" aria-hidden="true">
+    <video
+      id="bg-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      webkit-playsinline="true"
+      preload="auto"
+      disablepictureinpicture
+      disableremoteplayback
+      x-webkit-airplay="deny"
+    >
       <source src="images/IMG_7169.mp4" type="video/mp4">
     </video>
   </div>
+
   <div class="vignette-overlay"></div>
 
   <header class="fixed top-0 left-0 w-full z-50 glass-nav pt-safe">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto">
-        <span class="font-black text-xl italic tracking-tighter uppercase">Dorfdulli <span class="outline-text">Racing</span></span>
+      <div class="flex items-center">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto logo-white">
       </div>
+
       <nav class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-[0.2em]">
         <a href="#gallery" class="hover:opacity-60 transition">Gallery</a>
         <a href="#" class="hover:opacity-60 transition">Enduro</a>
         <a href="#" class="hover:opacity-60 transition">Motocross</a>
       </nav>
-      <div class="w-10 h-10 flex flex-col justify-center items-end gap-1.5 cursor-pointer">
+
+      <div class="w-10 h-10 flex flex-col justify-center items-end gap-1.5 cursor-pointer" aria-label="Menü">
         <div class="w-8 h-[2px] bg-white"></div>
         <div class="w-5 h-[2px] bg-white"></div>
       </div>
@@ -164,12 +208,14 @@
     <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6">
       <div class="max-w-7xl mx-auto w-full">
         <div class="reveal">
-          <h1 class="hero-title">
-            DORFDULLI<br>
-            <span class="outline-text">RACING</span>
-          </h1>
+          <img
+            src="images/logo.PNG"
+            alt="Dorfdulli Racing"
+            class="hero-logo logo-white"
+          >
+
           <div class="mt-8 flex flex-col md:flex-row md:items-end justify-between gap-10">
-            <p class="max-w-md text-xl md:text-2xl font-bold uppercase italic leading-tight text-gray-300">
+            <p class="hero-subcopy text-xl md:text-2xl font-bold uppercase italic leading-tight text-gray-300">
               Motocross & Enduro Community.<br>Offroad, Bikes und Szene.
             </p>
             <a href="#gallery" class="btn-racing">Explore the Crew</a>
@@ -181,34 +227,24 @@
     <section id="gallery" class="relative z-10 bg-[#050505] py-32 px-6">
       <div class="max-w-7xl mx-auto">
         <div class="mb-20 reveal">
-          <h2 class="text-6xl md:text-8xl font-black italic uppercase leading-none">The <span class="outline-text">Vision</span></h2>
+          <h2 class="text-6xl md:text-8xl font-black italic uppercase leading-none">The Crew</h2>
           <div class="h-1 w-20 bg-white mt-4"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           <div class="gallery-item reveal" style="transition-delay: 0.1s;">
-            <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing">
+            <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
           </div>
           <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.2s;">
-            <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad">
+            <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
           </div>
           <div class="gallery-item reveal" style="transition-delay: 0.3s;">
-            <img src="images/IMG_0662.jpeg" alt="Motocross Treffen">
+            <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
           </div>
           <div class="gallery-item reveal md:translate-y-16" style="transition-delay: 0.4s;">
-            <img src="images/IMG_0663.jpeg" alt="Enduro Szene">
+            <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="relative z-10 bg-[#050505] pt-20 pb-40 px-6 overflow-hidden">
-      <div class="max-w-7xl mx-auto text-center reveal">
-        <div class="mb-12 inline-block">
-          <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-24 w-auto opacity-30 grayscale mx-auto">
-        </div>
-        <h2 class="text-5xl md:text-7xl font-black italic uppercase mb-8">Ready to send it?</h2>
-        <p class="text-gray-500 font-bold uppercase tracking-[0.3em] text-sm">Join the Dorfdulli Movement</p>
       </div>
     </section>
   </main>
@@ -216,12 +252,11 @@
   <footer class="relative z-10 bg-black border-t border-white/5 py-12 px-6 pb-safe">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
       <div class="flex items-center gap-3">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto">
-        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">© 2024 Dorfdulli Racing</span>
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto logo-white">
+        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">© 2026 Dorfdulli Racing</span>
       </div>
       <div class="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-        <a href="#" class="hover:text-white transition">Instagram</a>
-        <a href="#" class="hover:text-white transition">YouTube</a>
+        <a href="https://www.instagram.com/dorfdulli.racing" class="hover:text-white transition" target="_blank" rel="noopener noreferrer">Instagram</a>
         <a href="#" class="hover:text-white transition">Impressum</a>
       </div>
     </div>
@@ -243,13 +278,43 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    window.addEventListener('scroll', () => {
-      const video = document.querySelector('.hero-video-wrapper video');
-      if (video) {
-        let offset = window.pageYOffset;
-        video.style.transform = `scale(1.02) translateY(${offset * 0.4}px)`;
+    const video = document.getElementById('bg-video');
+
+    function forcePlayVideo() {
+      if (!video) return;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
       }
-    });
+    }
+
+    if (video) {
+      forcePlayVideo();
+
+      window.addEventListener('load', forcePlayVideo, { once: true });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) forcePlayVideo();
+      });
+
+      document.addEventListener('touchstart', forcePlayVideo, { passive: true });
+      document.addEventListener('touchend', forcePlayVideo, { passive: true });
+      document.addEventListener('click', forcePlayVideo, { passive: true });
+
+      video.addEventListener('canplay', forcePlayVideo);
+      video.addEventListener('loadeddata', forcePlayVideo);
+      video.addEventListener('suspend', forcePlayVideo);
+      video.addEventListener('stalled', forcePlayVideo);
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!video) return;
+      const offset = window.pageYOffset;
+      video.style.transform = `translate(-50%, -50%) scale(1.02) translateY(${offset * 0.18}px)`;
+    }, { passive: true });
   </script>
 </body>
 </html>
