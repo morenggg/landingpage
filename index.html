@@ -98,20 +98,44 @@
     }
 
     .hero-subcopy {
-      max-width: 34rem;
+      max-width: 38rem;
     }
 
-    .quote-style {
-      font-size: clamp(2.2rem, 6vw, 5rem);
-      line-height: 0.95;
+    .quote-main {
+      font-size: clamp(1.15rem, 3.6vw, 2.1rem);
+      line-height: 1;
       font-weight: 900;
       font-style: italic;
       text-transform: uppercase;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .quote-author-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      opacity: 0.7;
+    }
+
+    .quote-line {
+      width: 38px;
+      height: 2px;
+      background: #fff;
+      opacity: 0.6;
+      flex: 0 0 auto;
+    }
+
+    .quote-author {
+      font-size: 0.82rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      line-height: 1;
     }
 
     .gallery-wrap {
-      max-width: 70rem;
+      max-width: 68rem;
       margin: 0 auto;
     }
 
@@ -121,6 +145,8 @@
       aspect-ratio: 4/5;
       background: #111;
       border: 1px solid rgba(255,255,255,0.05);
+      will-change: transform;
+      transition: transform 0.18s linear;
     }
 
     .gallery-item img {
@@ -168,8 +194,22 @@
     .pt-safe { padding-top: env(safe-area-inset-top); }
 
     @media (max-width: 767px) {
-      .quote-style {
-        font-size: clamp(2rem, 9vw, 3.5rem);
+      .quote-main {
+        font-size: clamp(0.98rem, 4.3vw, 1.2rem);
+        white-space: nowrap;
+      }
+
+      .quote-author {
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+      }
+
+      .quote-line {
+        width: 28px;
+      }
+
+      .gallery-wrap {
+        max-width: 94%;
       }
     }
   </style>
@@ -215,9 +255,17 @@
       <div class="max-w-7xl mx-auto w-full">
         <div class="reveal">
           <div class="mt-8 flex flex-col md:flex-row md:items-end justify-between gap-10">
-            <p class="hero-subcopy quote-style text-gray-100">
-              „Halbgas ist verschwendete Lebenszeit.“ - Erich Honecker
-            </p>
+            <div class="hero-subcopy">
+              <p class="quote-main text-gray-100">
+                „Halbgas ist verschwendete Lebenszeit.“
+              </p>
+
+              <div class="quote-author-wrap">
+                <span class="quote-line"></span>
+                <span class="quote-author">Erich Honecker</span>
+              </div>
+            </div>
+
             <a href="#gallery" class="btn-racing">Explore the Crew</a>
           </div>
         </div>
@@ -233,16 +281,16 @@
 
         <div class="gallery-wrap">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
-            <div class="gallery-item reveal" style="transition-delay: 0.1s;">
+            <div class="gallery-item reveal float-item" data-speed="0.045" style="transition-delay: 0.1s;">
               <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
             </div>
-            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.2s;">
+            <div class="gallery-item reveal md:translate-y-12 float-item" data-speed="0.07" style="transition-delay: 0.2s;">
               <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
             </div>
-            <div class="gallery-item reveal" style="transition-delay: 0.3s;">
+            <div class="gallery-item reveal float-item" data-speed="0.05" style="transition-delay: 0.3s;">
               <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
             </div>
-            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.4s;">
+            <div class="gallery-item reveal md:translate-y-12 float-item" data-speed="0.075" style="transition-delay: 0.4s;">
               <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
             </div>
           </div>
@@ -298,6 +346,24 @@
     });
     document.addEventListener('touchstart', startVideo, { passive: true });
     document.addEventListener('click', startVideo, { passive: true });
+
+    const floatItems = document.querySelectorAll('.float-item');
+
+    function updateFloat() {
+      const scrollY = window.scrollY;
+
+      floatItems.forEach((item) => {
+        const speed = parseFloat(item.dataset.speed || 0.05);
+        const rect = item.getBoundingClientRect();
+        const offsetFromCenter = rect.top - window.innerHeight / 2;
+        const movement = offsetFromCenter * speed * -1;
+        item.style.transform = `translateY(${movement}px)`;
+      });
+    }
+
+    updateFloat();
+    window.addEventListener('scroll', updateFloat, { passive: true });
+    window.addEventListener('resize', updateFloat);
   </script>
 </body>
 </html>
