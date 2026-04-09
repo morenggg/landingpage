@@ -17,32 +17,20 @@
       padding: 80px 24px;
     }
 
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 60px;
-    }
-
-    .logo {
-      height: 36px;
-      filter: brightness(0) invert(1);
-    }
-
     h1 {
       font-size: clamp(3rem,7vw,6rem);
       font-weight: 900;
       font-style: italic;
       text-transform: uppercase;
-      margin: 0 0 60px;
+      margin-bottom: 60px;
     }
 
     .event-card {
-      max-width: 720px;
+      max-width: 700px;
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(0,0,0,0.6);
-      padding: 32px;
-      backdrop-filter: blur(12px);
+      padding: 30px;
+      margin-bottom: 30px;
     }
 
     .date {
@@ -50,19 +38,11 @@
       letter-spacing: .2em;
       text-transform: uppercase;
       color: rgba(255,255,255,.4);
-      margin-bottom: 8px;
-    }
-
-    .location {
-      font-size: 12px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.4);
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
     h3 {
-      font-size: clamp(2rem,4vw,2.6rem);
+      font-size: 2rem;
       font-weight: 900;
       font-style: italic;
       text-transform: uppercase;
@@ -72,13 +52,12 @@
     p {
       color: rgba(255,255,255,.7);
       line-height: 1.4;
-      max-width: 520px;
     }
 
     .btn {
       display: inline-block;
-      margin-top: 24px;
-      padding: 12px 26px;
+      margin-top: 20px;
+      padding: 12px 24px;
       background: #fff;
       color: #000;
       font-weight: 900;
@@ -98,20 +77,10 @@
 </head>
 <body>
 
-  <!-- TOP BAR -->
-  <div class="top">
-    <img src="images/logo.PNG" class="logo" alt="Dorfdulli Racing">
-    <a href="index.html" class="back">← Startseite</a>
-  </div>
-
   <h1>Events</h1>
 
-  <!-- EVENT -->
   <div class="event-card">
-
-    <div class="date">11. April 2026</div>
-    <div class="location">Torgau / Neiden – Rennstrecke „Am Österreicher“</div>
-
+    <div class="date">11.04.2026</div>
     <h3>3H Block’N’Duro</h3>
 
     <p>
@@ -126,8 +95,9 @@
     >
       Mehr Infos
     </a>
-
   </div>
+
+  <a href="index.html" class="back">Zurück zur Startseite</a>
 
 </body>
 </html>
