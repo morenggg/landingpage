@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mitgliederbereich | Dorfdulli Racing</title>
+  <meta name="description" content="Login und Registrierung für den Mitgliederbereich von Dorfdulli Racing.">
+
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: rgba(0,0,0,0.72);
+      --line: rgba(255,255,255,0.08);
+      --text: #ffffff;
+      --muted: rgba(255,255,255,0.62);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.82)),
+        #050505;
+    }
+
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 28px 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .logo {
+      height: 42px;
+      width: auto;
+      filter: brightness(0) invert(1) contrast(1.12);
+      display: block;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin: 0 0 22px;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: #fff;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: #fff;
+      color: #000;
+    }
+
+    .form {
+      display: none;
+    }
+
+    .form.active {
+      display: block;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      padding: 14px 14px;
+      font: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: rgba(255,255,255,0.32);
+    }
+
+    .btn {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      background: #fff;
+      color: #000;
+      padding: 15px 18px;
+      font: inherit;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .msg {
+      min-height: 24px;
+      margin-top: 14px;
+      color: #fff;
+      opacity: 0.82;
+      line-height: 1.3;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 18px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.85rem;
+    }
+
+    .hint {
+      margin-top: 10px;
+      color: rgba(255,255,255,0.42);
+      font-size: 0.88rem;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <img src="images/logo.PNG" alt="Dorfdulli Racing" class="logo">
+
+      <h1>Mitgliederbereich</h1>
+      <p class="sub">Login oder Registrierung für Crew-Mitglieder.</p>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="show-login" type="button">Login</button>
+        <button class="tab-btn" id="show-register" type="button">Registrieren</button>
+      </div>
+
+      <form id="login-form" class="form active">
+        <label for="login-email">E-Mail</label>
+        <input id="login-email" type="email" placeholder="deine@email.de" required>
+
+        <label for="login-password">Passwort</label>
+        <input id="login-password" type="password" placeholder="Passwort" required>
+
+        <button class="btn" id="login-btn" type="submit">Einloggen</button>
+      </form>
+
+      <form id="register-form" class="form">
+        <label for="register-email">E-Mail</label>
+        <input id="register-email" type="email" placeholder="deine@email.de" required>
+
+        <label for="register-password">Passwort</label>
+        <input id="register-password" type="password" placeholder="Passwort" required>
+
+        <label for="register-code">Referral-Code</label>
+        <input id="register-code" type="text" placeholder="Referral-Code" required>
+
+        <button class="btn" id="register-btn" type="submit">Registrieren</button>
+
+        <p class="hint">Nur Mitglieder mit gültigem Referral-Code können sich registrieren.</p>
+      </form>
+
+      <div class="msg" id="message"></div>
+
+      <a class="back-link" href="index.html">Zurück zur Startseite</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const showLogin = document.getElementById('show-login');
+    const showRegister = document.getElementById('show-register');
+    const message = document.getElementById('message');
+
+    function setMessage(text) {
+      message.textContent = text || '';
+    }
+
+    showLogin.addEventListener('click', () => {
+      showLogin.classList.add('active');
+      showRegister.classList.remove('active');
+      loginForm.classList.add('active');
+      registerForm.classList.remove('active');
+      setMessage('');
+    });
+
+    showRegister.addEventListener('click', () => {
+      showRegister.classList.add('active');
+      showLogin.classList.remove('active');
+      registerForm.classList.add('active');
+      loginForm.classList.remove('active');
+      setMessage('');
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setMessage('Logge ein ...');
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        setMessage('Login fehlgeschlagen: ' + error.message);
+        return;
+      }
+
+      setMessage('Login erfolgreich. Weiterleitung ...');
+      window.location.href = 'members.html';
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setMessage('Prüfe Referral-Code ...');
+
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value;
+      const code = document.getElementById('register-code').value.trim();
+
+      const { data: referral, error: referralError } = await supabase
+        .from('referral_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (referralError) {
+        setMessage('Fehler beim Prüfen des Codes.');
+        return;
+      }
+
+      if (!referral) {
+        setMessage('Ungültiger Referral-Code.');
+        return;
+      }
+
+      if (referral.used_count >= referral.max_uses) {
+        setMessage('Dieser Referral-Code ist bereits aufgebraucht.');
+        return;
+      }
+
+      setMessage('Registriere Account ...');
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (signUpError) {
+        setMessage('Registrierung fehlgeschlagen: ' + signUpError.message);
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('referral_codes')
+        .update({ used_count: referral.used_count + 1 })
+        .eq('id', referral.id);
+
+      if (updateError) {
+        setMessage('Account erstellt, aber Code-Zähler konnte nicht erhöht werden.');
+        return;
+      }
+
+      setMessage('Registrierung erfolgreich. Du kannst dich jetzt einloggen.');
+      showLogin.click();
+    });
+  </script>
+</body>
+</html>
