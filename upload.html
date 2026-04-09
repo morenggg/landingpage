@@ -62,11 +62,11 @@
     <div class="msg" id="message"></div>
   </div>
 
-  <script type="module">
+ <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+  const SUPABASE_URL = 'DEINE_SUPABASE_URL';
+  const SUPABASE_KEY = 'DEIN_PUBLISHABLE_KEY';
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -74,34 +74,15 @@
   const message = document.getElementById("message");
   const uploadBtn = document.getElementById("uploadBtn");
 
-  async function checkSession() {
-    const { data, error } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-    if (error) {
-      message.innerText = "Session-Fehler: " + error.message;
-      uploadBtn.disabled = true;
-      return;
-    }
-
-    if (!data.session) {
-      message.innerText = "Nicht eingeloggt. Bitte erst über login.html einloggen.";
-      uploadBtn.disabled = true;
-      return;
-    }
-
-    message.innerText = "Eingeloggt. Upload bereit.";
+  if (!session) {
+    window.location.href = "login.html";
   }
 
-  await checkSession();
+  message.innerText = "Eingeloggt. Upload bereit.";
 
   uploadBtn.addEventListener("click", async () => {
-    const { data } = await supabase.auth.getSession();
-
-    if (!data.session) {
-      message.innerText = "Nicht eingeloggt. Bitte erst einloggen.";
-      return;
-    }
-
     const file = fileInput.files[0];
 
     if (!file) {
@@ -120,7 +101,7 @@
     if (error) {
       message.innerText = "Fehler: " + error.message;
     } else {
-      message.innerText = "Upload erfolgreich";
+      message.innerText = "Upload erfolgreich 🔥";
     }
   });
 </script>
