@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Members | Dorfdulli Racing</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      background: #050505;
+      color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 14px 28px;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <h1>Willkommen im Mitgliederbereich</h1>
+    <p>Du bist eingeloggt.</p>
+
+    <button id="logout">Logout</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Check Login
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "login.html";
+    }
+
+    // Logout
+    document.getElementById("logout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    });
+  </script>
+
+</body>
+</html>
