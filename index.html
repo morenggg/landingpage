@@ -15,8 +15,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
     :root {
       --bg-dark: #050505;
@@ -42,6 +40,10 @@
       min-height: 100vh;
       min-height: -webkit-fill-available;
       position: relative;
+    }
+
+    a {
+      color: inherit;
     }
 
     ::-webkit-scrollbar { display: none; }
@@ -203,6 +205,7 @@
       letter-spacing: 0.05em;
       transition: all 0.3s ease;
       display: inline-block;
+      text-decoration: none;
     }
 
     .btn-racing:hover {
@@ -372,6 +375,11 @@
       color: rgba(255,255,255,0.3);
     }
 
+    .menu-footer-status {
+      margin-top: 8px;
+      color: rgba(255,255,255,0.48);
+    }
+
     .menu-link.placeholder {
       cursor: default;
     }
@@ -441,6 +449,11 @@
         <span class="menu-link-meta">Live</span>
       </a>
 
+      <a class="menu-link" href="members.html" id="member-link">
+        <span class="menu-link-label">Mitgliederbereich</span>
+        <span class="menu-link-meta" id="member-link-meta">Login</span>
+      </a>
+
       <div class="menu-link placeholder">
         <span class="menu-link-label">Gallery</span>
         <span class="menu-link-meta">Soon</span>
@@ -473,21 +486,16 @@
     </nav>
 
     <div class="menu-footer">
-      Dorfdulli Racing
+      <div>Dorfdulli Racing</div>
+      <div class="menu-footer-status" id="auth-status">Status: Gast</div>
     </div>
   </aside>
 
   <header class="fixed top-0 left-0 w-full glass-nav pt-safe" id="site-header">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <div style="max-width:1280px;margin:0 auto;padding:0 24px;height:80px;display:flex;align-items:center;justify-content:space-between;">
       <div class="flex items-center">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto logo-white">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto logo-white" style="height:34px;width:auto;">
       </div>
-
-      <nav class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-[0.2em]">
-        <span class="opacity-60">Startseite</span>
-        <span class="opacity-60">Events</span>
-        <span class="opacity-60">Blog</span>
-      </nav>
 
       <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false" aria-controls="side-menu">
         <span></span>
@@ -497,10 +505,10 @@
   </header>
 
   <main>
-    <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6">
-      <div class="max-w-7xl mx-auto w-full">
+    <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6" style="min-height:100vh;display:flex;align-items:flex-end;padding:0 24px 80px;">
+      <div style="max-width:1280px;margin:0 auto;width:100%;">
         <div class="reveal">
-          <div class="mt-8 flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <div style="margin-top:32px;display:flex;flex-direction:column;gap:40px;justify-content:space-between;">
             <div class="hero-subcopy">
               <p class="quote-main text-gray-100">
                 „Halbgas ist verschwendete Lebenszeit.“
@@ -512,31 +520,33 @@
               </div>
             </div>
 
-            <a href="#gallery" class="btn-racing">Explore the Crew</a>
+            <div>
+              <a href="#gallery" class="btn-racing">Explore the Crew</a>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="gallery" class="relative py-32 px-6">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-20 reveal">
-          <h2 class="text-6xl md:text-8xl font-black italic uppercase leading-none">The Crew</h2>
-          <div class="h-1 w-20 bg-white mt-4"></div>
+    <section id="gallery" class="relative py-32 px-6" style="position:relative;padding:128px 24px;">
+      <div style="max-width:1280px;margin:0 auto;">
+        <div class="mb-20 reveal" style="margin-bottom:80px;">
+          <h2 style="font-size:clamp(3rem,7vw,6rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:1;margin:0;">The Crew</h2>
+          <div style="height:4px;width:80px;background:#fff;margin-top:16px;"></div>
         </div>
 
         <div class="gallery-wrap">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
+          <div style="display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:20px;" class="gallery-grid">
             <div class="gallery-item reveal" style="transition-delay: 0.1s;">
               <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
             </div>
-            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.2s;">
+            <div class="gallery-item reveal gallery-offset" style="transition-delay: 0.2s;">
               <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
             </div>
             <div class="gallery-item reveal" style="transition-delay: 0.3s;">
               <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
             </div>
-            <div class="gallery-item reveal md:translate-y-12" style="transition-delay: 0.4s;">
+            <div class="gallery-item reveal gallery-offset" style="transition-delay: 0.4s;">
               <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
             </div>
           </div>
@@ -545,18 +555,40 @@
     </section>
   </main>
 
-  <footer class="bg-black/60 border-t border-white/5 py-12 px-6 pb-safe">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-      <div class="flex items-center gap-3">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto logo-white">
-        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">© 2026 Dorfdulli Racing</span>
+  <footer class="bg-black/60 border-t border-white/5 py-12 px-6 pb-safe" style="background:rgba(0,0,0,0.6);border-top:1px solid rgba(255,255,255,0.05);padding:48px 24px;">
+    <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:24px;align-items:center;justify-content:space-between;" class="footer-inner">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto logo-white" style="height:24px;width:auto;">
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.4);">© 2026 Dorfdulli Racing</span>
       </div>
-      <div class="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-        <a href="https://www.instagram.com/dorfdulli.racing" class="hover:text-white transition" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href="#" class="hover:text-white transition">Impressum</a>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.45);">
+        <a href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Instagram</a>
+        <a href="members.html" style="text-decoration:none;">Mitgliederbereich</a>
       </div>
     </div>
   </footer>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'HIER_DEINE_SUPABASE_URL_EINFUEGEN';
+    const SUPABASE_KEY = 'HIER_DEINEN_PUBLISHABLE_KEY_EINFUEGEN';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const authStatus = document.getElementById('auth-status');
+    const memberLinkMeta = document.getElementById('member-link-meta');
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session) {
+      if (authStatus) authStatus.textContent = 'Status: Eingeloggt';
+      if (memberLinkMeta) memberLinkMeta.textContent = 'Open';
+    } else {
+      if (authStatus) authStatus.textContent = 'Status: Gast';
+      if (memberLinkMeta) memberLinkMeta.textContent = 'Login';
+    }
+  </script>
 
   <script>
     const observerOptions = {
@@ -649,6 +681,37 @@
     sideMenu.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', closeMenu);
     });
+
+    function applyResponsiveLayout() {
+      const galleryGrid = document.querySelector('.gallery-grid');
+      const footerInner = document.querySelector('.footer-inner');
+      const galleryOffsets = document.querySelectorAll('.gallery-offset');
+
+      if (window.innerWidth >= 768) {
+        if (galleryGrid) {
+          galleryGrid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+        }
+        galleryOffsets.forEach(el => {
+          el.style.transform = 'translateY(48px)';
+        });
+        if (footerInner) {
+          footerInner.style.flexDirection = 'row';
+        }
+      } else {
+        if (galleryGrid) {
+          galleryGrid.style.gridTemplateColumns = 'repeat(1, minmax(0, 1fr))';
+        }
+        galleryOffsets.forEach(el => {
+          el.style.transform = 'translateY(0)';
+        });
+        if (footerInner) {
+          footerInner.style.flexDirection = 'column';
+        }
+      }
+    }
+
+    applyResponsiveLayout();
+    window.addEventListener('resize', applyResponsiveLayout);
   </script>
 </body>
 </html>
