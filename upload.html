@@ -2,109 +2,475 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Upload | Dorfdulli Racing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Uploads | Dorfdulli Racing</title>
+  <meta name="description" content="Interner Upload-Bereich für Dorfdulli Racing Mitglieder.">
 
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
 
   <style>
-    body {
+    :root {
+      --bg: #050505;
+      --panel: rgba(0,0,0,0.72);
+      --panel-2: rgba(255,255,255,0.04);
+      --line: rgba(255,255,255,0.08);
+      --text: #ffffff;
+      --muted: rgba(255,255,255,0.62);
+      --success: #d7ffd9;
+      --error: #ffd4d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
       margin: 0;
-      background: #050505;
-      color: #fff;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
       font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.34), rgba(0,0,0,0.86)),
+        #050505;
+      overflow-x: hidden;
+    }
+
+    .page {
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      text-align: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      padding: 28px 22px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .logo {
+      height: 40px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1) contrast(1.12);
+    }
+
+    .status-badge {
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      white-space: nowrap;
     }
 
     h1 {
-      font-size: 2.5rem;
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 900;
       font-style: italic;
       text-transform: uppercase;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
     }
 
-    input {
-      margin-top: 20px;
-      color: white;
+    .sub {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.25;
     }
 
-    button {
-      margin-top: 20px;
-      padding: 14px 28px;
+    .upload-box {
+      border: 1px dashed rgba(255,255,255,0.18);
+      background: var(--panel-2);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .upload-box-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .upload-box-copy {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.25;
+      margin-bottom: 14px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: #fff;
+      font: inherit;
+      background: transparent;
+      border: 1px solid var(--line);
+      padding: 12px;
+    }
+
+    input[type="file"]::file-selector-button {
       background: #fff;
       color: #000;
-      border: none;
+      border: 0;
+      padding: 10px 14px;
+      margin-right: 12px;
+      font: inherit;
       font-weight: 900;
       text-transform: uppercase;
       cursor: pointer;
     }
 
-    .msg {
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .btn,
+    .btn-secondary,
+    .btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn {
+      background: #fff;
+      color: #000;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
       margin-top: 20px;
+    }
+
+    .meta-card {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      padding: 14px;
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .meta-value {
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .msg {
+      min-height: 24px;
+      margin-top: 18px;
+      line-height: 1.35;
+      font-size: 1rem;
+    }
+
+    .msg.success {
+      color: var(--success);
+    }
+
+    .msg.error {
+      color: var(--error);
+    }
+
+    .file-list {
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .file-list-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .file-name {
+      font-size: 1rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .file-size {
+      color: var(--muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .btn, .btn-secondary {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="page">
+    <div class="card">
+      <div class="topbar">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing" class="logo">
+        <div class="status-badge" id="auth-status">Prüfe Login ...</div>
+      </div>
 
-  <div>
-    <h1>Upload</h1>
+      <h1>Uploads</h1>
+      <p class="sub">
+        Interner Upload-Bereich für Crew-Mitglieder. Hier kannst du mehrere Bilder und Videos gleichzeitig hochladen.
+      </p>
 
-    <input type="file" id="fileInput">
+      <div class="upload-box">
+        <div class="upload-box-title">Dateien auswählen</div>
+        <div class="upload-box-copy">
+          Erlaubt sind Bilder und Videos. Die Uploads landen intern im Mitgliederbereich und werden nicht automatisch öffentlich angezeigt.
+        </div>
 
-    <br>
+        <input type="file" id="fileInput" multiple accept="image/*,video/*">
+      </div>
 
-    <button id="uploadBtn">Hochladen</button>
+      <div class="actions">
+        <button class="btn" id="uploadBtn" type="button">Dateien hochladen</button>
+        <a class="btn-secondary" href="members.html">Zurück zum Mitgliederbereich</a>
+        <button class="btn-secondary" id="logoutBtn" type="button">Logout</button>
+      </div>
 
-    <div class="msg" id="message"></div>
+      <div class="meta">
+        <div class="meta-card">
+          <div class="meta-label">Ausgewählt</div>
+          <div class="meta-value" id="selectedCount">0</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Erfolgreich</div>
+          <div class="meta-value" id="successCount">0</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Fehlgeschlagen</div>
+          <div class="meta-value" id="failCount">0</div>
+        </div>
+      </div>
+
+      <div class="msg" id="message"></div>
+
+      <div class="file-list" id="fileListWrap" style="display:none;">
+        <div class="file-list-title">Ausgewählte Dateien</div>
+        <div id="fileList"></div>
+      </div>
+    </div>
   </div>
 
- <script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+    const SUPABASE_URL = 'HIER_DEINE_SUPABASE_URL_EINFUEGEN';
+    const SUPABASE_KEY = 'HIER_DEINEN_PUBLISHABLE_KEY_EINFUEGEN';
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const fileInput = document.getElementById("fileInput");
-  const message = document.getElementById("message");
-  const uploadBtn = document.getElementById("uploadBtn");
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const message = document.getElementById('message');
+    const authStatus = document.getElementById('auth-status');
 
-  const { data: { session } } = await supabase.auth.getSession();
+    const selectedCount = document.getElementById('selectedCount');
+    const successCount = document.getElementById('successCount');
+    const failCount = document.getElementById('failCount');
 
-  if (!session) {
-    window.location.href = "login.html";
-  }
+    const fileListWrap = document.getElementById('fileListWrap');
+    const fileList = document.getElementById('fileList');
 
-  message.innerText = "Eingeloggt. Upload bereit.";
-
-  uploadBtn.addEventListener("click", async () => {
-    const file = fileInput.files[0];
-
-    if (!file) {
-      message.innerText = "Keine Datei ausgewählt";
-      return;
+    function setMessage(text, type = '') {
+      message.textContent = text || '';
+      message.className = 'msg' + (type ? ' ' + type : '');
     }
 
-    message.innerText = "Lade hoch...";
-
-    const fileName = Date.now() + "_" + file.name;
-
-    const { error } = await supabase.storage
-      .from('uploads')
-      .upload(fileName, file);
-
-    if (error) {
-      message.innerText = "Fehler: " + error.message;
-    } else {
-      message.innerText = "Upload erfolgreich 🔥";
+    function formatBytes(bytes) {
+      if (!bytes && bytes !== 0) return '';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0;
+      let num = bytes;
+      while (num >= 1024 && i < units.length - 1) {
+        num /= 1024;
+        i++;
+      }
+      return `${num.toFixed(num >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
     }
-  });
-</script>
 
+    function renderSelectedFiles() {
+      const files = Array.from(fileInput.files || []);
+      selectedCount.textContent = String(files.length);
+
+      if (!files.length) {
+        fileListWrap.style.display = 'none';
+        fileList.innerHTML = '';
+        return;
+      }
+
+      fileListWrap.style.display = 'block';
+      fileList.innerHTML = files.map(file => `
+        <div class="file-item">
+          <div class="file-name">${file.name}</div>
+          <div class="file-size">${formatBytes(file.size)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function requireSession() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error || !data.session) {
+        window.location.href = 'login.html';
+        return null;
+      }
+
+      authStatus.textContent = 'Eingeloggt';
+      return data.session;
+    }
+
+    await requireSession();
+
+    fileInput.addEventListener('change', () => {
+      renderSelectedFiles();
+      setMessage('');
+      successCount.textContent = '0';
+      failCount.textContent = '0';
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const files = Array.from(fileInput.files || []);
+
+      if (!files.length) {
+        setMessage('Keine Dateien ausgewählt.', 'error');
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      successCount.textContent = '0';
+      failCount.textContent = '0';
+      setMessage(`Lade ${files.length} Datei(en) hoch ...`);
+
+      let success = 0;
+      let fail = 0;
+
+      for (const file of files) {
+        const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${file.name}`;
+
+        const { error } = await supabase.storage
+          .from('uploads')
+          .upload(safeName, file);
+
+        if (error) {
+          fail++;
+        } else {
+          success++;
+        }
+
+        successCount.textContent = String(success);
+        failCount.textContent = String(fail);
+      }
+
+      uploadBtn.disabled = false;
+
+      if (fail === 0) {
+        setMessage(`Upload erfolgreich: ${success} Datei(en) hochgeladen.`, 'success');
+      } else {
+        setMessage(`Fertig: ${success} erfolgreich, ${fail} fehlgeschlagen.`, 'error');
+      }
+
+      fileInput.value = '';
+      renderSelectedFiles();
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
 </body>
 </html>
