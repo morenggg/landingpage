@@ -42,11 +42,14 @@
 <body>
 
   <div>
-    <h1>Willkommen im Mitgliederbereich</h1>
-    <p>Du bist eingeloggt.</p>
+  <h1>Willkommen im Mitgliederbereich</h1>
+  <p>Du bist eingeloggt.</p>
 
+  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-top:20px;">
+    <a href="upload.html" style="padding:14px 28px; background:#fff; color:#000; text-decoration:none; font-weight:900; text-transform:uppercase;">Upload öffnen</a>
     <button id="logout">Logout</button>
   </div>
+</div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
