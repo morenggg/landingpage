@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upload | Dorfdulli Racing</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      background: #050505;
+      color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+    }
+
+    input {
+      margin-top: 20px;
+      color: white;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 14px 28px;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .msg {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <h1>Upload</h1>
+
+    <input type="file" id="fileInput">
+
+    <br>
+
+    <button id="uploadBtn">Hochladen</button>
+
+    <div class="msg" id="message"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const fileInput = document.getElementById("fileInput");
+    const message = document.getElementById("message");
+
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        message.innerText = "Keine Datei ausgewählt";
+        return;
+      }
+
+      message.innerText = "Lade hoch...";
+
+      const fileName = Date.now() + "_" + file.name;
+
+      const { error } = await supabase.storage
+        .from('uploads')
+        .upload(fileName, file);
+
+      if (error) {
+        message.innerText = "Fehler: " + error.message;
+      } else {
+        message.innerText = "Upload erfolgreich 🔥";
+      }
+
+    });
+  </script>
+
+</body>
+</html>
