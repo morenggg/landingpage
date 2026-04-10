@@ -1046,15 +1046,21 @@
     });
 
     overlayBtn.addEventListener('click', () => {
-      if (!gameRunning) {
-        startGame();
-      } else if (paused) {
-        pauseGame();
-      } else {
-        resetGame();
-        startGame();
-      }
-    });
+  if (overlayTitle.textContent === 'Game Over') {
+    resetGame();
+    startGame();
+    return;
+  }
+
+  if (!gameRunning) {
+    startGame();
+  } else if (paused) {
+    pauseGame();
+  } else {
+    resetGame();
+    startGame();
+  }
+});
 
     muteBtn.addEventListener('click', () => {
       muted = !muted;
