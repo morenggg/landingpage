@@ -138,8 +138,7 @@
     }
 
     .btn,
-    .btn-secondary,
-    .btn-link {
+    .btn-secondary {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -222,6 +221,7 @@
 
       <div class="actions">
         <a class="btn" href="upload.html">Uploads öffnen</a>
+        <a class="btn-secondary" href="tetris.html">Dorfdulli Blocks</a>
         <a class="btn-secondary" href="index.html">Zur Startseite</a>
         <button class="btn-secondary" id="logoutBtn" type="button">Logout</button>
       </div>
@@ -254,7 +254,21 @@
       const user = data.session.user;
 
       authStatus.textContent = 'Eingeloggt';
-      memberEmail.textContent = user.email ? `Angemeldet als ${user.email}` : 'Mitglied eingeloggt';
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profileError && profile?.display_name) {
+        memberEmail.textContent = `Angemeldet als ${profile.display_name}`;
+      } else if (user.email) {
+        memberEmail.textContent = `Angemeldet als ${user.email}`;
+      } else {
+        memberEmail.textContent = 'Mitglied eingeloggt';
+      }
+
       message.textContent = 'Zugang aktiv.';
     }
 
