@@ -207,6 +207,9 @@
       </form>
 
       <form id="register-form" class="form">
+        <label for="register-username">Benutzername</label>
+        <input id="register-username" type="text" placeholder="Benutzername" required>
+
         <label for="register-email">E-Mail</label>
         <input id="register-email" type="email" placeholder="deine@email.de" required>
 
@@ -230,8 +233,8 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const SUPABASE_URL = 'https://morrzzgbyowlauhkfmdg.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_h0Ya2fAHKnQ6J2QL8Ny3LA_SBqFp-XZ';
+    const SUPABASE_URL = 'HIER_DEINE_SUPABASE_URL_EINFUEGEN';
+    const SUPABASE_KEY = 'HIER_DEINEN_PUBLISHABLE_KEY_EINFUEGEN';
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -284,11 +287,33 @@
 
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      setMessage('Prüfe Referral-Code ...');
+      setMessage('Prüfe Registrierung ...');
 
+      const username = document.getElementById('register-username').value.trim();
       const email = document.getElementById('register-email').value.trim();
       const password = document.getElementById('register-password').value;
       const code = document.getElementById('register-code').value.trim();
+
+      if (!username) {
+        setMessage('Benutzername fehlt.');
+        return;
+      }
+
+      const { data: existingProfile, error: usernameError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('display_name', username)
+        .maybeSingle();
+
+      if (usernameError) {
+        setMessage('Fehler beim Prüfen des Benutzernamens.');
+        return;
+      }
+
+      if (existingProfile) {
+        setMessage('Benutzername ist bereits vergeben.');
+        return;
+      }
 
       const { data: referral, error: referralError } = await supabase
         .from('referral_codes')
@@ -314,13 +339,32 @@
 
       setMessage('Registriere Account ...');
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password
       });
 
       if (signUpError) {
         setMessage('Registrierung fehlgeschlagen: ' + signUpError.message);
+        return;
+      }
+
+      const authUser = signUpData?.user;
+
+      if (!authUser) {
+        setMessage('Account wurde erstellt, aber User-ID fehlt.');
+        return;
+      }
+
+      const { error: profileInsertError } = await supabase
+        .from('profiles')
+        .insert([{
+          user_id: authUser.id,
+          display_name: username
+        }]);
+
+      if (profileInsertError) {
+        setMessage('Account erstellt, aber Benutzername konnte nicht gespeichert werden.');
         return;
       }
 
