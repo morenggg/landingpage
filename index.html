@@ -13,7 +13,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#050505">
@@ -21,6 +21,14 @@
   <style>
     :root {
       --bg-dark: #050505;
+      --bg-dark-2: #0b0a09;
+      --paper: #ece7de;
+      --accent: #b8460e;
+      --accent-bright: #d95a1f;
+      --line: rgba(236,231,222,0.08);
+      --line-strong: rgba(236,231,222,0.16);
+      --mono: 'JetBrains Mono', monospace;
+      --display: 'Barlow Condensed', sans-serif;
     }
 
     * {
@@ -35,9 +43,9 @@
     }
 
     body {
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--display);
       background-color: var(--bg-dark);
-      color: #fff;
+      color: var(--paper);
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
       min-height: 100vh;
@@ -45,12 +53,36 @@
       position: relative;
     }
 
-    a {
-      color: inherit;
-    }
+    a { color: inherit; }
 
     ::-webkit-scrollbar { display: none; }
     * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ---------- Film grain signature ---------- */
+    .grain {
+      position: fixed;
+      inset: -100px;
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0.05;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 180px 180px;
+      animation: grain-shift 8s steps(8) infinite;
+    }
+
+    @keyframes grain-shift {
+      0%   { transform: translate(0,0); }
+      20%  { transform: translate(-3%,-2%); }
+      40%  { transform: translate(-6%,3%); }
+      60%  { transform: translate(4%,-4%); }
+      80%  { transform: translate(3%,5%); }
+      100% { transform: translate(0,0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .grain { animation: none; }
+    }
 
     .hero-video-wrapper {
       position: fixed;
@@ -72,7 +104,7 @@
       object-fit: cover;
       object-position: center;
       transform: translate(-50%, -50%);
-      filter: grayscale(100%) brightness(0.52) contrast(1.08);
+      filter: grayscale(100%) brightness(0.42) contrast(1.22);
       background: #000;
     }
 
@@ -81,53 +113,55 @@
       inset: 0;
       z-index: 1;
       background:
-        radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.24) 45%, rgba(0,0,0,0.68) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.12) 55%, rgba(5,5,5,0.62) 100%);
+        radial-gradient(circle at center, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.82) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.08) 25%, rgba(0,0,0,0.18) 55%, rgba(5,5,5,0.78) 100%);
       pointer-events: none;
     }
 
-    header, main, footer {
-      position: relative;
-    }
-
-    header {
-      z-index: 9999;
-      isolation: isolate;
-    }
-
-    main, footer {
-      z-index: 10;
-    }
+    header, main, footer { position: relative; }
+    header { z-index: 9999; isolation: isolate; }
+    main, footer { z-index: 10; }
 
     .glass-nav {
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
       background: rgba(0,0,0,0.58);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition:
-        background 0.3s ease,
-        backdrop-filter 0.3s ease,
-        -webkit-backdrop-filter 0.3s ease,
-        border-color 0.3s ease;
+      border-bottom: 1px solid var(--line);
+      transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
     }
 
     .glass-nav.scrolled {
       backdrop-filter: blur(22px);
       -webkit-backdrop-filter: blur(22px);
-      background: rgba(0,0,0,0.78);
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.82);
+      border-bottom: 1px solid var(--line-strong);
     }
 
-    .logo-white {
-      filter: brightness(0) invert(1) contrast(1.12);
+    .logo-white { filter: brightness(0) invert(1) contrast(1.12); }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .hero-subcopy {
-      max-width: 38rem;
+    .eyebrow::before {
+      content: '';
+      width: 22px;
+      height: 1px;
+      background: var(--accent-bright);
+      display: inline-block;
     }
+
+    .hero-subcopy { max-width: 40rem; }
 
     .quote-main {
-      font-size: clamp(1.15rem, 3.6vw, 2.1rem);
+      font-size: clamp(1.15rem, 3.6vw, 2.2rem);
       line-height: 1;
       font-weight: 900;
       font-style: italic;
@@ -140,51 +174,153 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 12px;
-      opacity: 0.7;
+      margin-top: 14px;
+      opacity: 0.75;
     }
 
-    .quote-line {
-      width: 38px;
-      height: 2px;
-      background: #fff;
-      opacity: 0.6;
-      flex: 0 0 auto;
-    }
+    .quote-line { width: 38px; height: 2px; background: var(--accent); flex: 0 0 auto; }
 
     .quote-author {
-      font-size: 0.82rem;
-      letter-spacing: 0.18em;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       line-height: 1;
     }
 
-    .gallery-wrap {
-      max-width: 68rem;
-      margin: 0 auto;
+    /* ---------- Marquee ---------- */
+    .marquee-strip {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      background: var(--accent);
+      border-top: 1px solid rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(0,0,0,0.25);
+      transform: skewY(-1.2deg);
+      margin: 0 0 -1px;
+    }
+
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marquee-scroll 26s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .marquee-track { animation-duration: 90s; }
+    }
+
+    @keyframes marquee-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .marquee-item {
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      font-size: clamp(1rem, 2.6vw, 1.6rem);
+      color: #050505;
+      padding: 14px 28px;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+
+    .marquee-item span { opacity: 0.55; margin-left: 28px; }
+
+    /* ---------- Gallery / bento ---------- */
+    .gallery-wrap { max-width: 72rem; margin: 0 auto; }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: 140px;
+      gap: 14px;
     }
 
     .gallery-item {
       position: relative;
       overflow: hidden;
-      aspect-ratio: 4/5;
       background: #111;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid var(--line);
       z-index: 1;
+      grid-column: span 4;
+      grid-row: span 3;
     }
 
     .gallery-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: grayscale(1);
-      transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      filter: grayscale(1) brightness(0.9);
+      transition: filter 0.6s cubic-bezier(0.23,1,0.32,1), transform 0.6s cubic-bezier(0.23,1,0.32,1);
       display: block;
     }
 
     .gallery-item:hover img {
-      filter: grayscale(0);
+      filter: grayscale(0) brightness(1);
       transform: scale(1.05);
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .gallery-item:hover .hud { opacity: 1; }
+
+    .hud::before {
+      content: '';
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(236,231,222,0.5);
+    }
+
+    .hud-corner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--accent-bright);
+    }
+    .hud-corner.tl { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
+    .hud-corner.tr { top: 6px; right: 6px; border-top: 2px solid; border-right: 2px solid; }
+    .hud-corner.bl { bottom: 6px; left: 6px; border-bottom: 2px solid; border-left: 2px solid; }
+    .hud-corner.br { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
+
+    .hud-tag {
+      position: absolute;
+      left: 20px;
+      bottom: 16px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: rgba(5,5,5,0.55);
+      padding: 4px 8px;
+      border-left: 2px solid var(--accent-bright);
+    }
+
+    .hud-tag-top {
+      position: absolute;
+      right: 20px;
+      top: 16px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--accent-bright);
+      background: rgba(5,5,5,0.55);
+      padding: 4px 8px;
+    }
+
+    @media (min-width: 768px) {
+      .gallery-item.g-1 { grid-column: span 2; grid-row: span 6; }
+      .gallery-item.g-2 { grid-column: span 2; grid-row: span 3; }
+      .gallery-item.g-3 { grid-column: span 1; grid-row: span 3; }
+      .gallery-item.g-4 { grid-column: span 1; grid-row: span 3; }
     }
 
     .reveal {
@@ -192,351 +328,189 @@
       transform: translateY(30px);
       transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
     }
-
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
 
     .btn-racing {
+      position: relative;
       padding: 1rem 2.5rem;
-      background: #fff;
-      color: #000;
+      background: var(--paper);
+      color: #050505;
       font-weight: 900;
       text-transform: uppercase;
       font-style: italic;
       letter-spacing: 0.05em;
-      transition: all 0.3s ease;
+      transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
       display: inline-block;
       text-decoration: none;
+      will-change: transform;
     }
 
     .btn-racing:hover {
-      transform: skewX(-6deg);
-      background: #d9d9d9;
+      background: var(--accent-bright);
+      color: #050505;
+      box-shadow: 0 8px 30px rgba(184,70,14,0.35);
     }
 
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .pt-safe { padding-top: env(safe-area-inset-top); }
 
     .menu-btn {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 6px;
-      background: transparent;
-      border: 0;
-      padding: 0;
-      cursor: pointer;
+      width: 40px; height: 40px;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-end;
+      gap: 6px; background: transparent; border: 0; padding: 0; cursor: pointer;
     }
 
     .menu-btn span {
-      display: block;
-      height: 2px;
-      background: #fff;
-      border-radius: 999px;
+      display: block; height: 2px; background: var(--paper); border-radius: 999px;
       transition: transform 0.28s ease, opacity 0.28s ease, width 0.28s ease;
     }
-
-    .menu-btn span:first-child {
-      width: 32px;
-    }
-
-    .menu-btn span:last-child {
-      width: 20px;
-    }
-
-    .menu-open .menu-btn span:first-child {
-      transform: translateY(4px) rotate(45deg);
-      width: 28px;
-    }
-
-    .menu-open .menu-btn span:last-child {
-      transform: translateY(-4px) rotate(-45deg);
-      width: 28px;
-    }
+    .menu-btn span:first-child { width: 32px; }
+    .menu-btn span:last-child { width: 20px; }
+    .menu-open .menu-btn span:first-child { transform: translateY(4px) rotate(45deg); width: 28px; }
+    .menu-open .menu-btn span:last-child { transform: translateY(-4px) rotate(-45deg); width: 28px; }
 
     .menu-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9997;
-      background: rgba(0,0,0,0.36);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.35s ease;
+      position: fixed; inset: 0; z-index: 9997;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
     }
-
-    .menu-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .menu-overlay.active { opacity: 1; pointer-events: auto; }
 
     .side-menu {
-      position: fixed;
-      top: 0;
-      right: 0;
-      height: 100vh;
-      width: min(88vw, 420px);
-      z-index: 9998;
-      background:
-        linear-gradient(180deg, rgba(18,18,18,0.96) 0%, rgba(5,5,5,0.98) 100%);
-      border-left: 1px solid rgba(255,255,255,0.08);
-      box-shadow: -20px 0 60px rgba(0,0,0,0.45);
+      position: fixed; top: 0; right: 0; height: 100vh;
+      width: min(88vw, 420px); z-index: 9998;
+      background: linear-gradient(180deg, rgba(20,16,14,0.97) 0%, rgba(5,5,5,0.99) 100%);
+      border-left: 1px solid var(--line-strong);
+      box-shadow: -20px 0 60px rgba(0,0,0,0.5);
       transform: translateX(100%);
       transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-      padding:
-        max(26px, env(safe-area-inset-top))
-        26px
-        max(26px, env(safe-area-inset-bottom))
-        26px;
+      display: flex; flex-direction: column;
+      padding: max(26px, env(safe-area-inset-top)) 26px max(26px, env(safe-area-inset-bottom)) 26px;
     }
+    .side-menu.active { transform: translateX(0); }
 
-    .side-menu.active {
-      transform: translateX(0);
-    }
-
-    .side-menu-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 28px;
-    }
+    .side-menu-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 
     .side-menu-title {
-      font-size: 0.8rem;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.45);
+      font-family: var(--mono);
+      font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(236,231,222,0.4);
     }
 
     .menu-close {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.03);
-      color: #fff;
-      font-size: 1.2rem;
-      line-height: 1;
-      cursor: pointer;
+      width: 42px; height: 42px; border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: rgba(236,231,222,0.03);
+      color: var(--paper); font-size: 1.2rem; line-height: 1; cursor: pointer;
     }
 
-    .menu-nav {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 10px;
-    }
+    .menu-nav { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 
     .menu-link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      text-decoration: none;
-      color: #fff;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; text-decoration: none; color: var(--paper);
+      border-bottom: 1px solid var(--line);
+      transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
     }
-
-    .menu-link:hover {
-      opacity: 0.72;
-      transform: translateX(4px);
-    }
+    .menu-link:hover { opacity: 0.85; transform: translateX(4px); border-color: var(--accent); }
 
     .menu-link-label {
       font-size: clamp(1.5rem, 4vw, 2.4rem);
-      font-weight: 900;
-      font-style: italic;
-      text-transform: uppercase;
-      letter-spacing: -0.02em;
-      line-height: 1;
+      font-weight: 900; font-style: italic; text-transform: uppercase;
+      letter-spacing: -0.02em; line-height: 1;
     }
 
     .menu-link-meta {
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.36);
-      margin-left: 16px;
-      flex: 0 0 auto;
+      font-family: var(--mono);
+      font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent-bright); margin-left: 16px; flex: 0 0 auto;
     }
 
     .menu-footer {
-      margin-top: auto;
-      padding-top: 24px;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.3);
+      margin-top: auto; padding-top: 24px;
+      font-family: var(--mono);
+      font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: rgba(236,231,222,0.3);
+    }
+    .menu-footer-status { margin-top: 8px; color: rgba(236,231,222,0.5); }
+
+    .menu-link.placeholder { cursor: default; }
+    .menu-link.placeholder:hover { opacity: 1; transform: none; border-color: var(--line); }
+
+    .section-heading {
+      font-size: clamp(3rem,7vw,6rem);
+      font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1; margin: 0;
     }
 
-    .menu-footer-status {
-      margin-top: 8px;
-      color: rgba(255,255,255,0.48);
-    }
-
-    .menu-link.placeholder {
-      cursor: default;
-    }
-
-    .menu-link.placeholder:hover {
-      opacity: 1;
-      transform: none;
-    }
+    .section-rule { height: 4px; width: 80px; background: var(--accent); margin-top: 16px; }
 
     @media (max-width: 767px) {
-      .quote-main {
-        font-size: clamp(0.98rem, 4.3vw, 1.2rem);
-        white-space: nowrap;
-      }
-
-      .quote-author {
-        font-size: 0.72rem;
-        letter-spacing: 0.14em;
-      }
-
-      .quote-line {
-        width: 28px;
-      }
-
-      .gallery-wrap {
-        max-width: 94%;
-      }
-
-      .side-menu {
-        width: min(92vw, 380px);
-      }
-
-      .menu-link-label {
-        font-size: clamp(1.35rem, 7vw, 1.9rem);
-      }
+      .quote-main { font-size: clamp(0.98rem, 4.3vw, 1.2rem); white-space: nowrap; }
+      .quote-author { font-size: 0.68rem; letter-spacing: 0.14em; }
+      .quote-line { width: 28px; }
+      .gallery-wrap { max-width: 94%; }
+      .side-menu { width: min(92vw, 380px); }
+      .menu-link-label { font-size: clamp(1.35rem, 7vw, 1.9rem); }
     }
   </style>
 </head>
 <body id="top">
 
+  <div class="grain" aria-hidden="true"></div>
+
   <div id="newsletter-popup" style="
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    position: fixed; inset: 0; z-index: 10000; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   ">
     <div style="
-      width: 100%;
-      max-width: 460px;
-      background: rgba(5,5,5,0.95);
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 24px 20px;
-      position: relative;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      width: 100%; max-width: 460px;
+      background: rgba(8,7,6,0.96);
+      border: 1px solid var(--line-strong);
+      padding: 24px 20px; position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
     ">
       <button id="newsletter-close" type="button" style="
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 38px;
-        height: 38px;
-        border: 1px solid rgba(255,255,255,0.08);
-        background: rgba(255,255,255,0.04);
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
+        position: absolute; top: 12px; right: 12px; width: 38px; height: 38px;
+        border: 1px solid var(--line-strong); background: rgba(236,231,222,0.04);
+        color: var(--paper); font-size: 18px; cursor: pointer;
       ">✕</button>
 
-      <div style="
-        font-size: 12px;
-        letter-spacing: .22em;
-        text-transform: uppercase;
-        color: rgba(255,255,255,.42);
-        margin-bottom: 10px;
-      ">
-        Newsletter
-      </div>
+      <div class="eyebrow" style="margin-bottom: 14px;">Newsletter</div>
 
       <h2 style="
-        margin: 0 0 10px;
-        font-size: clamp(2rem, 5vw, 3rem);
-        font-weight: 900;
-        font-style: italic;
-        text-transform: uppercase;
-        line-height: .95;
-      ">
-        Nichts verpassen
-      </h2>
+        margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 900; font-style: italic; text-transform: uppercase; line-height: .95;
+      ">Nichts verpassen</h2>
 
-      <p style="
-        margin: 0 0 18px;
-        color: rgba(255,255,255,.7);
-        line-height: 1.35;
-      ">
+      <p style="margin: 0 0 18px; color: rgba(236,231,222,.7); line-height: 1.35;">
         Melde dich für Updates, Events und neue Drops an.
       </p>
 
       <form id="newsletter-form" style="display:flex;flex-direction:column;gap:12px;">
-        <input
-          id="newsletter-email"
-          type="email"
-          placeholder="deine@email.de"
-          required
-          style="
-            width: 100%;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.04);
-            color: #fff;
-            padding: 14px;
-            font: inherit;
-            font-size: 16px;
-            outline: none;
-          "
-        >
-
-        <button type="submit" style="
-          border: 0;
-          background: #fff;
-          color: #000;
-          padding: 14px 18px;
-          font: inherit;
-          font-weight: 900;
-          font-style: italic;
-          text-transform: uppercase;
-          cursor: pointer;
+        <input id="newsletter-email" type="email" placeholder="deine@email.de" required style="
+          width: 100%; border: 1px solid var(--line-strong);
+          background: rgba(236,231,222,0.04); color: var(--paper);
+          padding: 14px; font: inherit; font-size: 16px; outline: none;
         ">
+        <button type="submit" style="
+          border: 0; background: var(--accent); color: #050505;
+          padding: 14px 18px; font: inherit; font-weight: 900; font-style: italic;
+          text-transform: uppercase; cursor: pointer; transition: background 0.2s ease;
+        " onmouseover="this.style.background='var(--accent-bright)'" onmouseout="this.style.background='var(--accent)'">
           Anmelden
         </button>
       </form>
 
-      <div id="newsletter-message" style="
-        min-height: 22px;
-        margin-top: 12px;
-        color: rgba(255,255,255,.82);
-        line-height: 1.3;
-      "></div>
+      <div id="newsletter-message" style="min-height: 22px; margin-top: 12px; color: rgba(236,231,222,.85); line-height: 1.3;"></div>
     </div>
   </div>
 
   <div class="hero-video-wrapper" aria-hidden="true">
-    <video
-      id="bg-video"
-      muted
-      autoplay
-      loop
-      playsinline
-      preload="metadata"
-    >
+    <video id="bg-video" muted autoplay loop playsinline preload="metadata">
       <source src="images/hero.MP4" type="video/mp4">
     </video>
   </div>
@@ -578,9 +552,9 @@
       </a>
 
       <a class="menu-link placeholder" href="javascript:void(0);">
-  <span class="menu-link-label">Blog</span>
-  <span class="menu-link-meta">Soon</span>
-</a>
+        <span class="menu-link-label">Blog</span>
+        <span class="menu-link-meta">Soon</span>
+      </a>
 
       <a class="menu-link" href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer">
         <span class="menu-link-label">Instagram</span>
@@ -607,32 +581,29 @@
   <header class="fixed top-0 left-0 w-full glass-nav pt-safe" id="site-header">
     <div style="max-width:1280px;margin:0 auto;padding:0 24px;height:80px;display:flex;align-items:center;justify-content:space-between;">
       <div class="flex items-center">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-8 md:h-10 w-auto logo-white" style="height:34px;width:auto;">
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="logo-white" style="height:34px;width:auto;">
       </div>
-
       <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false" aria-controls="side-menu">
-        <span></span>
-        <span></span>
+        <span></span><span></span>
       </button>
     </div>
   </header>
 
   <main>
-    <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6" style="min-height:100vh;display:flex;align-items:flex-end;padding:0 24px 80px;">
+    <section class="relative min-h-screen flex items-end pb-20 md:pb-32 px-6" style="min-height:100vh;display:flex;align-items:flex-end;padding:0 24px 64px;">
       <div style="max-width:1280px;margin:0 auto;width:100%;">
         <div class="reveal">
-          <div style="margin-top:32px;display:flex;flex-direction:column;gap:40px;justify-content:space-between;">
+          <div class="eyebrow" style="margin-bottom:18px;">Motocross · Enduro · Offroad</div>
+          <div style="display:flex;flex-direction:column;gap:36px;justify-content:space-between;">
             <div class="hero-subcopy">
               <p class="quote-main text-gray-100">
                 „Halbgas ist verschwendete Lebenszeit.“
               </p>
-
               <div class="quote-author-wrap">
                 <span class="quote-line"></span>
-                <span class="quote-author">Erich Honecker</span>
+                <span class="quote-author">Boxenstopp-Weisheit</span>
               </div>
             </div>
-
             <div>
               <a href="#gallery" class="btn-racing">Explore the Crew</a>
             </div>
@@ -641,26 +612,63 @@
       </div>
     </section>
 
-    <section id="gallery" class="relative py-32 px-6" style="position:relative;padding:128px 24px;">
+    <div class="marquee-strip">
+      <div class="marquee-track">
+        <div class="marquee-item">Motocross <span>×</span></div>
+        <div class="marquee-item">Enduro <span>×</span></div>
+        <div class="marquee-item">Dorfdulli Racing <span>×</span></div>
+        <div class="marquee-item">Offroad <span>×</span></div>
+        <div class="marquee-item">Motocross <span>×</span></div>
+        <div class="marquee-item">Enduro <span>×</span></div>
+        <div class="marquee-item">Dorfdulli Racing <span>×</span></div>
+        <div class="marquee-item">Offroad <span>×</span></div>
+      </div>
+    </div>
+
+    <section id="gallery" class="relative py-32 px-6" style="position:relative;padding:96px 24px 128px;">
       <div style="max-width:1280px;margin:0 auto;">
-        <div class="mb-20 reveal" style="margin-bottom:80px;">
-          <h2 style="font-size:clamp(3rem,7vw,6rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:1;margin:0;">The Crew</h2>
-          <div style="height:4px;width:80px;background:#fff;margin-top:16px;"></div>
+        <div class="mb-20 reveal" style="margin-bottom:64px;">
+          <h2 class="section-heading">The Crew</h2>
+          <div class="section-rule"></div>
         </div>
 
         <div class="gallery-wrap">
-          <div style="display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:20px;" class="gallery-grid">
-            <div class="gallery-item reveal" style="transition-delay: 0.1s;">
+          <div class="bento-grid">
+            <div class="gallery-item g-1 reveal" style="transition-delay: 0.1s;">
               <img src="images/IMG_0673.jpeg" alt="Motocross Bike Dorfdulli Racing" loading="lazy">
+              <div class="hud">
+                <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+                <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+                <span class="hud-tag-top">Rec ●</span>
+                <span class="hud-tag">Terrain: Mud</span>
+              </div>
             </div>
-            <div class="gallery-item reveal gallery-offset" style="transition-delay: 0.2s;">
+            <div class="gallery-item g-2 reveal" style="transition-delay: 0.2s;">
               <img src="images/IMG_0674.jpeg" alt="Enduro Bike Offroad" loading="lazy">
+              <div class="hud">
+                <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+                <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+                <span class="hud-tag-top">Rec ●</span>
+                <span class="hud-tag">Gear: 2nd</span>
+              </div>
             </div>
-            <div class="gallery-item reveal" style="transition-delay: 0.3s;">
+            <div class="gallery-item g-3 reveal" style="transition-delay: 0.3s;">
               <img src="images/IMG_0662.jpeg" alt="Motocross Treffen" loading="lazy">
+              <div class="hud">
+                <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+                <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+                <span class="hud-tag-top">Rec ●</span>
+                <span class="hud-tag">Squad</span>
+              </div>
             </div>
-            <div class="gallery-item reveal gallery-offset" style="transition-delay: 0.4s;">
+            <div class="gallery-item g-4 reveal" style="transition-delay: 0.4s;">
               <img src="images/IMG_0663.jpeg" alt="Enduro Szene" loading="lazy">
+              <div class="hud">
+                <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+                <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+                <span class="hud-tag-top">Rec ●</span>
+                <span class="hud-tag">Offroad</span>
+              </div>
             </div>
           </div>
         </div>
@@ -668,13 +676,13 @@
     </section>
   </main>
 
-  <footer class="bg-black/60 border-t border-white/5 py-12 px-6 pb-safe" style="background:rgba(0,0,0,0.6);border-top:1px solid rgba(255,255,255,0.05);padding:48px 24px;">
+  <footer class="bg-black/60 border-t border-white/5 py-12 px-6 pb-safe" style="background:rgba(0,0,0,0.6);border-top:1px solid var(--line);padding:48px 24px;">
     <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:24px;align-items:center;justify-content:space-between;" class="footer-inner">
       <div style="display:flex;align-items:center;gap:12px;">
-        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="h-6 w-auto logo-white" style="height:24px;width:auto;">
-        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.4);">© 2026 Dorfdulli Racing</span>
+        <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="logo-white" style="height:24px;width:auto;">
+        <span style="font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.14em;color:rgba(236,231,222,.4);">© 2026 Dorfdulli Racing</span>
       </div>
-      <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.45);">
+      <div style="display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:rgba(236,231,222,.45);">
         <a href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Instagram</a>
         <a href="members.html" style="text-decoration:none;">Mitgliederbereich</a>
       </div>
@@ -719,14 +727,8 @@
 
       async function trackEvent(type) {
         if (!window.newsletterSupabase) return;
-
         try {
-          await window.newsletterSupabase
-            .from('newsletter_events')
-            .insert([{
-              event_type: type,
-              page: 'index'
-            }]);
+          await window.newsletterSupabase.from('newsletter_events').insert([{ event_type: type, page: 'index' }]);
         } catch (e) {}
       }
 
@@ -734,18 +736,13 @@
         if (!window.newsletterSupabase) {
           return { ok: false, message: 'Supabase nicht geladen.' };
         }
-
-        const { error } = await window.newsletterSupabase
-          .from('newsletter_signups')
-          .insert([{ email }]);
-
+        const { error } = await window.newsletterSupabase.from('newsletter_signups').insert([{ email }]);
         if (error) {
           if (error.message && error.message.toLowerCase().includes('duplicate')) {
             return { ok: false, message: 'Diese E-Mail ist bereits eingetragen.' };
           }
           return { ok: false, message: 'Anmeldung fehlgeschlagen.' };
         }
-
         return { ok: true, message: 'Danke! Anmeldung gespeichert.' };
       }
 
@@ -755,69 +752,38 @@
       }
 
       const lastSeen = localStorage.getItem(storageKey);
-
       if (lastSeen !== today) {
         popup.style.display = 'flex';
         trackEvent('view');
       }
 
-      closeBtn.addEventListener('click', async () => {
-        await trackEvent('dismiss');
-        closePopup();
-      });
-
-      popup.addEventListener('click', async (e) => {
-        if (e.target === popup) {
-          await trackEvent('dismiss');
-          closePopup();
-        }
-      });
+      closeBtn.addEventListener('click', async () => { await trackEvent('dismiss'); closePopup(); });
+      popup.addEventListener('click', async (e) => { if (e.target === popup) { await trackEvent('dismiss'); closePopup(); } });
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const email = emailInput.value.trim().toLowerCase();
-
-        if (!email) {
-          message.textContent = 'Bitte E-Mail eingeben.';
-          return;
-        }
-
+        if (!email) { message.textContent = 'Bitte E-Mail eingeben.'; return; }
         message.textContent = 'Speichere Anmeldung ...';
-
         const result = await saveSignup(email);
         message.textContent = result.message;
-
         if (result.ok) {
           await trackEvent('signup');
           localStorage.setItem(storageKey, today);
-
-          setTimeout(() => {
-            popup.style.display = 'none';
-          }, 700);
+          setTimeout(() => { popup.style.display = 'none'; }, 700);
         }
       });
     });
   </script>
 
   <script>
-    const observerOptions = {
-      threshold: 0.15,
-      rootMargin: "0px 0px -50px 0px"
-    };
-
+    const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
+      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
     }, observerOptions);
-
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
     const video = document.getElementById('bg-video');
-
     function startVideo() {
       if (!video) return;
       video.muted = true;
@@ -826,26 +792,18 @@
       const p = video.play();
       if (p && typeof p.catch === 'function') p.catch(() => {});
     }
-
     window.addEventListener('load', startVideo);
     document.addEventListener('DOMContentLoaded', startVideo);
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) startVideo();
-    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) startVideo(); });
     document.addEventListener('touchstart', startVideo, { passive: true });
     document.addEventListener('click', startVideo, { passive: true });
 
     const header = document.getElementById('site-header');
-
     function updateHeader() {
       if (!header) return;
-      if (window.scrollY > 20) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
+      if (window.scrollY > 20) header.classList.add('scrolled');
+      else header.classList.remove('scrolled');
     }
-
     updateHeader();
     window.addEventListener('scroll', updateHeader, { passive: true });
 
@@ -863,7 +821,6 @@
       menuBtn.setAttribute('aria-expanded', 'true');
       body.style.overflow = 'hidden';
     }
-
     function closeMenu() {
       body.classList.remove('menu-open');
       sideMenu.classList.remove('active');
@@ -872,54 +829,20 @@
       menuBtn.setAttribute('aria-expanded', 'false');
       body.style.overflow = '';
     }
-
-    menuBtn.addEventListener('click', () => {
-      if (sideMenu.classList.contains('active')) {
-        closeMenu();
-      } else {
-        openMenu();
-      }
-    });
-
+    menuBtn.addEventListener('click', () => { sideMenu.classList.contains('active') ? closeMenu() : openMenu(); });
     menuClose.addEventListener('click', closeMenu);
     menuOverlay.addEventListener('click', closeMenu);
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeMenu();
-    });
-
-    sideMenu.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', closeMenu);
-    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+    sideMenu.querySelectorAll('a').forEach((link) => { link.addEventListener('click', closeMenu); });
 
     function applyResponsiveLayout() {
-      const galleryGrid = document.querySelector('.gallery-grid');
       const footerInner = document.querySelector('.footer-inner');
-      const galleryOffsets = document.querySelectorAll('.gallery-offset');
-
       if (window.innerWidth >= 768) {
-        if (galleryGrid) {
-          galleryGrid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-        }
-        galleryOffsets.forEach(el => {
-          el.style.transform = 'translateY(48px)';
-        });
-        if (footerInner) {
-          footerInner.style.flexDirection = 'row';
-        }
+        if (footerInner) footerInner.style.flexDirection = 'row';
       } else {
-        if (galleryGrid) {
-          galleryGrid.style.gridTemplateColumns = 'repeat(1, minmax(0, 1fr))';
-        }
-        galleryOffsets.forEach(el => {
-          el.style.transform = 'translateY(0)';
-        });
-        if (footerInner) {
-          footerInner.style.flexDirection = 'column';
-        }
+        if (footerInner) footerInner.style.flexDirection = 'column';
       }
     }
-
     applyResponsiveLayout();
     window.addEventListener('resize', applyResponsiveLayout);
   </script>
