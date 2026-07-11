@@ -34,7 +34,7 @@
 
   var CONFIG = {
     SUPABASE_URL: 'https://morrzzgbyowlauhkfmdg.supabase.co',
-    SUPABASE_ANON_KEY: 'HIER_DEN_ANON_KEY_EINFUEGEN',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vcnJ6emdieW93bGF1aGtmbWRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDgwNDYsImV4cCI6MjA5MTMyNDA0Nn0.tZRm3ODKVByB2RXQt8cfjqJ8JjF-QoqN-6zFdG6QLAU',
     TABLE_PAGE_VIEWS: 'page_views',
     // Für zukünftige Event-Erweiterungen (siehe "Erweiterbarkeit" unten).
     // Tabelle existiert aktuell noch nicht und muss vor Aktivierung angelegt werden.
