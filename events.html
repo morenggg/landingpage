@@ -1,103 +1,252 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Events | Dorfdulli Racing</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Events | Dorfdulli Racing</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta name="theme-color" content="#050505">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#050505;
+  --paper:#ece7de;
+  --accent:#b8460e;
+  --accent-bright:#d95a1f;
+  --line:rgba(236,231,222,0.08);
+  --line-strong:rgba(236,231,222,0.16);
+  --panel:rgba(10,9,8,0.82);
+  --mono:'JetBrains Mono',monospace;
+  --display:'Barlow Condensed',sans-serif;
+}
+body{
+  background:var(--bg);
+  color:var(--paper);
+  font-family:var(--display);
+  min-height:100vh;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse at top,rgba(184,70,14,0.07),transparent 55%);
+}
+a:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px}
+::selection{background:var(--accent);color:#050505}
 
-  <link rel="icon" type="image/png" href="images/favicon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+.grain{
+  position:fixed;inset:-100px;z-index:50;pointer-events:none;
+  opacity:0.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size:180px 180px;
+  animation:grain-shift 8s steps(8) infinite;
+}
+@keyframes grain-shift{
+  0%{transform:translate(0,0)}20%{transform:translate(-3%,-2%)}40%{transform:translate(-6%,3%)}
+  60%{transform:translate(4%,-4%)}80%{transform:translate(3%,5%)}100%{transform:translate(0,0)}
+}
 
-  <style>
-    body {
-      margin: 0;
-      background: #050505;
-      color: #fff;
-      font-family: 'Barlow Condensed', sans-serif;
-      padding: 80px 24px;
-    }
+.header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(0,0,0,0.72);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);
+  padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.header-logo{height:34px;width:auto;filter:brightness(0) invert(1) contrast(1.12);display:block}
+.header-btn{
+  font-family:var(--mono);font-size:0.62rem;font-weight:500;text-transform:uppercase;
+  letter-spacing:0.14em;color:var(--paper);
+  background:rgba(236,231,222,0.04);border:1px solid var(--line-strong);
+  padding:9px 14px;min-height:38px;
+  transition:border-color 0.3s ease,color 0.3s ease;
+  text-decoration:none;display:inline-flex;align-items:center;
+}
+.header-btn:hover{border-color:var(--accent-bright);color:var(--accent-bright)}
 
-    h1 {
-      font-size: clamp(3rem,7vw,6rem);
-      font-weight: 900;
-      font-style: italic;
-      text-transform: uppercase;
-      margin-bottom: 60px;
-    }
+.main{max-width:760px;margin:0 auto;padding:56px 20px 100px}
 
-    .event-card {
-      max-width: 700px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.6);
-      padding: 30px;
-      margin-bottom: 30px;
-    }
 
-    .date {
-      font-size: 12px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.4);
-      margin-bottom: 10px;
-    }
+h1{
+  font-size:clamp(3rem,10vw,5.5rem);
+  font-weight:900;font-style:italic;text-transform:uppercase;
+  line-height:0.9;letter-spacing:-0.02em;
+  margin:14px 0 0;
+}
+.section-rule{height:4px;width:80px;background:var(--accent);margin:20px 0 48px}
 
-    h3 {
-      font-size: 2rem;
-      font-weight: 900;
-      font-style: italic;
-      text-transform: uppercase;
-      margin: 0 0 14px;
-    }
+.event-card{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:28px 24px;
+  margin-bottom:20px;
+}
+.event-date{
+  font-family:var(--mono);font-size:0.62rem;font-weight:500;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:rgba(236,231,222,0.45);
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:12px;
+}
+.event-date::before{content:'';width:8px;height:8px;background:var(--accent-bright);flex:0 0 auto}
+.event-card h3{
+  font-size:clamp(1.6rem,5vw,2.2rem);
+  font-weight:900;font-style:italic;text-transform:uppercase;
+  line-height:1;letter-spacing:-0.01em;
+  margin:0 0 14px;
+}
+.event-card p{
+  color:rgba(236,231,222,0.65);
+  line-height:1.5;
+  font-size:1.1rem;
+  max-width:36rem;
+}
+.btn{
+  font-family:var(--display);font-size:1rem;font-weight:900;font-style:italic;
+  text-transform:uppercase;letter-spacing:0.04em;text-decoration:none;
+  padding:13px 26px;margin-top:22px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--paper);color:#050505;
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  position:relative;overflow:hidden;isolation:isolate;
+  transition:color 0.3s ease;
+}
+.btn::before{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:var(--accent-bright);
+  transform:translateX(-101%) skewX(-12deg) scaleX(1.2);
+  transition:transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.btn:hover::before,.btn:focus-visible::before{transform:translateX(0) skewX(0) scaleX(1)}
 
-    p {
-      color: rgba(255,255,255,.7);
-      line-height: 1.4;
-    }
+.back{
+  margin-top:48px;
+  display:inline-flex;align-items:center;gap:8px;
+  color:rgba(236,231,222,0.45);
+  text-decoration:none;text-transform:uppercase;
+  font-family:var(--mono);font-size:0.62rem;letter-spacing:0.16em;
+  transition:color 0.3s ease;
+}
+.back:hover{color:var(--accent-bright)}
+.back::before{content:'←'}
 
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 24px;
-      background: #fff;
-      color: #000;
-      font-weight: 900;
-      text-transform: uppercase;
-      text-decoration: none;
-    }
 
-    .back {
-      margin-top: 60px;
-      display: inline-block;
-      color: rgba(255,255,255,.5);
-      text-decoration: none;
-      text-transform: uppercase;
-      font-size: 12px;
-    }
-  </style>
+.event-card.past{opacity:0.55;transition:opacity 0.35s ease}
+.event-card.past:hover{opacity:1}
+.event-card.past .event-date::before{background:rgba(236,231,222,0.3);transition:background 0.35s ease}
+.event-card.past:hover .event-date::before{background:var(--accent-bright)}
+
+.past-label{
+  font-family:var(--mono);font-size:0.62rem;font-weight:500;
+  letter-spacing:0.22em;text-transform:uppercase;
+  color:rgba(236,231,222,0.4);
+  display:flex;align-items:center;gap:10px;
+  margin:48px 0 16px;
+}
+.past-label::before{content:'';width:18px;height:1px;background:rgba(236,231,222,0.3)}
+
+.no-events{
+  border:1px solid var(--line);
+  padding:28px 24px;margin-bottom:20px;
+  font-family:var(--mono);font-size:0.68rem;letter-spacing:0.14em;
+  text-transform:uppercase;color:rgba(236,231,222,0.4);
+}
+
+@media(prefers-reduced-motion:reduce){.grain{animation:none}}
+</style>
 </head>
 <body>
 
+<div class="grain" aria-hidden="true"></div>
+
+<header class="header">
+  <a href="index.html" aria-label="Zur Startseite">
+    <img src="images/logo.PNG" alt="Dorfdulli Racing Logo" class="header-logo">
+  </a>
+  <a href="index.html" class="header-btn">Startseite</a>
+</header>
+
+<main class="main">
   <h1>Events</h1>
+  <div class="section-rule"></div>
+
+  <div id="eventList">
 
   <div class="event-card">
-    <div class="date">11.04.2026</div>
-    <h3>3H Block’N’Duro</h3>
-
+    <div class="event-date">11.04.2026</div>
+    <h3>3H Block'N'Duro</h3>
     <p>
       3 Stunden Enduro beim MSC Pflückuff auf einem ca. 6 km langen Rundkurs
       mit Waldpassagen, Auf- und Abfahrten, Hindernissen und Wasserdurchfahrten.
     </p>
-
-    <a 
+    <a
       href="https://www.msc-pflueckuff.de/news/1/1212463/nachrichten/3h-blocknduro-2026.html"
       target="_blank"
+      rel="noopener noreferrer"
       class="btn"
     >
       Mehr Infos
     </a>
   </div>
 
+  </div>
+
   <a href="index.html" class="back">Zurück zur Startseite</a>
+</main>
+
+<script>
+(function(){
+  /* Events automatisch in "kommend" und "vergangen" trennen.
+     Datum wird aus der .event-date gelesen (Format TT.MM.JJJJ). */
+  var list=document.getElementById('eventList');
+  if(!list) return;
+  var cards=Array.prototype.slice.call(list.querySelectorAll('.event-card'));
+  var today=new Date();today.setHours(0,0,0,0);
+
+  function parseDate(card){
+    var el=card.querySelector('.event-date');
+    if(!el) return null;
+    var m=el.textContent.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    if(!m) return null;
+    return new Date(parseInt(m[3],10),parseInt(m[2],10)-1,parseInt(m[1],10));
+  }
+
+  var upcoming=[],past=[];
+  cards.forEach(function(c){
+    var d=parseDate(c);
+    if(d&&d<today){past.push({c:c,d:d});}
+    else{upcoming.push({c:c,d:d||today});}
+  });
+
+  upcoming.sort(function(a,b){return a.d-b.d;});
+  past.sort(function(a,b){return b.d-a.d;});
+
+  list.innerHTML='';
+
+  if(upcoming.length===0){
+    var note=document.createElement('div');
+    note.className='no-events';
+    note.textContent='Aktuell keine anstehenden Events.';
+    list.appendChild(note);
+  }
+  upcoming.forEach(function(e){list.appendChild(e.c);});
+
+  if(past.length>0){
+    var label=document.createElement('div');
+    label.className='past-label';
+    label.textContent='Vergangene';
+    list.appendChild(label);
+    past.forEach(function(e){
+      e.c.classList.add('past');
+      list.appendChild(e.c);
+    });
+  }
+})();
+</script>
 <script src="tracking.js"></script>
 </body>
 </html>
