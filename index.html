@@ -1129,10 +1129,16 @@
 const backgroundAudio = document.getElementById("background-audio");
 
 function startAudio() {
-  backgroundAudio.volume = 0.2; // Lautstärke (0.0 bis 1.0)
-  backgroundAudio.play().catch(() => {});
-  document.removeEventListener("click", startAudio);
-  document.removeEventListener("touchstart", startAudio);
+    backgroundAudio.volume = 0.2;
+    backgroundAudio.play().catch(() => {});
+
+    setTimeout(() => {
+        backgroundAudio.pause();
+        backgroundAudio.currentTime = 0;
+    }, 3000);
+
+    document.removeEventListener("click", startAudio);
+    document.removeEventListener("touchstart", startAudio);
 }
 
 document.addEventListener("click", startAudio);
