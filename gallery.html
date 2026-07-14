@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gallery – 125 SX | Dorfdulli Racing</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta name="theme-color" content="#050505">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#050505;
+  --paper:#ece7de;
+  --accent:#b8460e;
+  --accent-bright:#d95a1f;
+  --line:rgba(224,148,96,0.14);
+  --mono:'JetBrains Mono',monospace;
+  --display:'Barlow Condensed',sans-serif;
+}
+html{scroll-behavior:auto}
+body{
+  background:#070605;
+  color:var(--paper);
+  font-family:var(--display);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px}
+::selection{background:var(--accent);color:#050505}
+img{user-select:none;-webkit-user-drag:none}
+
+/* ---------- Header (schwebend, minimal) ---------- */
+.top{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;padding-top:max(14px,env(safe-area-inset-top));
+  background:linear-gradient(180deg,rgba(5,5,5,0.72),transparent);
+  pointer-events:none;
+}
+.top a{pointer-events:auto}
+.top-logo{height:30px;width:auto;filter:brightness(0) invert(1) contrast(1.12);display:block}
+.top-btn{
+  font-family:var(--mono);font-size:0.6rem;font-weight:500;text-transform:uppercase;
+  letter-spacing:0.14em;color:var(--paper);text-decoration:none;
+  border:1px solid rgba(236,231,222,0.2);padding:9px 14px;
+  background:rgba(5,5,5,0.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:border-color 0.3s ease,color 0.3s ease;
+}
+.top-btn:hover{border-color:var(--accent-bright);color:var(--accent-bright)}
+
+/* ---------- Scrub-Grundgerüst ---------- */
+.act{position:relative}
+.stage{
+  position:sticky;top:0;
+  height:100vh;height:100svh;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.stage-img{
+  position:absolute;inset:-6%;
+  width:112%;height:112%;
+  object-fit:cover;
+  will-change:transform,opacity;
+}
+/* Alles fährt nur über transform/opacity – keine Layout-Arbeit */
+[data-fx]{will-change:transform,opacity}
+
+/* ---------- Akt 1: Hero ---------- */
+.act-hero{height:300vh}
+.act-hero .stage{background:#000}
+.hero-img{
+  opacity:var(--v1,0);
+  transform:scale(calc(1.18 - var(--w1,0)*0.14));
+  filter:contrast(1.1) saturate(1.04);
+}
+.hero-dark{
+  position:absolute;inset:0;background:#000;
+  opacity:calc(1 - var(--v1,0)*0.92);
+  pointer-events:none;
+}
+.hero-sweep{
+  position:absolute;top:-10%;bottom:-10%;width:34%;
+  background:linear-gradient(90deg,transparent,rgba(236,231,222,0.14) 45%,rgba(217,90,31,0.1) 55%,transparent);
+  transform:translateX(calc(-140% + var(--sw,0)*380%)) skewX(-16deg);
+  opacity:calc(var(--sw,0)*(1 - var(--sw,0))*4);
+  pointer-events:none;mix-blend-mode:screen;
+}
+.hero-copy{
+  position:relative;z-index:3;text-align:center;padding:0 20px;
+  opacity:var(--v2,0);
+  transform:translateY(calc((1 - var(--v2,0))*46px - var(--w1,0)*70px));
+}
+.hero-eyebrow{
+  font-family:var(--mono);font-size:0.62rem;letter-spacing:0.34em;text-transform:uppercase;
+  color:var(--accent-bright);
+}
+.hero-h{
+  font-size:clamp(4rem,17vw,13rem);
+  font-weight:900;font-style:italic;text-transform:uppercase;
+  line-height:0.85;letter-spacing:-0.03em;
+  margin-top:14px;
+  text-shadow:0 10px 70px rgba(0,0,0,0.7);
+}
+.hero-sub{
+  font-family:var(--mono);font-size:0.66rem;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(236,231,222,0.6);margin-top:20px;
+}
+.hero-scrollhint{
+  position:absolute;bottom:max(26px,env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%);
+  font-family:var(--mono);font-size:0.56rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:rgba(236,231,222,0.4);
+  opacity:calc(var(--v2,0)*(1 - var(--w1,0)*2.2));
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.hero-scrollhint::after{content:'';width:1px;height:34px;background:linear-gradient(180deg,var(--accent-bright),transparent)}
+.dust{position:absolute;inset:0;pointer-events:none;z-index:2}
+.dust span{
+  position:absolute;border-radius:50%;
+  background:rgba(236,205,180,0.5);
+  transform:translateY(calc(var(--p,0)*var(--d,-120)*1px));
+  opacity:calc(var(--v1,0)*0.45);
+  will-change:transform,opacity;
+}
+
+/* ---------- Vignette überall ---------- */
+.vig{
+  position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(circle at center,transparent 40%,rgba(0,0,0,0.55) 100%);
+}
+
+/* ---------- Akt 2: Kamerafahrt ---------- */
+.act-cam{height:480vh}
+.act-cam .stage{background:#000}
+.cam-img{
+  opacity:var(--v,0);
+  transform:
+    scale(calc(1.06 + var(--w,0)*0.14))
+    translate3d(calc(var(--tx,0)*1% * var(--w,0)),calc(var(--ty,0)*1% * var(--w,0)),0);
+  filter:contrast(1.08) saturate(1.02);
+}
+.cam-caption{
+  position:absolute;left:0;right:0;bottom:12%;z-index:3;
+  text-align:center;padding:0 24px;
+  opacity:var(--v,0);
+  transform:translateY(calc((1 - var(--v,0))*34px));
+}
+.cam-caption .k{
+  font-family:var(--mono);font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:var(--accent-bright);
+}
+.cam-caption .t{
+  font-size:clamp(1.7rem,6vw,3.4rem);
+  font-weight:900;font-style:italic;text-transform:uppercase;
+  line-height:0.95;letter-spacing:-0.02em;margin-top:10px;
+  text-shadow:0 6px 40px rgba(0,0,0,0.8);
+}
+
+/* ---------- Akt 3: Technik ---------- */
+.act-tech{height:520vh}
+.act-tech .stage{background:#000}
+.tech-img{
+  opacity:calc(0.36 + var(--v1,0)*0.24);
+  transform:scale(calc(1.04 + var(--p,0)*0.1));
+  filter:contrast(1.12) saturate(0.9) brightness(0.8);
+}
+.tech-scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.25) 55%,rgba(0,0,0,0.55) 100%);z-index:1}
+.tech-head{
+  position:absolute;top:12%;left:6%;z-index:3;
+  opacity:var(--v1,0);
+  transform:translateY(calc((1 - var(--v1,0))*30px));
+}
+.tech-head .k{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent-bright)}
+.tech-head .t{font-size:clamp(2.4rem,8vw,5rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:0.9;margin-top:10px}
+.spec{
+  position:absolute;left:6%;z-index:3;max-width:min(78vw,420px);
+  opacity:var(--v,0);
+  transform:translateY(calc((1 - var(--v,0))*26px));
+}
+.spec .line{
+  height:1px;background:linear-gradient(90deg,var(--accent-bright),transparent);
+  transform:scaleX(var(--v,0));transform-origin:left;
+  margin-bottom:12px;
+}
+.spec .l{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.24em;text-transform:uppercase;color:rgba(236,231,222,0.55)}
+.spec .v{font-size:clamp(1.9rem,7vw,3.4rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:0.95;letter-spacing:-0.01em;margin-top:6px}
+.spec .v small{font-size:0.45em;font-weight:700;color:rgba(236,231,222,0.6)}
+.spec .d{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(236,231,222,0.45);margin-top:8px;line-height:1.6}
+.spec-1{top:34%}
+.spec-2{top:34%}
+.spec-3{top:34%}
+.spec-4{top:34%}
+
+/* ---------- Akt 4: Details ---------- */
+.act-detail{height:440vh}
+.act-detail .stage{background:#000}
+.det-img{
+  opacity:var(--v,0);
+  transform:
+    scale(calc(2 + var(--w,0)*0.3))
+    translate3d(calc(var(--tx,0)*1%),calc(var(--ty,0)*1%),0);
+  filter:contrast(1.12) saturate(1.02) brightness(0.92);
+}
+.det-sweep{
+  position:absolute;top:-10%;bottom:-10%;width:30%;z-index:2;
+  background:linear-gradient(90deg,transparent,rgba(236,231,222,0.1),transparent);
+  transform:translateX(calc(-140% + var(--dsw,0)*380%)) skewX(-14deg);
+  opacity:calc(var(--dsw,0)*(1 - var(--dsw,0))*3.4);
+  mix-blend-mode:screen;pointer-events:none;
+}
+.det-tag{
+  position:absolute;left:6%;bottom:14%;z-index:3;
+  opacity:var(--v,0);
+  transform:translateY(calc((1 - var(--v,0))*24px));
+  border-left:2px solid var(--accent-bright);
+  padding-left:14px;max-width:min(80vw,380px);
+}
+.det-tag .k{font-family:var(--mono);font-size:0.56rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--accent-bright)}
+.det-tag .t{font-size:clamp(1.5rem,5.5vw,2.6rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:0.95;margin-top:6px}
+
+/* ---------- Akt 5: Finale ---------- */
+.act-final{height:300vh}
+.act-final .stage{background:#000}
+.fin-img{
+  opacity:calc(var(--v1,0)*(1 - var(--w2,0)));
+  transform:scale(calc(1.14 - var(--v1,0)*0.1 + var(--w2,0)*0.05));
+  filter:contrast(1.1) saturate(1.04) brightness(calc(1 - var(--w2,0)*0.75));
+}
+.fin-copy{
+  position:relative;z-index:3;text-align:center;padding:0 20px;
+  opacity:var(--v2,0);
+  transform:translateY(calc((1 - var(--v2,0))*36px));
+}
+.fin-h{
+  font-size:clamp(2.6rem,10vw,7rem);
+  font-weight:900;font-style:italic;text-transform:uppercase;
+  line-height:0.9;letter-spacing:-0.02em;
+}
+.fin-h em{font-style:italic;color:transparent;-webkit-text-stroke:1.5px var(--accent-bright)}
+.fin-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.btn{
+  font-family:var(--display);font-size:1rem;font-weight:900;font-style:italic;
+  text-transform:uppercase;letter-spacing:0.04em;text-decoration:none;
+  padding:14px 28px;display:inline-flex;align-items:center;
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  position:relative;overflow:hidden;isolation:isolate;
+  transition:color 0.3s ease;
+}
+.btn::before{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:var(--accent-bright);
+  transform:translateX(-101%) skewX(-12deg) scaleX(1.2);
+  transition:transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.btn:hover::before,.btn:focus-visible::before{transform:translateX(0) skewX(0) scaleX(1)}
+.btn-primary{background:var(--paper);color:#050505}
+.btn-ghost{background:transparent;color:var(--paper);box-shadow:inset 0 0 0 1px rgba(236,231,222,0.25)}
+.btn-ghost:hover,.btn-ghost:focus-visible{color:#050505}
+.fin-note{
+  font-family:var(--mono);font-size:0.54rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(236,231,222,0.3);margin-top:44px;
+}
+
+/* ---------- Mobil: kürzere Strecken, ruhigere Werte ---------- */
+@media(max-width:768px){
+  .act-hero{height:220vh}
+  .act-cam{height:360vh}
+  .act-tech{height:400vh}
+  .act-detail{height:340vh}
+  .act-final{height:230vh}
+  .dust span:nth-child(even){display:none}
+  .tech-head{left:20px;right:20px}
+  .spec{left:20px}
+  .det-tag{left:20px}
+  .tech-scrim{background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.3) 55%,rgba(0,0,0,0.65) 100%)}
+}
+
+/* ---------- Reduced Motion: alles statisch, voll lesbar ---------- */
+@media(prefers-reduced-motion:reduce){
+  .act{height:auto!important}
+  .stage{position:relative;height:auto;min-height:70vh}
+  .stage-img{position:relative;inset:auto;width:100%;height:auto;transform:none!important;opacity:1!important}
+  [data-fx]{transform:none!important;opacity:1!important}
+  .hero-dark,.hero-sweep,.det-sweep,.dust{display:none}
+  .spec{position:relative;top:auto;left:auto;margin:24px 20px}
+  .tech-head{position:relative;top:auto;left:auto;margin:24px 20px}
+  .det-tag,.cam-caption{position:relative;bottom:auto;margin:18px 20px}
+  .cam-img,.det-img{position:relative;inset:auto;width:100%;height:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a href="index.html" aria-label="Zur Startseite">
+    <img src="images/logo.PNG" alt="Dorfdulli Racing" class="top-logo">
+  </a>
+  <a href="index.html" class="top-btn">Zurück</a>
+</header>
+
+<main>
+
+  <!-- ================= AKT 1: HERO ================= -->
+  <section class="act act-hero" data-scrub>
+    <div class="stage">
+      <img class="stage-img hero-img" data-fx src="images/IMG_0673.jpeg" alt="KTM 125 SX der Dorfdulli Racing Crew" fetchpriority="high">
+      <div class="hero-dark" data-fx></div>
+      <div class="hero-sweep" data-fx></div>
+      <div class="dust" id="dust"></div>
+      <div class="vig"></div>
+      <div class="hero-copy" data-fx>
+        <div class="hero-eyebrow">Dorfdulli Racing · Gallery</div>
+        <h1 class="hero-h">125 SX</h1>
+        <div class="hero-sub">Zweitakt · Baujahr 2023 · Vollgas serienmäßig</div>
+      </div>
+      <div class="hero-scrollhint" data-fx>Scroll</div>
+    </div>
+  </section>
+
+  <!-- ================= AKT 2: KAMERAFAHRT ================= -->
+  <section class="act act-cam" data-scrub>
+    <div class="stage">
+      <img class="stage-img cam-img" data-fx data-in="0.00,0.06" data-out="0.30,0.38" data-kb="1"
+           style="--tx:-3;--ty:-2" src="images/IMG_0673.jpeg" alt="" loading="lazy">
+      <img class="stage-img cam-img" data-fx data-in="0.30,0.38" data-out="0.60,0.68" data-kb="1"
+           style="--tx:3;--ty:-1" src="images/IMG_0674.jpeg" alt="" loading="lazy">
+      <img class="stage-img cam-img" data-fx data-in="0.60,0.68" data-out="0.92,1.00" data-kb="1"
+           style="--tx:-2;--ty:2" src="images/IMG_0662.jpeg" alt="" loading="lazy">
+      <div class="vig"></div>
+      <div class="cam-caption" data-fx data-in="0.06,0.14" data-out="0.26,0.34">
+        <div class="k">01 · Das Bike</div>
+        <div class="t">Gebaut für Sand,<br>Schlamm und Wurzeln.</div>
+      </div>
+      <div class="cam-caption" data-fx data-in="0.38,0.46" data-out="0.56,0.64">
+        <div class="k">02 · Die Linie</div>
+        <div class="t">Jedes Gramm<br>am richtigen Ort.</div>
+      </div>
+      <div class="cam-caption" data-fx data-in="0.68,0.76" data-out="0.88,0.96">
+        <div class="k">03 · Die Crew</div>
+        <div class="t">Wir fahren,<br>was hält.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AKT 3: TECHNIK ================= -->
+  <section class="act act-tech" data-scrub>
+    <div class="stage">
+      <img class="stage-img tech-img" data-fx src="images/IMG_0674.jpeg" alt="" loading="lazy">
+      <div class="tech-scrim"></div>
+      <div class="vig"></div>
+      <div class="tech-head" data-fx>
+        <div class="k">Technik · KTM 125 SX MY23</div>
+        <div class="t">Auf dem<br>Papier.</div>
+      </div>
+
+      <div class="spec spec-1" data-fx data-in="0.14,0.22" data-out="0.30,0.38">
+        <div class="line"></div>
+        <div class="l">Motor</div>
+        <div class="v">124,8 <small>cm³</small></div>
+        <div class="d">1-Zylinder · 2-Takt · Einspritzung<br>6-Gang · Elektrostarter</div>
+      </div>
+
+      <div class="spec spec-2" data-fx data-in="0.34,0.42" data-out="0.50,0.58">
+        <div class="line"></div>
+        <div class="l">Gewicht ohne Kraftstoff</div>
+        <div class="v">92,4 <small>kg</small></div>
+        <div class="d">Doppelschleifen-Zentralrohrrahmen<br>25CrMo4-Stahl · Tank 7,2 l</div>
+      </div>
+
+      <div class="spec spec-3" data-fx data-in="0.54,0.62" data-out="0.70,0.78">
+        <div class="line"></div>
+        <div class="l">Federung</div>
+        <div class="v">310 / 300 <small>mm</small></div>
+        <div class="d">WP XACT-USD Ø 48 mm vorne<br>WP XACT-Federbein mit Umlenkung</div>
+      </div>
+
+      <div class="spec spec-4" data-fx data-in="0.74,0.82" data-out="0.92,1.00">
+        <div class="line"></div>
+        <div class="l">Bremsen</div>
+        <div class="v">260 / 220 <small>mm</small></div>
+        <div class="d">Scheibenbremsen · Brembo-Hydraulikkupplung<br>Sitzhöhe 958 mm · Bodenfreiheit 359 mm</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AKT 4: DETAILS ================= -->
+  <section class="act act-detail" data-scrub>
+    <div class="stage">
+      <img class="stage-img det-img" data-fx data-in="0.00,0.08" data-out="0.30,0.38" data-kb="1"
+           style="--tx:8;--ty:6" src="images/IMG_0673.jpeg" alt="" loading="lazy">
+      <img class="stage-img det-img" data-fx data-in="0.30,0.38" data-out="0.62,0.70" data-kb="1"
+           style="--tx:-7;--ty:4" src="images/IMG_0674.jpeg" alt="" loading="lazy">
+      <img class="stage-img det-img" data-fx data-in="0.62,0.70" data-out="0.92,1.00" data-kb="1"
+           style="--tx:5;--ty:-6" src="images/IMG_0663.jpeg" alt="" loading="lazy">
+      <div class="det-sweep" data-fx></div>
+      <div class="vig"></div>
+      <div class="det-tag" data-fx data-in="0.08,0.16" data-out="0.26,0.34">
+        <div class="k">Detail 01</div>
+        <div class="t">Front · WP XACT<br>Ø 48 mm</div>
+      </div>
+      <div class="det-tag" data-fx data-in="0.38,0.46" data-out="0.58,0.66">
+        <div class="k">Detail 02</div>
+        <div class="t">Heck · 300 mm<br>Federweg</div>
+      </div>
+      <div class="det-tag" data-fx data-in="0.70,0.78" data-out="0.90,0.98">
+        <div class="k">Detail 03</div>
+        <div class="t">Zweitakt.<br>Sonst nichts.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AKT 5: FINALE ================= -->
+  <section class="act act-final" data-scrub>
+    <div class="stage">
+      <img class="stage-img fin-img" data-fx src="images/IMG_0662.jpeg" alt="" loading="lazy">
+      <div class="vig"></div>
+      <div class="fin-copy" data-fx>
+        <div class="fin-h">Halbgas ist<br><em>verschwendete</em><br>Lebenszeit.</div>
+        <div class="fin-btns">
+          <a href="index.html" class="btn btn-primary">Zur Startseite</a>
+          <a href="https://www.instagram.com/dorfdulli.racing" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Instagram</a>
+        </div>
+        <div class="fin-note">Technische Daten: KTM 125 SX MY23 · Angaben ohne Gewähr</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function(){
+'use strict';
+
+var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduced) return; /* statischer Fallback läuft rein über CSS */
+
+/* ---------- Staubpartikel im Hero (Position rein scrollgesteuert) ---------- */
+(function(){
+  var dust=document.getElementById('dust');
+  if(!dust) return;
+  var n=22;
+  for(var i=0;i<n;i++){
+    var s=document.createElement('span');
+    var size=(Math.random()*2.4+1).toFixed(1);
+    s.style.width=size+'px';
+    s.style.height=size+'px';
+    s.style.left=(Math.random()*100).toFixed(2)+'%';
+    s.style.top=(Math.random()*100).toFixed(2)+'%';
+    /* Tiefe: je größer, desto stärker die Parallaxe */
+    s.style.setProperty('--d',(-(Math.random()*260+80)).toFixed(0));
+    dust.appendChild(s);
+  }
+})();
+
+/* ---------- Scrub-Engine ----------
+   Ein Scroll-Listener (passiv), rAF-gebündelt.
+   Pro Sektion: Fortschritt p (0..1) als CSS-Variable.
+   Pro Element mit data-in/data-out: Glockenwert --v (rein->halten->raus)
+   und Fensterfortschritt --w (linear über das ganze Sichtfenster).
+   Alles Weitere macht CSS mit transform/opacity. */
+
+function clamp(x){return x<0?0:x>1?1:x}
+function smooth(t){t=clamp(t);return t*t*(3-2*t)}
+function sub(p,a,b){return b>a?clamp((p-a)/(b-a)):(p>=b?1:0)}
+
+var sections=[];
+document.querySelectorAll('[data-scrub]').forEach(function(el){
+  var items=[];
+  el.querySelectorAll('[data-in]').forEach(function(node){
+    var pin=node.getAttribute('data-in').split(',').map(parseFloat);
+    var pout=(node.getAttribute('data-out')||'1,1').split(',').map(parseFloat);
+    items.push({node:node,i0:pin[0],i1:pin[1],o0:pout[0],o1:pout[1]});
+  });
+  sections.push({el:el,top:0,h:0,items:items,active:true,lastP:-1});
+});
+
+var vh=window.innerHeight;
+function measure(){
+  vh=window.innerHeight;
+  var sy=window.pageYOffset;
+  sections.forEach(function(s){
+    var r=s.el.getBoundingClientRect();
+    s.top=r.top+sy;
+    s.h=s.el.offsetHeight;
+  });
+}
+
+/* Nur sichtbare Sektionen rechnen */
+var io=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    var s=sections.find(function(x){return x.el===e.target;});
+    if(s) s.active=e.isIntersecting;
+  });
+},{rootMargin:'60% 0px 60% 0px'});
+sections.forEach(function(s){io.observe(s.el);});
+
+var ticking=false;
+function onScroll(){
+  if(!ticking){ticking=true;requestAnimationFrame(update);}
+}
+
+function update(){
+  ticking=false;
+  var sy=window.pageYOffset;
+  for(var i=0;i<sections.length;i++){
+    var s=sections[i];
+    if(!s.active) continue;
+    var span=s.h-vh;
+    var p=span>0?clamp((sy-s.top)/span):0;
+    if(Math.abs(p-s.lastP)<0.0008) continue; /* nichts Neues -> kein Style-Write */
+    s.lastP=p;
+    var st=s.el.style;
+    st.setProperty('--p',p.toFixed(4));
+
+    /* Sektionstypische Phasen */
+    if(s.el.classList.contains('act-hero')){
+      st.setProperty('--v1',smooth(sub(p,0.02,0.32)).toFixed(4));      /* Bike aus dem Dunkel */
+      st.setProperty('--v2',smooth(sub(p,0.16,0.38)).toFixed(4));      /* Typo */
+      st.setProperty('--sw',sub(p,0.36,0.62).toFixed(4));               /* Lichtfahrt */
+      st.setProperty('--w1',smooth(sub(p,0.55,1)).toFixed(4));          /* Abgang */
+    }
+    if(s.el.classList.contains('act-tech')){
+      st.setProperty('--v1',smooth(sub(p,0.02,0.12)).toFixed(4));
+    }
+    if(s.el.classList.contains('act-final')){
+      st.setProperty('--v1',smooth(sub(p,0.02,0.3)).toFixed(4));        /* Bike kommt zurück */
+      st.setProperty('--v2',smooth(sub(p,0.26,0.48)).toFixed(4));       /* Typo + CTA */
+      st.setProperty('--w2',smooth(sub(p,0.72,1)).toFixed(4));          /* langsames Verschwinden */
+    }
+    if(s.el.classList.contains('act-detail')){
+      /* Lichtfahrt läuft pro Detailfenster einmal durch */
+      var d=(p*3)%1;
+      st.setProperty('--dsw',d.toFixed(4));
+    }
+
+    /* Elemente mit Ein-/Ausblendfenster */
+    for(var j=0;j<s.items.length;j++){
+      var it=s.items[j];
+      var vin=smooth(sub(p,it.i0,it.i1));
+      var vout=1-smooth(sub(p,it.o0,it.o1));
+      var v=Math.min(vin,vout);
+      var nst=it.node.style;
+      nst.setProperty('--v',v.toFixed(4));
+      if(it.node.hasAttribute('data-kb')){
+        nst.setProperty('--w',clamp(sub(p,it.i0,it.o1)).toFixed(4));
+      }
+    }
+  }
+}
+
+window.addEventListener('scroll',onScroll,{passive:true});
+window.addEventListener('resize',function(){measure();onScroll();},{passive:true});
+window.addEventListener('orientationchange',function(){setTimeout(function(){measure();onScroll();},250)});
+window.addEventListener('load',function(){measure();onScroll();});
+measure();
+update();
+})();
+</script>
+<script src="tracking.js"></script>
+</body>
+</html>
