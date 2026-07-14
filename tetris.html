@@ -510,6 +510,27 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   .tab-ind{transition:none}
 }
 
+
+/* ---------- Warm Pass: Glut statt Flachschwarz ---------- */
+:root{
+  --line:rgba(217,140,90,0.11);
+  --line-strong:rgba(217,140,90,0.22);
+  --panel:rgba(26,19,14,0.72);
+}
+body{
+  background-color:#0b0908;
+  background-image:
+    radial-gradient(1100px 560px at 50% -8%,rgba(217,90,31,0.14),transparent 62%),
+    radial-gradient(850px 520px at 88% 108%,rgba(184,70,14,0.09),transparent 60%),
+    linear-gradient(180deg,#0e0a08 0%,#090706 55%,#070605 100%);
+  background-attachment:fixed;
+}
+.header{background:rgba(14,10,8,0.78);border-bottom-color:var(--line)}
+.card{
+  background:linear-gradient(180deg,rgba(32,23,17,0.72) 0%,rgba(18,13,10,0.78) 100%);
+  border-color:var(--line);
+}
+
 </style>
 </head>
 <body>
@@ -639,7 +660,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 var state = {
   numPlayers:2, mode:'ft1', drawAllowed:false,
   players:[], schedule:[], results:{},
-  started:false, finished:false, seed:0
+  started:false, finished:false, seed:0,
+  bullHistory:{}
 };
 var ui = { tab:'board', expanded:null };
 var STORAGE_KEY = 'dart_lounge_state_v1';
@@ -676,6 +698,7 @@ function loadState(){
       state=s;
       if(typeof state.finished==='undefined') state.finished=false;
       if(typeof state.seed==='undefined') state.seed=1;
+      if(typeof state.bullHistory==='undefined') state.bullHistory={};
       return true;
     }
     return false;
@@ -741,7 +764,23 @@ function calculateTable(){
   });
   return table;
 }
+/* Faires Ausbullen:
+   1. Wer im Turnier bisher SELTENER ausbullen musste, ist dran.
+   2. Bei Gleichstand: der in der Live-Tabelle besser Platzierte.
+   3. Immer noch gleich: stabiler Zufall pro Spiel und Turnier.
+   Zuweisungen werden beim Eintragen des Ergebnisses eingefroren. */
+function bullCount(idx){
+  var c=0;
+  for(var k in state.bullHistory){
+    if(state.bullHistory[k]===idx) c++;
+  }
+  return c;
+}
 function getBullOffPlayer(m){
+  var key=m.p1+'_'+m.p2;
+  if(state.bullHistory&&typeof state.bullHistory[key]!=='undefined') return state.bullHistory[key];
+  var c1=bullCount(m.p1),c2=bullCount(m.p2);
+  if(c1!==c2) return (c1<c2)?m.p1:m.p2;
   var table=calculateTable();
   var t1=null,t2=null;
   for(var i=0;i<table.length;i++){
@@ -751,7 +790,7 @@ function getBullOffPlayer(m){
   if(!t1||!t2) return null;
   var a=t1.row,b=t2.row;
   if(a.points===b.points&&a.diff===b.diff&&a.legsFor===b.legsFor){
-    return (stableHash(m.p1+'_'+m.p2)%2===0)?m.p1:m.p2;
+    return (stableHash(key)%2===0)?m.p1:m.p2;
   }
   return (t1.pos<t2.pos)?m.p1:m.p2;
 }
@@ -804,7 +843,12 @@ function formFor(playerIdx){
 
 /* ---------- Ergebnis speichern / löschen ---------- */
 function setResult(m,opt){
-  state.results[m.p1+'_'+m.p2]={s1:opt.s1,s2:opt.s2};
+  var k=m.p1+'_'+m.p2;
+  if(typeof state.bullHistory[k]==='undefined'){
+    var bo=getBullOffPlayer(m);
+    if(bo!==null) state.bullHistory[k]=bo;
+  }
+  state.results[k]={s1:opt.s1,s2:opt.s2};
   state.finished=false;
   ui.expanded=null;
   saveState();
@@ -814,6 +858,7 @@ function setResult(m,opt){
 }
 function deleteResult(key){
   delete state.results[key];
+  delete state.bullHistory[key];
   state.finished=false;
   ui.expanded=null;
   saveState();
@@ -1224,6 +1269,7 @@ function startTournament(){
   state.players=shuffleArray(names);
   state.schedule=generateRoundRobin(state.players);
   state.results={};
+  state.bullHistory={};
   state.started=true;
   state.finished=false;
   state.seed=Date.now()%2147483647;
@@ -1238,7 +1284,7 @@ function newTournament(){
   state={
     numPlayers:state.numPlayers||2,mode:state.mode||'ft1',
     drawAllowed:state.drawAllowed||false,players:[],schedule:[],results:{},
-    started:false,finished:false,seed:0
+    started:false,finished:false,seed:0,bullHistory:{}
   };
   for(var i=0;i<state.numPlayers;i++) state.players[i]='Spieler '+(i+1);
   ui.tab='board';ui.expanded=null;
@@ -1256,7 +1302,7 @@ function deleteNight(){
   yes.className='btn btn-danger';yes.textContent='Ja, löschen';
   yes.addEventListener('click',function(){
     clearState();
-    state={numPlayers:2,mode:'ft1',drawAllowed:false,players:['Spieler 1','Spieler 2'],schedule:[],results:{},started:false,finished:false,seed:0};
+    state={numPlayers:2,mode:'ft1',drawAllowed:false,players:['Spieler 1','Spieler 2'],schedule:[],results:{},started:false,finished:false,seed:0,bullHistory:{}};
     ui.tab='board';ui.expanded=null;
     overlay.remove();renderSetup();
     toast('Spielabend gelöscht');
