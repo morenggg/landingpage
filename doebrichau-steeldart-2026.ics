@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Dorfdulli Racing//Events//DE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:doebrichau-steeldart-2026@dorfdulliracing.de
+DTSTAMP:20260714T190000Z
+DTSTART;TZID=Europe/Berlin:20260829T160000
+DTEND;TZID=Europe/Berlin:20260829T220000
+SUMMARY:3. Döbrichauer Steeldart-Zeltturnier
+DESCRIPTION:Vorrunde im Modus 501 Double Out. Anschließend K.-o.-Runde.
+LOCATION:Im Dorfe 1\, 04886 Döbrichau
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR
