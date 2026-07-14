@@ -1120,29 +1120,6 @@
       navigator.serviceWorker.register("/sw.js");
     }
   </script>
-  <script src="tracking.js"></script>
-  <audio id="background-audio" loop preload="auto">
-  <source src="images/background.mp3" type="audio/mpeg">
-</audio>
-
-<script>
-const backgroundAudio = document.getElementById("background-audio");
-
-function startAudio() {
-    backgroundAudio.volume = 0.2;
-    backgroundAudio.play().catch(() => {});
-
-    setTimeout(() => {
-        backgroundAudio.pause();
-        backgroundAudio.currentTime = 0;
-    }, 3000);
-
-    document.removeEventListener("click", startAudio);
-    document.removeEventListener("touchstart", startAudio);
-}
-
-document.addEventListener("click", startAudio);
-document.addEventListener("touchstart", startAudio);
 </script>
 </body>
 </html>
