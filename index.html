@@ -783,7 +783,7 @@
         <span class="menu-link-meta" id="member-link-meta">Login</span>
       </a>
 
-      <a class="menu-link" href="/404.html" title="Coming Soon – Bild wird geladen">
+      <a class="menu-link" href="404.html">
         <span class="menu-link-label">Gallery</span>
         <span class="menu-link-meta">Soon</span>
       </a>
@@ -979,8 +979,8 @@
       const emailInput = document.getElementById('newsletter-email');
       const message = document.getElementById('newsletter-message');
 
-      const today = new Date().toISOString().slice(0, 10);
       const storageKey = 'newsletter_popup_last_seen';
+      const popupCooldownDays = 30;
 
       async function trackEvent(type) {
         if (!window.newsletterSupabase) return;
@@ -1004,12 +1004,13 @@
       }
 
       function closePopup() {
-        localStorage.setItem(storageKey, today);
+        localStorage.setItem(storageKey, new Date().toISOString());
         popup.style.display = 'none';
       }
 
       const lastSeen = localStorage.getItem(storageKey);
-      if (lastSeen !== today) {
+      const daysSince = lastSeen ? (Date.now() - new Date(lastSeen).getTime()) / 86400000 : Infinity;
+      if (daysSince >= popupCooldownDays) {
         popup.style.display = 'flex';
         trackEvent('view');
       }
@@ -1026,7 +1027,7 @@
         message.textContent = result.message;
         if (result.ok) {
           await trackEvent('signup');
-          localStorage.setItem(storageKey, today);
+          localStorage.setItem(storageKey, new Date().toISOString());
           setTimeout(() => { popup.style.display = 'none'; }, 700);
         }
       });
@@ -1120,6 +1121,6 @@
       navigator.serviceWorker.register("/sw.js");
     }
   </script>
-</script>
+  <script src="tracking.js"></script>
 </body>
 </html>
