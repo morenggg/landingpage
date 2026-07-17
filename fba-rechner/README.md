@@ -26,6 +26,9 @@ bleiben lokal im Browser (`localStorage`).
 - **Szenarien**: Beliebig viele Produkte speichern, laden, löschen und in
   einer Vergleichstabelle gegenüberstellen.
 - **Intelligente Bewertung**: Ampel (✅ / ⚠️ / ❌) mit konkreten Begründungen.
+- **Erklärvideo**: 79-sekündiges Produktvideo (mit Remotion gerendert) in
+  einer Video-Karte unter dem Header; öffnet ein barrierefreies Modal
+  (ESC/Backdrop schließt, Focus-Trap, Lazy Loading, MP4 + WebM-Fallback).
 - Dark & Light Mode, responsive, ohne Fremdbibliotheken.
 
 ## Architektur
@@ -34,11 +37,17 @@ bleiben lokal im Browser (`localStorage`).
 fba-rechner/
 ├── index.html        Struktur & Layout (Karten, Formulare, Diagramm-Container)
 ├── css/styles.css    Design-System (CSS-Variablen für Light/Dark, Karten, KPIs)
+├── assets/           Erklärvideo (explainer.mp4/.webm) + Posterbild
 └── js/
     ├── calc.js       Reiner Berechnungskern — pure functions, kein DOM
     ├── charts.js     SVG-Liniendiagramme mit Crosshair-Tooltip, keine Libs
-    └── app.js        UI-Schicht: State, Event-Wiring, Rendering, localStorage
+    ├── app.js        UI-Schicht: State, Event-Wiring, Rendering, localStorage
+    └── video.js      Video-Karte + barrierefreies Modal fürs Erklärvideo
 ```
+
+Das Erklärvideo wird aus `../fba-rechner-video/` (Remotion, React/TypeScript)
+gerendert: `npm run render` erzeugt das MP4, `npm run poster` das Posterbild —
+beide landen direkt in `fba-rechner/assets/`.
 
 Die strikte Trennung (Berechnung ↔ Diagramme ↔ UI) hält den Code wartbar
 und testbar: `calc.js` ist vollständig DOM-frei.

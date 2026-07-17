@@ -38,6 +38,24 @@
 
   <main class="page">
 
+    <!-- ===================== Erklärvideo ===================== -->
+    <section class="video-section" aria-labelledby="video-heading">
+      <div class="video-head">
+        <h2 id="video-heading">So funktioniert der Rechner</h2>
+        <p>Erhalte in nur 90 Sekunden einen Überblick über alle Funktionen.</p>
+      </div>
+      <button type="button" class="video-card" id="video-open" aria-haspopup="dialog">
+        <img class="video-poster" src="assets/explainer-poster.jpg"
+             alt="" loading="lazy" width="1920" height="1080">
+        <span class="video-scrim" aria-hidden="true"></span>
+        <span class="video-play" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+        </span>
+        <span class="video-meta" aria-hidden="true">Video ansehen · 79 Sek.</span>
+        <span class="sr-only">Erklärvideo abspielen: So funktioniert der Rechner (79 Sekunden)</span>
+      </button>
+    </section>
+
     <!-- ===================== Eingaben + Ergebnisse ===================== -->
     <div class="layout">
       <div class="col col-inputs">
@@ -249,6 +267,22 @@
     </footer>
   </main>
 
+  <!-- Erklärvideo-Modal -->
+  <div class="video-modal" id="video-modal" role="dialog" aria-modal="true"
+       aria-label="Erklärvideo: So funktioniert der Rechner" hidden>
+    <div class="video-modal-backdrop" data-video-close></div>
+    <div class="video-modal-dialog">
+      <button type="button" class="video-modal-close" id="video-modal-close" aria-label="Video schließen">✕</button>
+      <video id="explainer-video" controls playsinline preload="none"
+             poster="assets/explainer-poster.jpg">
+        <source src="assets/explainer.mp4" type="video/mp4">
+        <source src="assets/explainer.webm" type="video/webm">
+        Dein Browser kann dieses Video nicht abspielen.
+      </video>
+    </div>
+  </div>
+
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/video.js"></script>
 </body>
 </html>
