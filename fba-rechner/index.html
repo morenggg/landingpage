@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FBA Kapital — Startkapital- & Liquiditätsrechner für Amazon FBA</title>
+  <meta name="description" content="Berechne vor dem ersten Verkauf, wie viel Startkapital dein Amazon-FBA-Produkt wirklich braucht und ob es sich selbst trägt.">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Theme so früh wie möglich setzen, um Flackern zu vermeiden
+    (function () {
+      const saved = localStorage.getItem('fba-theme');
+      const theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">◨</span>
+        <div>
+          <span class="brand-name">FBA&nbsp;Kapital</span>
+          <span class="brand-sub">Startkapital- &amp; Liquiditätsrechner</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="btn-save-scenario" class="btn btn-primary" type="button">＋ Szenario speichern</button>
+        <button id="btn-reset" class="btn btn-ghost" type="button" title="Alle Eingaben zurücksetzen">Zurücksetzen</button>
+        <button id="btn-theme" class="btn btn-icon" type="button" aria-label="Dark / Light Mode umschalten">
+          <span class="theme-icon-light" aria-hidden="true">☀</span>
+          <span class="theme-icon-dark" aria-hidden="true">☾</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- ===================== Eingaben + Ergebnisse ===================== -->
+    <div class="layout">
+      <div class="col col-inputs">
+
+        <section class="card" id="card-product">
+          <header class="card-head">
+            <h2>1&nbsp;·&nbsp;Produkt</h2>
+            <p class="card-sub">Basisdaten deines Produkts</p>
+          </header>
+          <div class="form-grid">
+            <label class="field span-2">
+              <span>Produktname</span>
+              <input type="text" id="p-name" placeholder="z. B. Edelstahl-Trinkflasche 750 ml" autocomplete="off">
+            </label>
+            <label class="field">
+              <span>Verkaufspreis (€)</span>
+              <input type="number" id="p-price" min="0" step="0.01" inputmode="decimal" placeholder="24,99">
+            </label>
+            <label class="field">
+              <span>Einkaufspreis / Stück (€)</span>
+              <input type="number" id="p-buy" min="0" step="0.01" inputmode="decimal" placeholder="5,20">
+            </label>
+            <label class="field">
+              <span>Stückzahl (1.&nbsp;Bestellung)</span>
+              <input type="number" id="p-qty" min="0" step="1" inputmode="numeric" placeholder="100">
+            </label>
+            <label class="field">
+              <span>Kategorie</span>
+              <select id="p-cat"></select>
+            </label>
+            <div class="field span-2">
+              <span>Maße (cm) — L × B × H</span>
+              <div class="dims-row">
+                <input type="number" id="p-len" min="0" step="0.1" inputmode="decimal" placeholder="L" aria-label="Länge in cm">
+                <span class="dims-x">×</span>
+                <input type="number" id="p-wid" min="0" step="0.1" inputmode="decimal" placeholder="B" aria-label="Breite in cm">
+                <span class="dims-x">×</span>
+                <input type="number" id="p-hei" min="0" step="0.1" inputmode="decimal" placeholder="H" aria-label="Höhe in cm">
+              </div>
+            </div>
+            <label class="field">
+              <span>Gewicht (g)</span>
+              <input type="number" id="p-weight" min="0" step="1" inputmode="numeric" placeholder="350">
+            </label>
+            <label class="field span-2">
+              <span>Amazon-Link oder ASIN <em class="opt">optional</em></span>
+              <input type="text" id="p-asin" placeholder="https://www.amazon.de/dp/… oder B0…" autocomplete="off">
+              <small class="hint">Wird gespeichert; automatischer Datenimport folgt mit der SP-API-Anbindung.</small>
+            </label>
+          </div>
+          <p class="tier-note" id="tier-note" hidden></p>
+        </section>
+
+        <section class="card" id="card-costs">
+          <header class="card-head">
+            <h2>2&nbsp;·&nbsp;Kosten</h2>
+            <p class="card-sub">Automatisch vorgeschlagen — jederzeit überschreibbar. <button type="button" id="btn-all-auto" class="link-btn">Alle Vorschläge übernehmen</button></p>
+          </header>
+          <div class="form-grid" id="costs-grid">
+            <!-- Kostenfelder werden von app.js erzeugt -->
+          </div>
+          <p class="hint">Provision &amp; FBA-Gebühr sind Schätzwerte auf Basis vereinfachter Amazon.de-Tarife.</p>
+        </section>
+
+        <section class="card" id="card-capital">
+          <header class="card-head">
+            <h2>3&nbsp;·&nbsp;Kapital</h2>
+            <p class="card-sub">Für Startkapitalrechnung &amp; Simulation</p>
+          </header>
+          <div class="form-grid">
+            <label class="field">
+              <span>Verfügbares Kapital (€) <em class="opt">optional</em></span>
+              <input type="number" id="k-capital" min="0" step="50" inputmode="decimal" placeholder="z. B. 3000">
+            </label>
+            <label class="field">
+              <span>Sicherheitspuffer (%)</span>
+              <input type="number" id="k-buffer" min="0" max="100" step="1" inputmode="numeric" value="10">
+            </label>
+            <label class="field span-2">
+              <span>Max. Absatz pro Zyklus (Stück) <em class="opt">optional — begrenzt das Wachstum in der Simulation</em></span>
+              <input type="number" id="k-maxqty" min="0" step="10" inputmode="numeric" placeholder="unbegrenzt">
+            </label>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="col col-results">
+
+        <section class="card rating-card" id="card-rating" data-level="medium">
+          <div class="rating-head">
+            <span class="rating-badge" id="rating-badge">⚠</span>
+            <div>
+              <h2 id="rating-title">Bewertung</h2>
+              <p class="card-sub">Automatische Einschätzung deines Produkts</p>
+            </div>
+          </div>
+          <ul class="rating-points" id="rating-points"></ul>
+        </section>
+
+        <section class="card" id="card-kpis">
+          <header class="card-head">
+            <h2>Ergebnisse</h2>
+            <p class="card-sub" id="kpi-context">pro Verkaufsrunde</p>
+          </header>
+          <div class="kpi-grid">
+            <div class="kpi"><span class="kpi-label">Gewinn pro Stück</span><strong class="kpi-value" id="kpi-profit-unit">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Gewinn gesamt</span><strong class="kpi-value" id="kpi-profit-total">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Umsatz</span><strong class="kpi-value" id="kpi-revenue">–</strong></div>
+            <div class="kpi"><span class="kpi-label">ROI</span><strong class="kpi-value" id="kpi-roi">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Marge</span><strong class="kpi-value" id="kpi-margin">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Kapitalbindung</span><strong class="kpi-value" id="kpi-bound">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Gewinnquote <small title="Gewinn je eingesetztem Euro Gesamtkosten">ⓘ</small></span><strong class="kpi-value" id="kpi-ratio">–</strong></div>
+            <div class="kpi"><span class="kpi-label">Kosten pro Stück</span><strong class="kpi-value" id="kpi-cost-unit">–</strong></div>
+          </div>
+          <div class="cost-bar-wrap">
+            <h3 class="mini-title">Wohin geht der Verkaufspreis?</h3>
+            <div class="cost-bar" id="cost-bar" role="img" aria-label="Kostenverteilung pro Stück"></div>
+            <div class="cost-legend" id="cost-legend"></div>
+          </div>
+        </section>
+
+        <section class="card hero-card" id="card-startcapital">
+          <header class="card-head">
+            <h2>Startkapitalrechner</h2>
+            <p class="card-sub">Wie viel Geld brauchst du wirklich?</p>
+          </header>
+          <p class="hero-number" id="sc-number">–</p>
+          <p class="hero-caption">empfohlenes Startkapital inkl. Sicherheitspuffer</p>
+          <p class="sc-story" id="sc-story"></p>
+          <div class="sc-breakdown" id="sc-breakdown"></div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ===================== Liquiditätssimulation ===================== -->
+    <section class="card wide" id="card-simulation">
+      <header class="card-head">
+        <h2>Liquiditätssimulation</h2>
+        <p class="card-sub">Voller Gewinn wird reinvestiert — Entwicklung über <span id="sim-cycles-label">12</span> Verkaufszyklen, startend mit <strong id="sim-start-label">–</strong></p>
+      </header>
+      <div class="charts-grid">
+        <figure class="chart-figure">
+          <figcaption><i class="dot" style="background:var(--series-capital)"></i>Kapitalentwicklung</figcaption>
+          <div id="chart-capital"></div>
+        </figure>
+        <figure class="chart-figure">
+          <figcaption><i class="dot" style="background:var(--series-profit)"></i>Gewinn pro Zyklus</figcaption>
+          <div id="chart-profit"></div>
+        </figure>
+        <figure class="chart-figure">
+          <figcaption><i class="dot" style="background:var(--series-qty)"></i>Bestellmenge pro Zyklus</figcaption>
+          <div id="chart-qty"></div>
+        </figure>
+      </div>
+      <div class="table-scroll">
+        <table class="sim-table" id="sim-table">
+          <thead>
+            <tr><th>Zyklus</th><th>Kapital zu Beginn</th><th>Bestellmenge</th><th>Umsatz</th><th>Gewinn</th><th>Kapital am Ende</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="sim-note" hidden></p>
+    </section>
+
+    <!-- ===================== Risikoanalyse ===================== -->
+    <section class="card wide" id="card-risk">
+      <header class="card-head">
+        <div class="head-row">
+          <div>
+            <h2>Risikoanalyse</h2>
+            <p class="card-sub">Was passiert, wenn sich die Bedingungen verschlechtern? Alle Ergebnisse oben aktualisieren sich sofort.</p>
+          </div>
+          <div class="head-actions">
+            <span class="risk-active-badge" id="risk-badge" hidden>Risikoszenario aktiv</span>
+            <button type="button" class="btn btn-ghost" id="btn-risk-reset">Regler zurücksetzen</button>
+          </div>
+        </div>
+      </header>
+      <div class="risk-grid" id="risk-grid">
+        <!-- Slider werden von app.js erzeugt -->
+      </div>
+      <div class="risk-compare" id="risk-compare"></div>
+    </section>
+
+    <!-- ===================== Szenarien ===================== -->
+    <section class="card wide" id="card-scenarios">
+      <header class="card-head">
+        <h2>Szenarien</h2>
+        <p class="card-sub">Speichere Produkte und vergleiche sie direkt miteinander.</p>
+      </header>
+      <div class="scenario-list" id="scenario-list">
+        <p class="empty-note">Noch keine Szenarien gespeichert. Fülle die Eingaben aus und klicke oben auf „Szenario speichern“.</p>
+      </div>
+      <div class="table-scroll" id="scenario-compare-wrap" hidden>
+        <table class="sim-table compare-table" id="scenario-compare">
+          <thead>
+            <tr><th>Szenario</th><th>Verkaufspreis</th><th>Gewinn/Stück</th><th>Marge</th><th>ROI</th><th>Startkapital</th><th>Selbsttragend</th><th>Bewertung</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <p>Alle Berechnungen sind Schätzungen zur Orientierung — kein Ersatz für die tatsächlichen Amazon-Gebühren deines Verkäuferkontos. Daten werden nur lokal in deinem Browser gespeichert.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
