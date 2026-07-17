@@ -13,7 +13,7 @@ const TOTAL = DURATIONS.reduce((a, b) => a + b, 0); // 2370 Frames ≈ 79 s
  * Auf true stellen, sobald die Audiodateien mit
  * `ELEVENLABS_API_KEY=... node voiceover/generate-voice.mjs` erzeugt wurden.
  */
-const INCLUDE_VOICE = false;
+const INCLUDE_VOICE = true;
 
 /** [Datei, Startframe] — Starts passend zu den Szenen (30 fps). */
 const VOICE_SEGMENTS: Array<[string, number]> = [

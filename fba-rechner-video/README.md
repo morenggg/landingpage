@@ -33,6 +33,32 @@ npm run render   # → ../fba-rechner/assets/explainer.mp4
 npm run poster   # → ../fba-rechner/assets/explainer-poster.jpg
 ```
 
+## Vertonung (Voiceover)
+
+Das Video hat eine deutsche Sprecherstimme (ElevenLabs, Stimme „Sarah",
+Modell `eleven_multilingual_v2`). Text und Timing pro Szene stehen in
+`voiceover/script.md`. Die fertigen Audiosegmente liegen in
+`assets/voice/*.mp3` und werden in `Root.tsx` über `INCLUDE_VOICE` +
+`VOICE_SEGMENTS` framegenau in die Timeline eingebunden.
+
+Neu generieren (z. B. bei Textänderungen):
+
+```bash
+ELEVENLABS_API_KEY=... node voiceover/generate-voice.mjs
+```
+
+Der Key wird nur aus der Umgebungsvariable gelesen, nie geloggt oder
+gespeichert. Nach dem Generieren die Segmentlängen gegen die Zeitfenster in
+`voiceover/script.md` prüfen (`npx remotion ffprobe assets/voice/<segment>.mp3`)
+und bei Bedarf den Text kürzen — nicht die Sprechgeschwindigkeit ändern.
+Danach neu rendern und die WebM-Fallback-Version neu erzeugen:
+
+```bash
+npx remotion ffmpeg -i ../fba-rechner/assets/explainer.mp4 \
+  -c:v libvpx-vp9 -crf 38 -b:v 0 -c:a libopus -b:a 128k -y \
+  ../fba-rechner/assets/explainer.webm
+```
+
 WebM-Fallback (für Browser ohne H.264) nach dem Render:
 
 ```bash
