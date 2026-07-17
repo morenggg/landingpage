@@ -24,11 +24,11 @@ if (!KEY) {
   process.exit(1);
 }
 
-// Standardstimme "Sarah" (ElevenLabs Premade Voice) — warm, professionell,
-// gut geeignet für multilinguale SaaS-Erklärvideos. Der verwendete Schlüssel
-// hat keine Berechtigung zum Auflisten der Stimmen (voices_read), daher fest
-// hinterlegt statt dynamisch abgefragt.
-const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
+// Standardstimme "George" (ElevenLabs Premade Voice) — warm, männlich,
+// seriös, gut geeignet für multilinguale SaaS-Erklärvideos. Der verwendete
+// Schlüssel hat keine Berechtigung zum Auflisten der Stimmen (voices_read),
+// daher fest hinterlegt statt dynamisch abgefragt.
+const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 
 // Segmente — Texte und Zeitfenster siehe voiceover/script.md
 const SEGMENTS = [
@@ -68,7 +68,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const outDir = join(root, 'assets', 'voice');
 mkdirSync(outDir, { recursive: true });
 
-console.log(`Stimme: Sarah (${VOICE_ID})`);
+console.log(`Stimme: George (${VOICE_ID})`);
 for (const [name, text] of SEGMENTS) {
   const file = join(outDir, `${name}.mp3`);
   curlPost(
