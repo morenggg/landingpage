@@ -14,6 +14,13 @@ import { renderDiagnoseList, renderDiagnoseFlow } from './views/diagnose.js';
 import { renderPlanerList, renderPlanerKit } from './views/planer.js';
 import { renderSchrauben } from './views/schrauben.js';
 import { renderEinstellungen } from './views/einstellungen.js';
+import { renderTeileList, renderTeilDetail } from './views/teile.js';
+import { renderSuche } from './views/suche.js';
+import {
+  renderMotorenList, renderMotorDetail,
+  renderWartungList, renderWartungDetail,
+  renderReparaturList, renderReparaturDetail,
+} from './views/wissen.js';
 
 const viewRoot = document.getElementById('view-root');
 
@@ -21,7 +28,8 @@ const TABS = [
   { id: '', name: 'Start', icon: 'home', match: (p) => p === '' },
   { id: 'garage', name: 'Garage', icon: 'garage', match: (p) => p.startsWith('garage') || p.startsWith('fahrzeug') },
   { id: 'diagnose', name: 'Diagnose', icon: 'diag', match: (p) => p.startsWith('diagnose') },
-  { id: 'technik', name: 'Technik', icon: 'engine', match: (p) => p.startsWith('technik') || p.startsWith('schrauben') },
+  { id: 'technik', name: 'Technik', icon: 'engine', match: (p) =>
+      ['technik', 'schrauben', 'teile', 'suche', 'motor', 'wartung', 'reparatur'].some((prefix) => p.startsWith(prefix)) },
   { id: 'mehr', name: 'Mehr', icon: 'more', match: (p) => p.startsWith('mehr') || p.startsWith('planer') },
 ];
 
@@ -78,6 +86,15 @@ route('diagnose/:flowId', (p) => mount(renderDiagnoseFlow, p));
 route('planer', () => mount(renderPlanerList));
 route('planer/:kitId', (p) => mount(renderPlanerKit, p));
 route('schrauben', () => mount(renderSchrauben));
+route('teile', () => mount(renderTeileList));
+route('teile/:partId', (p) => mount(renderTeilDetail, p));
+route('suche', () => mount(renderSuche));
+route('motoren', () => mount(renderMotorenList));
+route('motor/:id', (p) => mount(renderMotorDetail, p));
+route('wartung', () => mount(renderWartungList));
+route('wartung/:id', (p) => mount(renderWartungDetail, p));
+route('reparaturen', () => mount(renderReparaturList));
+route('reparatur/:id', (p) => mount(renderReparaturDetail, p));
 route('mehr', () => mount(renderEinstellungen));
 setNotFound(() => mount(renderDashboard));
 

@@ -3,8 +3,9 @@
  * Durchsuchbare Drehmoment- und Schrauben-Datenbank mit Gruppenfilter.
  */
 
-import { el, icon } from '../ui.js';
+import { el, icon, verificationBadge } from '../ui.js';
 import { FASTENERS, FASTENER_GROUPS } from '../data/fasteners.js';
+import { componentByPath, getPart, getTool } from '../knowledge.js';
 
 export function renderSchrauben() {
   const wrap = el('div', { class: 'view' });
@@ -59,6 +60,19 @@ export function renderSchrauben() {
       return;
     }
     for (const f of rows) {
+      const comp = f.componentPath ? componentByPath(f.componentPath) : null;
+      const links = [
+        comp && { icon: 'gearbox', label: comp.node.name, href: `#/technik/${comp.path}` },
+        ...(f.partIds || []).map((pid) => {
+          const p = getPart(pid);
+          return p && { icon: 'box', label: p.shortName || p.name, href: `#/teile/${p.id}` };
+        }),
+        ...(f.toolIds || []).map((tid) => {
+          const t = getTool(tid);
+          return t && { icon: 'wrench', label: t.name, href: null };
+        }),
+      ].filter(Boolean);
+
       listWrap.append(
         el('div', { class: 'card fastener-card' },
           el('div', { class: 'fastener-top' },
@@ -69,9 +83,17 @@ export function renderSchrauben() {
             el('span', { class: 'badge' }, f.thread),
             f.sw !== '—' ? el('span', { class: 'badge' }, f.sw) : null,
             f.grade !== '—' ? el('span', { class: 'badge' }, `Festigkeit ${f.grade}`) : null,
-            el('span', { class: 'badge subtle' }, f.fastener)
+            el('span', { class: 'badge subtle' }, f.fastener),
+            f.locking ? el('span', { class: 'badge subtle' }, `Sicherung: ${f.locking}`) : null,
+            f.reuse ? el('span', { class: 'badge subtle' }, f.reuse) : null,
+            verificationBadge(f.verificationStatus)
           ),
-          f.note && f.note !== '—' ? el('p', { class: 'small muted', style: 'margin:8px 0 0' }, f.note) : null
+          f.note && f.note !== '—' ? el('p', { class: 'small muted', style: 'margin:8px 0 0' }, f.note) : null,
+          links.length
+            ? el('div', { class: 'link-chips', style: 'margin-top:10px' },
+                links.map((l) => el(l.href ? 'a' : 'span', { class: 'chip' + (l.href ? '' : ' static'), href: l.href || null },
+                  icon(l.icon, 13), l.label)))
+            : null
         )
       );
     }

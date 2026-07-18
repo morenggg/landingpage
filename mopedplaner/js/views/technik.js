@@ -4,8 +4,12 @@
  * Motor → Kupplung → Kupplungskorb → … mit Details je Ebene.
  */
 
-import { el, icon } from '../ui.js';
+import { el, icon, verificationBadge } from '../ui.js';
 import { COMPONENT_TREE, findComponent } from '../data/components.js';
+import {
+  partsForComponent, maintenanceForComponent, repairsForComponent,
+  bearingsForComponent, fastenersForComponent,
+} from '../knowledge.js';
 
 export function renderTechnik({ path = [] }) {
   const wrap = el('div', { class: 'view' });
@@ -39,7 +43,21 @@ export function renderTechnik({ path = [] }) {
         )
       );
     }
-    wrap.append(grid, disclaimer());
+    wrap.append(grid);
+
+    // Wissensdatenbank-Einstiege
+    const kb = section('Wissensdatenbank');
+    kb.append(
+      el('div', { class: 'stack' },
+        kbRow('search', 'Technische Suche', 'Alles durchsuchen – Teile, Schrauben, Reparaturen …', '#/suche'),
+        kbRow('box', 'Ersatzteile', 'Katalog mit Kompatibilität & Verknüpfungen', '#/teile'),
+        kbRow('engine', 'Motoren', 'Alle Motorfamilien von Rh 50 bis M741', '#/motoren'),
+        kbRow('calendar', 'Wartungsplan', 'Intervalle, Werkzeug, Schritte', '#/wartung'),
+        kbRow('tools', 'Reparaturen', 'Geführte Reparaturen mit Sollwerten', '#/reparaturen'),
+        kbRow('nut', 'Schraubenfinder', 'Drehmomente & Gewinde', '#/schrauben')
+      )
+    );
+    wrap.append(kb, disclaimer());
     return wrap;
   }
 
@@ -120,8 +138,28 @@ export function renderTechnik({ path = [] }) {
     wrap.append(sec);
   }
 
-  // Ersatzteile
-  if (node.parts?.length) {
+  // Passende Ersatzteile aus dem Katalog (verknüpft, klickbar)
+  const currentPath = path.join('/');
+  const linkedParts = partsForComponent(currentPath);
+  if (linkedParts.length) {
+    const sec = section('Passende Ersatzteile');
+    const list = el('div', { class: 'stack' });
+    for (const part of linkedParts) {
+      const price = part.estimatedPriceRange;
+      list.append(
+        el('a', { class: 'row-item', href: `#/teile/${part.id}` },
+          icon('box', 18, 'row-lead accent-lead'),
+          el('div', { class: 'row-main' },
+            el('span', {}, part.name),
+            el('span', { class: 'chip-wrap tight' }, verificationBadge(part.verificationStatus))),
+          el('div', { style: 'display:grid;justify-items:end;gap:4px' },
+            price?.min != null ? el('span', { class: 'part-price small' }, `${price.min}–${price.max} €`) : null,
+            icon('chevR', 16, 'muted'))));
+    }
+    sec.append(list);
+    wrap.append(sec);
+  } else if (node.parts?.length) {
+    // Fallback: unverknüpfte Alt-Liste aus dem Bauteil-Baum
     const sec = section('Typische Ersatzteile');
     const table = el('div', { class: 'card table-card' });
     for (const p of node.parts) {
@@ -136,8 +174,44 @@ export function renderTechnik({ path = [] }) {
     wrap.append(sec);
   }
 
+  // Verknüpfte Wartungen, Reparaturen, Lager & Dichtungen
+  linkedRows(wrap, 'Zugehörige Wartungen', 'calendar', maintenanceForComponent(currentPath)
+    .map((m) => ({ label: m.name, sub: m.interval, href: `#/wartung/${m.id}` })));
+  linkedRows(wrap, 'Zugehörige Reparaturen', 'tools', repairsForComponent(currentPath)
+    .map((r) => ({ label: r.name, sub: r.duration, href: `#/reparatur/${r.id}` })));
+  linkedRows(wrap, 'Lager & Dichtungen', 'clutch', bearingsForComponent(currentPath)
+    .map((b) => ({ label: b.name, sub: b.size || b.location || '', href: null, status: b.verificationStatus })));
+
   wrap.append(disclaimer());
   return wrap;
+}
+
+function linkedRows(wrap, title, iconName, items) {
+  if (!items.length) return;
+  const sec = section(title);
+  const list = el('div', { class: 'stack' });
+  for (const it of items) {
+    const inner = [
+      icon(iconName, 18, 'row-lead'),
+      el('div', { class: 'row-main' },
+        el('span', {}, it.label),
+        it.sub ? el('span', { class: 'muted small' }, it.sub) : null),
+      it.status ? verificationBadge(it.status) : null,
+      it.href ? icon('chevR', 16, 'muted') : null,
+    ];
+    list.append(it.href ? el('a', { class: 'row-item', href: it.href }, ...inner) : el('div', { class: 'row-item' }, ...inner));
+  }
+  sec.append(list);
+  wrap.append(sec);
+}
+
+function kbRow(iconName, title, sub, href) {
+  return el('a', { class: 'row-item', href },
+    icon(iconName, 18, 'row-lead accent-lead'),
+    el('div', { class: 'row-main' },
+      el('span', {}, title),
+      el('span', { class: 'muted small' }, sub)),
+    icon('chevR', 18, 'muted'));
 }
 
 function section(title) {

@@ -19,7 +19,12 @@ interaktives Technik-Wissen, Umbauplaner und Schraubenfinder.
 | **Technik-Explorer** | Interaktiver Drilldown Motor → Kupplung → Kupplungskorb → … mit Funktion, typischen Defekten, Aus-/Einbau-Schritten, Werkzeug, Drehmomenten und Ersatzteil-Preisen |
 | **Problemfinder** | 8 geführte Diagnose-Flows (springt nicht an, geht aus, läuft schlecht, verliert Benzin, Elektrik, Kupplung, Geräusche, Bremse) mit Rückfragen, Wahrscheinlichkeiten und Direktlinks in den Technik-Explorer |
 | **Umbauplaner** | 7 Kits (VAPE, 60 ccm, 70 ccm, LED, Originalrestauration, Alltags-Setup, Enduro) mit Teileliste, Werkzeug, Reihenfolge, Kosten, Dauer, Schwierigkeit und Rechts-Hinweisen; Übernahme als Aufgaben in ein Fahrzeug |
-| **Schraubenfinder** | Durchsuchbare Drehmoment-Datenbank (Gewinde, SW, Festigkeit, Hinweise) mit Gruppenfilter |
+| **Schraubenfinder** | Durchsuchbare Drehmoment-Datenbank (Gewinde, SW, Festigkeit, Sicherungsart, Wiederverwendbarkeit) – jede Schraube verlinkt auf Bauteil, Ersatzteile und Werkzeug |
+| **Ersatzteil-Katalog** | 35+ händlerunabhängige Teile mit Kompatibilität (Modelle/Motoren), Qualitätsstufen, Preisspannen, Prüfstatus, Volltextsuche, Filtern und Fahrzeugbezug („nur passend zu meiner S51") |
+| **Technische Suche** | Ein Suchfeld über die gesamte Wissensbasis – Treffer gruppiert nach Typ (Modelle, Motoren, Bauteile, Teile, Schrauben, Werkzeuge, Wartungen, Reparaturen, Diagnosen) |
+| **Motoren-Datenbank** | Rh 50 bis M743: Stammdaten, Gemisch, Öl, Zündung, Drehmomente, typische Defekte – je Motor verknüpft mit Modellen und Baugruppen |
+| **Wartungsplan** | 11 strukturierte Wartungen mit Intervall, Werkzeug, Material, Schritten und Warnhinweisen |
+| **Reparaturen** | 8 geführte Reparaturen mit Sollwerten, verknüpft mit Diagnosen, Teilen, Schrauben und Werkzeug |
 | **PWA** | Installierbar („Zum Startbildschirm"), läuft dank Service Worker komplett offline in der Garage |
 | **Datensicherung** | JSON-Export/-Import unter „Mehr" |
 
@@ -47,15 +52,88 @@ mopedplaner/
     ├── app.js              Bootstrap, Routen, Tab-Bar, SW-Registrierung
     ├── router.js           Hash-Router (Params, Wildcards, Soft-Refresh)
     ├── store.js            Repository-API über StorageAdapter (localStorage)
+    ├── knowledge.js        Wissensschicht: verbindet alle Datenmodule,
+    │                       zentrale Suche, Kompatibilitätslogik, Filter
     ├── ui.js               DOM-Factory, Icon-Bibliothek (Inline-SVG), Sheets, Toasts
     ├── data/               Reine Daten – ohne DOM, einzeln erweiterbar
-    │   ├── models.js       Simson-Modellkatalog
+    │   ├── models.js       Simson-Modellkatalog (mit engineIds)
+    │   ├── engines.js      Motorendatenbank (Rh 50 … M743)
     │   ├── components.js   Bauteil-Baum (Technik-Explorer)
+    │   ├── parts.js        Ersatzteil-Katalog (händlerunabhängig)
+    │   ├── offers.js       Händlerangebote (Struktur + Demo, strikt getrennt)
+    │   ├── tools.js        Werkzeugdatenbank
+    │   ├── maintenance.js  Wartungsdatenbank
+    │   ├── repairs.js      Reparaturdatenbank
+    │   ├── bearings-seals.js  Lager, Dichtungen, Wellendichtringe
+    │   ├── fasteners.js    Schrauben-/Drehmoment-Datenbank (mit IDs & Links)
     │   ├── diagnostics.js  Diagnose-Entscheidungsbäume
     │   ├── conversions.js  Umbau-Kits
-    │   └── fasteners.js    Schrauben-/Drehmoment-Datenbank
+    │   └── sources.js      Quellen & Verifikationssystem
     └── views/              Eine Datei je Screen
+        ├── … (bestehende Views)
+        ├── teile.js        Ersatzteil-Katalog + Detailansicht
+        ├── suche.js        Zentrale technische Suche
+        └── wissen.js       Motoren, Wartungen, Reparaturen (Liste + Detail)
 ```
+
+## Wissensdatenbank & Verknüpfungslogik
+
+Alle technischen Stammdaten sind statisch (ES-Module) und strikt von den
+Nutzerdaten getrennt (Nutzerdaten: `mopedplaner.v1` im localStorage,
+UI-Zustand wie „zuletzt angesehene Teile": `mopedplaner.ui.v1` –
+Export/Import betrifft ausschließlich Nutzerdaten).
+
+Verknüpft wird ausschließlich über IDs bzw. Explorer-Pfade:
+
+```
+Modell (models.js, engineIds)
+  ↔ Motor (engines.js, modelIds/componentPaths)
+    ↔ Bauteil (components.js, adressiert über Pfad 'motor/kupplung/…')
+      ↔ Schraube (fasteners.js: id, componentPath, partIds, toolIds)
+      ↔ Ersatzteil (parts.js: componentIds, compatibleModel/EngineIds,
+                    requiredFastener/ToolIds, repair/maintenance/diagnosticIds)
+        ↔ Angebot (offers.js: partId, sellerId – strikt getrennt)
+      ↔ Wartung (maintenance.js) ↔ Reparatur (repairs.js) ↔ Diagnose (diagnostics.js)
+      ↔ Lager/Dichtung (bearings-seals.js)
+```
+
+`js/knowledge.js` ist die einzige Abfrageschicht: flacher Bauteil-Baum,
+`searchKnowledge()` (gruppierte Volltextsuche), `filterParts()`,
+`partCompatibility(part, vehicle)` (nur datenbasierte Aussagen:
+direkt passend / mit Einschränkungen / nicht kompatibel / ungeprüft)
+und Rückwärts-Verweise (`usagesOfPart`).
+
+### Quellen & Prüfstatus
+
+Jeder Stammdatensatz trägt `verificationStatus`
+(`verified` / `partially-verified` / `unverified` / `disputed` / `demo`)
+und optional `sourceIds` → `sources.js`. Die UI zeigt den Status als
+Badge; unterhalb von `verified` erscheint der Hinweis „Technische
+Angaben noch nicht vollständig verifiziert." Es werden keine
+OEM-Nummern, Maße oder Kompatibilitäten erfunden – unbekannte Werte
+stehen auf `null` / „Noch nicht erfasst".
+
+### Neue Inhalte hinzufügen
+
+| Was | Wo | Wie |
+| --- | --- | --- |
+| Ersatzteil | `js/data/parts.js` | `p({ id, name, category, componentIds, … })` ergänzen – IDs müssen existieren |
+| Motor | `js/data/engines.js` | Objekt in `ENGINES`; `modelIds` pflegen und ggf. `engineIds` im Modell |
+| Werkzeug | `js/data/tools.js` | Objekt in `TOOLS`, dann per `toolIds` referenzieren |
+| Wartung/Reparatur | `maintenance.js` / `repairs.js` | Objekt mit `componentPaths`, `toolIds`, `partIds`, `fastenerIds` |
+| Bauteil | `js/data/components.js` | Knoten im Baum; Ersatzteile verweisen per Pfad darauf |
+| Schraube | `js/data/fasteners.js` | `f({ id: 'f-…', … })` mit `componentPath`/`partIds` |
+| Quelle | `js/data/sources.js` | Quelle anlegen, per `sourceIds` referenzieren |
+
+### Spätere Händleranbindung & Preisvergleich
+
+`js/data/offers.js` trennt Angebote strikt vom Teilekatalog:
+`{ partId, sellerId, price, shippingCost, availability, qualityLevel,
+affiliate, active, lastCheckedAt }`. Aktuell nur klar gekennzeichnete
+Demo-Einträge (`demo: true`, `active: false`). Für echte Angebote:
+Seller anlegen, Offers mit `active: true` pflegen — der Preisvergleich
+ist dann `offersForPart(partId)` sortiert nach Gesamtpreis; Affiliate-
+Links werden über das `affiliate`-Flag transparent gekennzeichnet.
 
 **Grundsätze**
 

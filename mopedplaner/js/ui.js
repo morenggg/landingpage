@@ -90,6 +90,7 @@ const ICON_PATHS = {
   list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/>',
   book: '<path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z"/>',
   nut: '<path d="m12 2 8 4.6v9.2L12 22l-8-6.2V6.6z" transform="rotate(90 12 12)"/><circle cx="12" cy="12" r="3.4"/>',
+  box: '<path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
 };
 
 /** Inline-SVG-Icon. size in px. */
@@ -196,4 +197,25 @@ export const LIKELIHOOD_ORDER = { hoch: 0, mittel: 1, gering: 2 };
 
 export function likelihoodBadge(likelihood) {
   return el('span', { class: `badge lk-${likelihood}` }, likelihood);
+}
+
+/* ─────────────────────────── Wissensdatenbank-Badges ─────────────────────────── */
+
+const VERIFICATION_LABELS = {
+  verified: { label: 'Verifiziert', tone: 'ok' },
+  'partially-verified': { label: 'Teilw. geprüft', tone: 'warn' },
+  unverified: { label: 'Ungeprüft', tone: 'muted' },
+  disputed: { label: 'Umstritten', tone: 'danger' },
+  demo: { label: 'Demo', tone: 'demo' },
+};
+
+/** Prüfstatus-Badge (verified / partially-verified / unverified / disputed / demo). */
+export function verificationBadge(status) {
+  const info = VERIFICATION_LABELS[status] || VERIFICATION_LABELS.unverified;
+  return el('span', { class: `badge v-${info.tone}` }, info.label);
+}
+
+/** Kompatibilitäts-Badge – erwartet { label, tone } aus knowledge.partCompatibility(). */
+export function compatBadge(compat) {
+  return el('span', { class: `badge v-${compat.tone}` }, compat.label);
 }

@@ -781,6 +781,79 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 #tabbar .tab.active { color: var(--accent); }
 
+/* ─────────── Wissensdatenbank (Ersatzteile, Suche, Verknüpfungen) ─────────── */
+
+.badge.v-ok { color: var(--ok); border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.08); }
+.badge.v-warn { color: var(--warn); border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
+.badge.v-muted { color: var(--muted); }
+.badge.v-danger { color: var(--danger); border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
+.badge.v-demo { color: #c084fc; border-color: rgba(192, 132, 252, 0.4); background: rgba(192, 132, 252, 0.08); }
+
+.verify-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.verify-note .icon { color: var(--warn); margin-top: 1px; }
+
+.result-group { margin-top: 20px; }
+.result-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.result-group-head .icon { color: var(--accent); }
+
+.link-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.link-chips .chip { font-size: 0.82rem; padding: 8px 12px; }
+.link-chips .chip .icon { color: var(--accent); }
+
+.part-price { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.filter-select {
+  flex: 1;
+  min-width: 130px;
+  min-height: 42px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  outline: none;
+}
+.filter-select:focus { border-color: var(--accent); }
+
+.vehicle-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 107, 44, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+}
+.vehicle-filter .icon { color: var(--accent); }
+.vehicle-filter select { flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; outline: none; }
+.vehicle-filter select option { background: var(--surface-2); }
+
 /* ─────────── Desktop-Feinschliff ─────────── */
 
 @media (min-width: 720px) {

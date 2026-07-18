@@ -20,6 +20,11 @@ export function renderEinstellungen() {
   const toolsSec = el('section', { class: 'section' }, el('h2', { class: 'sub-head' }, 'Werkzeuge'));
   toolsSec.append(
     el('div', { class: 'stack' },
+      el('a', { class: 'row-item', href: '#/suche' }, icon('search', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Technische Suche')), icon('chevR', 18, 'muted')),
+      el('a', { class: 'row-item', href: '#/teile' }, icon('box', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Ersatzteil-Katalog')), icon('chevR', 18, 'muted')),
+      el('a', { class: 'row-item', href: '#/motoren' }, icon('engine', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Motoren-Datenbank')), icon('chevR', 18, 'muted')),
+      el('a', { class: 'row-item', href: '#/wartung' }, icon('calendar', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Wartungsplan')), icon('chevR', 18, 'muted')),
+      el('a', { class: 'row-item', href: '#/reparaturen' }, icon('tools', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Reparaturen')), icon('chevR', 18, 'muted')),
       el('a', { class: 'row-item', href: '#/planer' }, icon('upgrade', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Umbauplaner')), icon('chevR', 18, 'muted')),
       el('a', { class: 'row-item', href: '#/schrauben' }, icon('nut', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Schraubenfinder')), icon('chevR', 18, 'muted'))
     )

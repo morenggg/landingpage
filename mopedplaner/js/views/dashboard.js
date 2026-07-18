@@ -37,6 +37,8 @@ export async function renderDashboard() {
       { class: 'quick-grid' },
       quickTile('diag', 'Problemfinder', 'Geführte Diagnose', '#/diagnose'),
       quickTile('engine', 'Technik', 'Bauteile erkunden', '#/technik'),
+      quickTile('box', 'Ersatzteile', 'Katalog & Kompatibilität', '#/teile'),
+      quickTile('search', 'Suche', 'Ganze Wissensbasis', '#/suche'),
       quickTile('upgrade', 'Umbauplaner', 'Kits & Teilelisten', '#/planer'),
       quickTile('nut', 'Schrauben', 'Drehmomente', '#/schrauben')
     )
