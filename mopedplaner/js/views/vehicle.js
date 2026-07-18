@@ -1,0 +1,293 @@
+/**
+ * MopedPlaner – Fahrzeugakte
+ * Übersicht, Logbuch (Historie mit Kosten) und Aufgaben je Fahrzeug.
+ */
+
+import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2 } from '../ui.js';
+import { Vehicles, Logs, Tasks, LOG_TYPES } from '../store.js';
+import { getModel } from '../data/models.js';
+import { navigate, refresh } from '../router.js';
+import { openVehicleForm } from './garage.js';
+
+export async function renderVehicle({ id, tab = 'uebersicht' }) {
+  const vehicle = await Vehicles.get(id);
+  if (!vehicle) {
+    return el('div', { class: 'view' },
+      el('div', { class: 'empty-state' },
+        icon('warn', 44, 'empty-icon'),
+        el('h2', {}, 'Fahrzeug nicht gefunden'),
+        el('a', { class: 'btn btn-primary', href: '#/garage' }, 'Zur Garage'))
+    );
+  }
+
+  const model = getModel(vehicle.modelId);
+  const [logs, tasks] = await Promise.all([Logs.byVehicle(id), Tasks.byVehicle(id)]);
+  const totalCost = logs.reduce((s, l) => s + (parseFloat(l.cost) || 0), 0);
+  const wrap = el('div', { class: 'view view-vehicle' });
+
+  // ── Kopf ──
+  wrap.append(
+    el('div', { class: 'vehicle-hero' + (vehicle.photo ? ' has-photo' : ''), style: vehicle.photo ? `background-image:url('${vehicle.photo}')` : '' },
+      el('div', { class: 'vehicle-hero-scrim' }),
+      el('div', { class: 'vehicle-hero-bar' },
+        el('a', { class: 'icon-btn glass', href: '#/garage', 'aria-label': 'Zurück' }, icon('back', 20)),
+        el('div', { class: 'grow' }),
+        el('button', { class: 'icon-btn glass', 'aria-label': 'Bearbeiten', onclick: () => openVehicleForm(vehicle, refresh) }, icon('edit', 18)),
+        el('button', { class: 'icon-btn glass', 'aria-label': 'Löschen', onclick: async () => {
+          const yes = await confirmSheet('Fahrzeug löschen?', `„${vehicle.name || model?.name}" wird mit kompletter Akte und allen Aufgaben gelöscht. Das lässt sich nicht rückgängig machen.`);
+          if (yes) { await Vehicles.remove(id); toast('Fahrzeug gelöscht'); navigate('garage'); }
+        } }, icon('trash', 18))
+      ),
+      el('div', { class: 'vehicle-hero-info' },
+        !vehicle.photo ? icon('moped', 46, 'hero-moped') : null,
+        el('h1', {}, vehicle.name || model?.name || 'Fahrzeug'),
+        el('p', {}, [model?.name, vehicle.baujahr && `Bj. ${vehicle.baujahr}`, vehicle.farbe].filter(Boolean).join(' · ') || '—')
+      )
+    )
+  );
+
+  // ── Tabs ──
+  const tabs = [
+    { id: 'uebersicht', name: 'Übersicht' },
+    { id: 'logbuch', name: `Logbuch${logs.length ? ` (${logs.length})` : ''}` },
+    { id: 'aufgaben', name: `Aufgaben${tasks.filter((t) => !t.done).length ? ` (${tasks.filter((t) => !t.done).length})` : ''}` },
+  ];
+  wrap.append(
+    el('nav', { class: 'seg-tabs', role: 'tablist' },
+      tabs.map((t) =>
+        el('a', {
+          class: 'seg-tab' + (t.id === tab ? ' active' : ''),
+          href: `#/fahrzeug/${id}${t.id === 'uebersicht' ? '' : '/' + t.id}`,
+          role: 'tab', 'aria-selected': String(t.id === tab),
+        }, t.name)
+      )
+    )
+  );
+
+  const body = el('div', { class: 'tab-body' });
+  if (tab === 'logbuch') body.append(renderLogbuch(vehicle, logs));
+  else if (tab === 'aufgaben') body.append(renderAufgaben(vehicle, tasks));
+  else body.append(renderUebersicht(vehicle, model, logs, tasks, totalCost));
+  wrap.append(body);
+
+  return wrap;
+}
+
+/* ─────────────────────────── Übersicht ─────────────────────────── */
+
+function renderUebersicht(vehicle, model, logs, tasks, totalCost) {
+  const openTasks = tasks.filter((t) => !t.done);
+  const spec = (label, value) =>
+    value ? el('div', { class: 'spec' }, el('span', { class: 'muted small' }, label), el('strong', {}, value)) : null;
+
+  return el('div', {},
+    // KPI-Zeile
+    el('div', { class: 'kpi-row' },
+      kpi('book', logs.length, 'Einträge'),
+      kpi('euro', fmtEuro(totalCost), 'Investiert'),
+      kpi('check', openTasks.length, 'Offen')
+    ),
+
+    // Technische Daten des Fahrzeugs
+    el('section', { class: 'section' },
+      el('h2', { class: 'sub-head' }, 'Fahrzeugdaten'),
+      el('div', { class: 'card spec-grid' },
+        spec('Modell', model?.name),
+        spec('Baujahr', vehicle.baujahr),
+        spec('Farbe', vehicle.farbe),
+        spec('Rahmennummer', vehicle.rahmennummer),
+        spec('Motornummer', vehicle.motornummer),
+        spec('Motor', vehicle.motor || model?.engine),
+        spec('Vergaser', vehicle.vergaser),
+        spec('Zündung', vehicle.zuendung),
+        spec('Auspuff', vehicle.auspuff)
+      )
+    ),
+
+    // Modell-Steckbrief aus dem Katalog
+    model && model.id !== 'sonstige'
+      ? el('section', { class: 'section' },
+          el('h2', { class: 'sub-head' }, 'Modell-Steckbrief'),
+          el('div', { class: 'card spec-grid' },
+            spec('Bauzeit', model.years),
+            spec('Motor', model.engine),
+            spec('Hubraum', model.ccm && `${model.ccm} ccm`),
+            spec('Leistung', model.ps && `${model.ps} PS`),
+            spec('V max', model.vmax && `${model.vmax} km/h`),
+            spec('Gemisch', model.mix),
+            spec('Tank', model.tank && `${model.tank} l`),
+            spec('Bordspannung', model.voltage)
+          ),
+          model.notes ? el('p', { class: 'muted small card-note' }, model.notes) : null
+        )
+      : null,
+
+    vehicle.notizen
+      ? el('section', { class: 'section' },
+          el('h2', { class: 'sub-head' }, 'Notizen'),
+          el('div', { class: 'card' }, el('p', { class: 'pre-wrap', style: 'margin:0' }, vehicle.notizen))
+        )
+      : null,
+
+    // Schnellaktionen
+    el('section', { class: 'section' },
+      el('h2', { class: 'sub-head' }, 'Schnellaktionen'),
+      el('div', { class: 'stack' },
+        el('button', { class: 'row-item as-btn', onclick: () => openLogForm(vehicle.id) }, icon('plus', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Logbuch-Eintrag anlegen')), icon('chevR', 18, 'muted')),
+        el('a', { class: 'row-item', href: '#/diagnose' }, icon('diag', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Problem diagnostizieren')), icon('chevR', 18, 'muted')),
+        el('a', { class: 'row-item', href: '#/planer' }, icon('upgrade', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Umbau planen')), icon('chevR', 18, 'muted'))
+      )
+    )
+  );
+}
+
+function kpi(iconName, value, label) {
+  return el('div', { class: 'kpi' }, icon(iconName, 18, 'kpi-icon'), el('strong', {}, String(value)), el('span', { class: 'muted small' }, label));
+}
+
+/* ─────────────────────────── Logbuch ─────────────────────────── */
+
+function renderLogbuch(vehicle, logs) {
+  const wrap = el('div', {});
+  wrap.append(
+    el('button', { class: 'btn btn-primary btn-block', onclick: () => openLogForm(vehicle.id) }, icon('plus', 18), 'Neuer Eintrag')
+  );
+
+  if (!logs.length) {
+    wrap.append(
+      el('div', { class: 'empty-state slim' },
+        icon('book', 40, 'empty-icon'),
+        el('p', { class: 'muted' }, 'Noch keine Einträge. Jede Wartung, Reparatur und jeder Umbau landet hier – so entsteht die lückenlose Historie.'))
+    );
+    return wrap;
+  }
+
+  const list = el('div', { class: 'timeline' });
+  for (const log of logs) {
+    const type = LOG_TYPES.find((t) => t.id === log.type) || LOG_TYPES[4];
+    list.append(
+      el('div', { class: 'timeline-item' },
+        el('div', { class: `timeline-dot type-${log.type}` }, icon(type.icon, 14)),
+        el('div', { class: 'timeline-card card' },
+          el('div', { class: 'timeline-head' },
+            el('strong', {}, log.title || type.name),
+            el('span', { class: 'muted small' }, fmtDate(log.date))
+          ),
+          el('div', { class: 'chip-wrap tight' },
+            el('span', { class: 'badge' }, type.name),
+            log.km ? el('span', { class: 'badge' }, `${log.km} km`) : null,
+            log.cost ? el('span', { class: 'badge accent' }, fmtEuro2(parseFloat(log.cost))) : null
+          ),
+          log.parts ? el('p', { class: 'small' }, el('span', { class: 'muted' }, 'Teile: '), log.parts) : null,
+          log.notes ? el('p', { class: 'small muted pre-wrap' }, log.notes) : null,
+          el('div', { class: 'timeline-actions' },
+            el('button', { class: 'mini-btn', onclick: () => openLogForm(vehicle.id, log) }, icon('edit', 14), 'Bearbeiten'),
+            el('button', { class: 'mini-btn danger', onclick: async () => {
+              if (await confirmSheet('Eintrag löschen?', 'Der Logbuch-Eintrag wird dauerhaft entfernt.')) {
+                await Logs.remove(log.id);
+                refresh();
+              }
+            } }, icon('trash', 14), 'Löschen')
+          )
+        )
+      )
+    );
+  }
+  wrap.append(list);
+  return wrap;
+}
+
+export function openLogForm(vehicleId, log = null) {
+  const isEdit = !!log;
+  const l = log || {};
+
+  const typeSelect = el('select', { name: 'type', class: 'field-input' },
+    LOG_TYPES.map((t) => el('option', { value: t.id, selected: t.id === (l.type || 'wartung') || null }, t.name))
+  );
+
+  const form = el('form', { class: 'form-stack' },
+    el('label', { class: 'field' }, el('span', {}, 'Art'), typeSelect),
+    el('label', { class: 'field' }, el('span', {}, 'Titel'),
+      el('input', { name: 'title', value: l.title || '', required: true, placeholder: 'z. B. Kupplung neu eingestellt' })),
+    el('div', { class: 'field-row' },
+      el('label', { class: 'field' }, el('span', {}, 'Datum'),
+        el('input', { name: 'date', type: 'date', value: l.date || new Date().toISOString().slice(0, 10) })),
+      el('label', { class: 'field' }, el('span', {}, 'Kosten (€)'),
+        el('input', { name: 'cost', inputmode: 'decimal', value: l.cost ?? '', placeholder: '0' }))
+    ),
+    el('label', { class: 'field' }, el('span', {}, 'Kilometerstand'),
+      el('input', { name: 'km', inputmode: 'numeric', value: l.km || '', placeholder: 'optional' })),
+    el('label', { class: 'field' }, el('span', {}, 'Verbaute Teile'),
+      el('input', { name: 'parts', value: l.parts || '', placeholder: 'z. B. Lamellensatz, Dichtung' })),
+    el('label', { class: 'field' }, el('span', {}, 'Notizen'),
+      el('textarea', { name: 'notes', rows: 3, placeholder: 'Was wurde gemacht? Worauf achten?' }, l.notes || '')),
+    el('button', { class: 'btn btn-primary btn-block', type: 'submit' }, isEdit ? 'Speichern' : 'Eintrag anlegen')
+  );
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.cost = data.cost ? String(data.cost).replace(',', '.') : null;
+    try {
+      if (isEdit) await Logs.update(log.id, data);
+      else await Logs.create(vehicleId, data);
+      toast(isEdit ? 'Eintrag gespeichert' : 'Eintrag angelegt');
+      closeSheet();
+      if (location.hash === `#/fahrzeug/${vehicleId}/logbuch`) refresh();
+      else location.hash = `#/fahrzeug/${vehicleId}/logbuch`;
+    } catch {
+      toast('Speichern fehlgeschlagen.', 'err');
+    }
+  });
+
+  openSheet(isEdit ? 'Eintrag bearbeiten' : 'Neuer Logbuch-Eintrag', form);
+}
+
+/* ─────────────────────────── Aufgaben ─────────────────────────── */
+
+function renderAufgaben(vehicle, tasks) {
+  const wrap = el('div', {});
+
+  const input = el('input', { class: 'task-input', placeholder: 'Neue Aufgabe, z. B. „Kette spannen"', enterkeyhint: 'done' });
+  const add = async () => {
+    const title = input.value.trim();
+    if (!title) return;
+    await Tasks.create(vehicle.id, title);
+    input.value = '';
+    refresh();
+  };
+  input.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), add()));
+
+  wrap.append(
+    el('div', { class: 'task-add' },
+      input,
+      el('button', { class: 'btn btn-primary btn-compact', onclick: add, 'aria-label': 'Aufgabe hinzufügen' }, icon('plus', 18))
+    )
+  );
+
+  if (!tasks.length) {
+    wrap.append(
+      el('div', { class: 'empty-state slim' },
+        icon('check', 40, 'empty-icon'),
+        el('p', { class: 'muted' }, 'Keine Aufgaben. Plane hier anstehende Arbeiten – der Umbauplaner kann ganze Teilelisten hierher übernehmen.'))
+    );
+    return wrap;
+  }
+
+  const list = el('div', { class: 'stack' });
+  for (const t of tasks) {
+    list.append(
+      el('div', { class: 'row-item task' + (t.done ? ' done' : '') },
+        el('button', {
+          class: 'task-check' + (t.done ? ' checked' : ''),
+          'aria-label': t.done ? 'Als offen markieren' : 'Als erledigt markieren',
+          onclick: async () => { await Tasks.toggle(t.id); refresh(); },
+        }, t.done ? icon('check', 15) : ''),
+        el('div', { class: 'row-main' }, el('span', {}, t.title)),
+        el('button', { class: 'icon-btn subtle', 'aria-label': 'Löschen', onclick: async () => { await Tasks.remove(t.id); refresh(); } }, icon('x', 16))
+      )
+    );
+  }
+  wrap.append(list);
+  return wrap;
+}

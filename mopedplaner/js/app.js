@@ -1,0 +1,90 @@
+/**
+ * MopedPlaner – App-Bootstrap
+ * Baut die Shell (View-Container + Tab-Bar), registriert Routen
+ * und startet den Router. Service Worker für Offline-Betrieb.
+ */
+
+import { el, icon, closeSheet } from './ui.js';
+import { route, setNotFound, startRouter, currentPath } from './router.js';
+import { renderDashboard } from './views/dashboard.js';
+import { renderGarage } from './views/garage.js';
+import { renderVehicle } from './views/vehicle.js';
+import { renderTechnik } from './views/technik.js';
+import { renderDiagnoseList, renderDiagnoseFlow } from './views/diagnose.js';
+import { renderPlanerList, renderPlanerKit } from './views/planer.js';
+import { renderSchrauben } from './views/schrauben.js';
+import { renderEinstellungen } from './views/einstellungen.js';
+
+const viewRoot = document.getElementById('view-root');
+
+const TABS = [
+  { id: '', name: 'Start', icon: 'home', match: (p) => p === '' },
+  { id: 'garage', name: 'Garage', icon: 'garage', match: (p) => p.startsWith('garage') || p.startsWith('fahrzeug') },
+  { id: 'diagnose', name: 'Diagnose', icon: 'diag', match: (p) => p.startsWith('diagnose') },
+  { id: 'technik', name: 'Technik', icon: 'engine', match: (p) => p.startsWith('technik') || p.startsWith('schrauben') },
+  { id: 'mehr', name: 'Mehr', icon: 'more', match: (p) => p.startsWith('mehr') || p.startsWith('planer') },
+];
+
+function buildTabbar() {
+  const bar = document.getElementById('tabbar');
+  for (const tab of TABS) {
+    bar.append(
+      el('a', { class: 'tab', href: '#/' + tab.id, dataset: { tab: tab.id } },
+        icon(tab.icon, 22),
+        el('span', {}, tab.name))
+    );
+  }
+}
+
+function updateTabbar() {
+  const path = currentPath();
+  document.querySelectorAll('#tabbar .tab').forEach((node) => {
+    const tab = TABS.find((t) => t.id === node.dataset.tab);
+    node.classList.toggle('active', !!tab && tab.match(path));
+  });
+}
+
+async function mount(renderFn, params) {
+  closeSheet();
+  viewRoot.classList.add('leaving');
+  const node = await renderFn(params || {});
+  viewRoot.replaceChildren(node);
+  viewRoot.classList.remove('leaving');
+  window.scrollTo({ top: 0 });
+  updateTabbar();
+}
+
+/* Query-Parameter aus dem Hash lösen (#/garage?neu=1) */
+function withQuery(handler) {
+  return (params) => {
+    const raw = location.hash.split('?')[1];
+    const query = raw ? Object.fromEntries(new URLSearchParams(raw)) : {};
+    // Letztes Pfadsegment kann Query enthalten
+    for (const key of Object.keys(params)) {
+      if (typeof params[key] === 'string' && params[key].includes('?')) params[key] = params[key].split('?')[0];
+    }
+    return handler({ ...params, query });
+  };
+}
+
+route('', withQuery(() => mount(renderDashboard)));
+route('garage', withQuery((p) => mount(renderGarage, p)));
+route('fahrzeug/:id', withQuery((p) => mount(renderVehicle, p)));
+route('fahrzeug/:id/:tab', withQuery((p) => mount(renderVehicle, p)));
+route('technik/*path', (p) => mount(renderTechnik, p));
+route('technik', () => mount(renderTechnik, { path: [] }));
+route('diagnose', () => mount(renderDiagnoseList));
+route('diagnose/:flowId', (p) => mount(renderDiagnoseFlow, p));
+route('planer', () => mount(renderPlanerList));
+route('planer/:kitId', (p) => mount(renderPlanerKit, p));
+route('schrauben', () => mount(renderSchrauben));
+route('mehr', () => mount(renderEinstellungen));
+setNotFound(() => mount(renderDashboard));
+
+buildTabbar();
+startRouter();
+
+/* PWA: Service Worker (nur auf http/https, scoped auf /mopedplaner/) */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}

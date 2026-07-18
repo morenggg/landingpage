@@ -1,0 +1,222 @@
+/**
+ * MopedPlaner – Umbauplaner-Kits
+ *
+ * Jedes Kit beschreibt einen kompletten Umbau: Teile, Werkzeug, Reihenfolge,
+ * Kosten, Dauer, Schwierigkeit und rechtliche Hinweise.
+ * Preise sind Circa-Werte (Nachbau-/Neuteile, Stand der Datenpflege).
+ *
+ * difficulty: 1 (Anfänger) … 5 (Profi)
+ */
+
+export const CONVERSION_KITS = [
+  {
+    id: 'vape',
+    title: 'VAPE / 12-V-Zündungsumbau',
+    tagline: 'Wartungsfreie Elektronikzündung + helles 12-V-Licht. Der beliebteste Umbau überhaupt.',
+    icon: 'spark',
+    difficulty: 2,
+    duration: '4–6 h',
+    costFrom: 180, costTo: 280,
+    legal: 'Eintragungsfrei, solange die Anlage für das Modell zugelassen ist. Leuchtmittel mit E-Prüfzeichen verwenden.',
+    parts: [
+      { name: 'VAPE-Komplettanlage (Zündung + Licht, 12 V)', price: '150–220 €' },
+      { name: '12-V-Leuchtmittelsatz (Bilux 35/35 W, Rücklicht, Blinker)', price: '10–20 €' },
+      { name: '12-V-Blinkgeber (elektronisch)', price: '5–10 €' },
+      { name: '12-V-Hupe', price: '8–15 €' },
+      { name: 'Kleinmaterial (Kabelschuhe, Schrumpfschlauch)', price: '5–10 €' },
+    ],
+    tools: ['Polrad-Abzieher (liegt oft dem Kit bei)', 'Drehmomentschlüssel', 'Multimeter', 'Messuhr oder Zündeinstelllehre', 'Lötkolben oder Quetschzange'],
+    steps: [
+      { title: 'Alte Zündanlage ausbauen', desc: 'Polrad mit Abzieher demontieren, Grundplatte und alte Zündspule entfernen.', duration: '45 min' },
+      { title: 'VAPE-Grundplatte montieren', desc: 'Grundplatte aufsetzen, Kabel nach Anleitung durch den Rahmen führen.', duration: '30 min' },
+      { title: 'Zündzeitpunkt einstellen', desc: 'Rotor aufsetzen, mit Messuhr 1,8 mm v. OT blitzen bzw. nach Kit-Anleitung statisch einstellen.', duration: '45 min' },
+      { title: 'Bordnetz auf 12 V umrüsten', desc: 'Alle Leuchtmittel tauschen, Blinkgeber und Hupe ersetzen, Laderegler nach Schaltplan anschließen.', duration: '90 min' },
+      { title: 'Funktionstest', desc: 'Zündfunke, Licht, Blinker, Hupe, Ladespannung (~13,8–14,4 V) prüfen. Probefahrt.', duration: '30 min' },
+    ],
+    hints: [
+      'Batterielos möglich – dann Kondensator-Pufferung für Blinker laut VAPE-Schaltplan.',
+      'Original-Kabelbaum kann meist bleiben; sauber dokumentieren, was stillgelegt wird.',
+      'Das alte Zündschloss-Kurzschlusskabel (blau) wird bei VAPE anders beschaltet – Anleitung beachten!',
+    ],
+  },
+  {
+    id: '60ccm',
+    title: '60-ccm-Tuningzylinder',
+    tagline: 'Spürbar mehr Drehmoment für S51 & Schwalbe – mit Augenmaß und passender Peripherie.',
+    icon: 'cylinder',
+    difficulty: 3,
+    duration: '5–8 h',
+    costFrom: 200, costTo: 420,
+    legal: '⚠️ Erlischt die Betriebserlaubnis! Nur mit Einzelabnahme (TÜV, §21 StVZO) und ggf. anderer Fahrerlaubnisklasse legal auf öffentlichen Straßen.',
+    parts: [
+      { name: '60-ccm-Zylinderkit (z. B. Ø 42 mm) inkl. Kolben', price: '120–250 €' },
+      { name: 'Passende Hauptdüse (größer, je nach Setup 75–85)', price: '3–6 €' },
+      { name: 'Dichtsatz komplett', price: '8–12 €' },
+      { name: 'Zündkerze neu (B7HS/B8HS je nach Setup)', price: '3–6 €' },
+      { name: 'Optional: 19er-Vergaser + Ansaugstutzen', price: '50–90 €' },
+      { name: 'Optional: verstärkte Kupplungsfedern', price: '5–10 €' },
+    ],
+    tools: ['Ringschlüssel SW 10', 'Drehmomentschlüssel', 'Kolbenbolzen-Auszieher', 'Fühlerlehre', 'Kompressionstester'],
+    steps: [
+      { title: 'Alten Zylinder demontieren', desc: 'Siehe Technik → Motor → Zylinder. Kurbelgehäuse sofort abdecken.', duration: '45 min' },
+      { title: 'Dichtflächen säubern', desc: 'Alte Dichtungsreste restlos entfernen, Dichtflächen auf Planheit prüfen.', duration: '30 min' },
+      { title: 'Neuen Kolben montieren', desc: 'Pfeil auf dem Kolbenboden zeigt zum Auslass! Sicherungsringe mit Öffnung nach unten.', duration: '30 min' },
+      { title: 'Zylinder aufsetzen', desc: 'Ringe zentrieren, Zylinder aufschieben, Kopf über Kreuz 9–10 Nm.', duration: '30 min' },
+      { title: 'Vergaser abstimmen', desc: 'Mit größerer HD beginnen (fett), über Kerzenbild schrittweise abmagern. Rehbraun = Ziel.', duration: '2–3 h inkl. Probefahrten' },
+      { title: 'Einfahren', desc: '250–500 km mit wechselnden Drehzahlen, kein Dauervollgas. Danach Kopfmuttern nachziehen.', duration: '—' },
+    ],
+    hints: [
+      'Ohne passende Bedüsung droht der Klemmer – niemals mit Serien-HD Vollgas fahren.',
+      'Auspuff und Luftfilter beeinflussen die Abstimmung – immer im Gesamtpaket denken.',
+      'Für den Alltag reicht oft das 60er-Kit mit Serienvergaser – zuverlässiger als Maximal-Setups.',
+    ],
+  },
+  {
+    id: '70ccm',
+    title: '70-ccm-Umbau (S70-Technik)',
+    tagline: 'Der große Hubraum: S70-Zylinder auf S51-Basis oder Neuaufbau mit M741-Charakter.',
+    icon: 'cylinder',
+    difficulty: 4,
+    duration: '8–12 h',
+    costFrom: 300, costTo: 600,
+    legal: '⚠️ Erlischt die Betriebserlaubnis der 50er! Einzelabnahme + Zulassung als Kleinkraftrad bis 75 km/h (Klasse A1/B196 je nach Ausführung) nötig.',
+    parts: [
+      { name: '70-ccm-Zylinderkit (Ø 45 mm) mit Kolben', price: '150–300 €' },
+      { name: 'S70-Kopf oder bearbeiteter Kopf', price: '40–80 €' },
+      { name: '16N3-4-Vergaser (S70) oder Abstimmteile', price: '50–90 €' },
+      { name: 'Verstärkte Kupplung (Federn/Lamellen)', price: '20–40 €' },
+      { name: 'Dichtsatz, Kerze, Kleinteile', price: '15–25 €' },
+      { name: 'Empfohlen: geänderte Sekundärübersetzung (Ritzel 16 Z)', price: '5–10 €' },
+    ],
+    tools: ['Kompletter Zylinderwechsel-Werkzeugsatz', 'Drehmomentschlüssel', 'Kompressionstester', 'Messschieber'],
+    steps: [
+      { title: 'Basis prüfen', desc: 'Kurbelwelle, Lager und Simmerringe müssen top sein – 70 ccm verzeiht keine müde Basis.', duration: '1 h' },
+      { title: 'Zylinderkit montieren', desc: 'Wie beim 60er-Umbau; Quetschkante mit Lötzinn messen (~1,2–1,5 mm).', duration: '2 h' },
+      { title: 'Vergaser & Ansaugung', desc: '16N3-4 einbauen und grundbedüsen, Luftfilter prüfen.', duration: '1 h' },
+      { title: 'Kupplung verstärken', desc: 'Federn/Lamellen ersetzen – das Plus an Drehmoment fordert die Kupplung.', duration: '1,5 h' },
+      { title: 'Abstimmung & Einfahren', desc: 'Kerzenbild-Methode, 500 km einfahren, dann nachziehen und final bedüsen.', duration: '3+ h' },
+    ],
+    hints: [
+      'Fahrwerk und Bremsen mitdenken: 75 km/h verlangen gute Bremsbacken und intakte Züge.',
+      'Versicherung informieren – sonst fährst du ohne Schutz.',
+    ],
+  },
+  {
+    id: 'led',
+    title: 'LED- & Licht-Upgrade',
+    tagline: 'Endlich sehen und gesehen werden – legal nur mit E-geprüften Komponenten.',
+    icon: 'bolt',
+    difficulty: 1,
+    duration: '2–4 h',
+    costFrom: 40, costTo: 150,
+    legal: 'Nur Leuchtmittel/Einsätze mit E-Prüfzeichen für den Fahrzeugtyp sind zulässig. „LED-Birne in Bilux-Reflektor" ist i. d. R. NICHT zulässig – komplette LED-Einsätze mit Zulassung wählen.',
+    parts: [
+      { name: 'LED-Scheinwerfereinsatz mit E-Zeichen', price: '40–90 €' },
+      { name: 'LED-Rücklicht (E-geprüft)', price: '15–30 €' },
+      { name: 'LED-Blinker-Set + lastunabhängiger Blinkgeber', price: '25–50 €' },
+      { name: 'Ggf. Gleichrichter/Spannungsregler', price: '10–20 €' },
+    ],
+    tools: ['Schraubendreher', 'Multimeter', 'Quetschzange'],
+    steps: [
+      { title: 'Bestandsaufnahme', desc: '6 V oder 12 V? Wechsel- oder Gleichspannung am Licht? LED braucht meist Gleichrichtung.', duration: '30 min' },
+      { title: 'Scheinwerfer umbauen', desc: 'Einsatz tauschen, Stecker anpassen, Leuchtweite einstellen.', duration: '45 min' },
+      { title: 'Rücklicht & Blinker', desc: 'Komponenten tauschen, lastunabhängigen Blinkgeber einsetzen.', duration: '45 min' },
+      { title: 'Test & Leuchtweite', desc: 'Alle Funktionen testen, Scheinwerfer korrekt einstellen (10 m-Wand-Methode).', duration: '30 min' },
+    ],
+    hints: [
+      'Bei 6-V-Wechselspannung flackern viele LEDs – Gleichrichter + Elko oder gleich VAPE-Umbau erwägen.',
+      'Kombiniert sich perfekt mit dem VAPE-Umbau (dann 12 V DC verfügbar).',
+    ],
+  },
+  {
+    id: 'restauration',
+    title: 'Originalrestauration',
+    tagline: 'Zurück zum Auslieferungszustand – Werterhalt für Sammlerstücke.',
+    icon: 'star',
+    difficulty: 4,
+    duration: '50–150 h (Projekt)',
+    costFrom: 800, costTo: 3000,
+    legal: 'Originalzustand erhält Betriebserlaubnis und Sammlerwert. Originalpapiere und Typenschild sind Gold wert.',
+    parts: [
+      { name: 'Dichtungs- und Verschleißteilsatz Motor', price: '40–80 €' },
+      { name: 'Originalgetreue Lackierung (Farbcode je Baujahr)', price: '300–1000 €' },
+      { name: 'Chrom-/Zinkteile aufarbeiten oder NOS', price: '100–400 €' },
+      { name: 'Sitzbank, Gummiteile, Züge, Kabelbaum', price: '150–300 €' },
+      { name: 'Reifen zeitgenössisches Profil (z. B. K30)', price: '60–100 €' },
+    ],
+    tools: ['Kompletter Werkstattbedarf', 'Schweißgerät (Rahmen nur vom Profi!)', 'Sandstrahl-Zugang', 'Fotodokumentation'],
+    steps: [
+      { title: 'Dokumentieren', desc: 'Jedes Detail fotografieren, Rahmennummer/Typenschild sichern, Originalität bewerten.', duration: '4 h' },
+      { title: 'Komplett zerlegen', desc: 'Systematisch in beschriftete Kisten, Schrauben je Baugruppe sortieren.', duration: '10 h' },
+      { title: 'Rahmen & Bleche aufarbeiten', desc: 'Entlacken, entrosten, Originalfarbton lackieren (Farbcode recherchieren).', duration: '20+ h' },
+      { title: 'Motor revidieren', desc: 'Lager, Simmerringe, ggf. Regeneration von Kurbelwelle und Zylinder.', duration: '10 h' },
+      { title: 'Montage & Erstlauf', desc: 'Mit neuen Verschleißteilen aufbauen, Einstellungen nach Handbuch, Einfahrprogramm.', duration: '15 h' },
+    ],
+    hints: [
+      'Vor dem Kauf von Nachbauteilen: Originalteile aufarbeiten ist oft wertiger.',
+      'MopedPlaner-Tipp: Lege jedes Teil als Logbuch-Eintrag mit Foto ab – so entsteht die lückenlose Historie.',
+    ],
+  },
+  {
+    id: 'alltag',
+    title: 'Zuverlässigkeits-Setup (Alltag)',
+    tagline: 'Nicht schneller – aber immer da: das Setup für Pendler und Vielfahrer.',
+    icon: 'shield',
+    difficulty: 2,
+    duration: '6–10 h',
+    costFrom: 150, costTo: 350,
+    legal: 'Alle Maßnahmen eintragungsfrei.',
+    parts: [
+      { name: 'VAPE-Zündanlage (siehe eigener Umbau)', price: '150–220 €' },
+      { name: 'Neue Züge komplett (Gas, Kupplung, Bremse)', price: '20–35 €' },
+      { name: 'Kette + Ritzel + Kettenrad (Satz)', price: '25–45 €' },
+      { name: 'Bremsbacken vorn + hinten', price: '20–35 €' },
+      { name: 'Neuer Benzinhahn + Schlauch + Filter', price: '15–25 €' },
+      { name: 'Reifen mit gutem Nassgrip (z. B. Heidenau K42)', price: '60–90 €' },
+    ],
+    tools: ['Standard-Werkstattausrüstung', 'Drehmomentschlüssel'],
+    steps: [
+      { title: 'Zündung modernisieren', desc: 'VAPE einbauen → wartungsfrei und helles Licht.', duration: '4–6 h' },
+      { title: 'Verschleißteile pauschal neu', desc: 'Züge, Kette/Räder-Satz, Bremsbacken – einmal komplett, dann Jahre Ruhe.', duration: '3 h' },
+      { title: 'Kraftstoffweg sanieren', desc: 'Tank prüfen/entrosten, neuer Hahn, Schlauch, Filter.', duration: '1 h' },
+      { title: 'Wartungsplan anlegen', desc: 'Im MopedPlaner: wiederkehrende Aufgaben (Kette schmieren, Öl, Kerze) als Aufgaben anlegen.', duration: '15 min' },
+    ],
+    hints: [
+      'Zuverlässigkeit schlägt Leistung: 90 % aller Pannen sind Zündung, Sprit oder Züge.',
+      'Immer Ersatzkerze, Kerzenschlüssel und Ersatzzüge unter die Sitzbank.',
+    ],
+  },
+  {
+    id: 'enduro',
+    title: 'Enduro-Umbau',
+    tagline: 'Hochgelegter Auspuff, Stollenreifen, robuste Optik – der S51-Enduro-Look.',
+    icon: 'mountain',
+    difficulty: 3,
+    duration: '10–16 h',
+    costFrom: 250, costTo: 550,
+    legal: 'Anbauteile mit Teilegutachten/E-Zeichen wählen; Reifenfreigabe beachten. Hochgelegter Auspuff: Verbrennungsschutz vorgeschrieben.',
+    parts: [
+      { name: 'Enduro-Auspuff hochgelegt + Hitzeschutz', price: '60–120 €' },
+      { name: 'Stollenreifen mit Straßenzulassung (z. B. K37)', price: '60–100 €' },
+      { name: 'Enduro-Lenker + Handschützer', price: '30–60 €' },
+      { name: 'Enduro-Schutzbleche (hochgesetzt)', price: '40–80 €' },
+      { name: 'Verstärkte Federbeine', price: '40–90 €' },
+      { name: 'Motorschutz / Unterfahrschutz', price: '25–50 €' },
+    ],
+    tools: ['Standardwerkzeug', 'ggf. Bohrmaschine für Halter'],
+    steps: [
+      { title: 'Fahrwerk vorbereiten', desc: 'Federbeine tauschen, Lenkkopflager prüfen, Enduro-Lenker montieren.', duration: '3 h' },
+      { title: 'Auspuff hochlegen', desc: 'Enduro-Anlage mit Hitzeschutz montieren, Bedüsung kontrollieren.', duration: '2 h' },
+      { title: 'Räder & Schutzbleche', desc: 'Stollenreifen aufziehen (Freigabe!), Schutzbleche hochsetzen.', duration: '3 h' },
+      { title: 'Details & Schutz', desc: 'Handschützer, Motorschutz, robuste Blinker.', duration: '2 h' },
+    ],
+    hints: [
+      'Vorbild ist die originale S51 Enduro – viele Teile gibt es als Nachbau in Erstausrüster-Qualität.',
+      'Nach den ersten Geländekilometern alle Schrauben nachziehen (Vibration!).',
+    ],
+  },
+];
+
+export function getKit(id) {
+  return CONVERSION_KITS.find((k) => k.id === id) || null;
+}
