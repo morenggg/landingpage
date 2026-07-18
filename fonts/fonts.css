@@ -1,0 +1,79 @@
+/**
+ * Lokal gehostete Schriften (Barlow Condensed, JetBrains Mono).
+ *
+ * Ersetzt das direkte Einbinden von fonts.googleapis.com / fonts.gstatic.com.
+ * Grund: Ein Live-Laden von Google Fonts überträgt die Besucher-IP ohne
+ * Einwilligung an Google und gilt nach verbreiteter deutscher Rechtsprechung
+ * (u. a. LG München I, Urteil vom 20.01.2022) als DSGVO-Verstoß. Lokales
+ * Hosten vermeidet das vollständig — und spart zusätzlich einen externen
+ * DNS-Lookup + Verbindungsaufbau.
+ *
+ * Enthält nur den "latin"-Subset (deckt inkl. Ä/Ö/Ü/ß über Latin-1
+ * Supplement ab) — ausreichend für deutsche Texte, deutlich kleiner als
+ * der volle Google-Fonts-Zeichensatz mit allen Sprachen.
+ */
+
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('barlow-condensed-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('barlow-condensed-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('barlow-condensed-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('barlow-condensed-900.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('barlow-condensed-700i.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('barlow-condensed-900i.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('jetbrains-mono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('jetbrains-mono-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('jetbrains-mono-700.woff2') format('woff2');
+}
