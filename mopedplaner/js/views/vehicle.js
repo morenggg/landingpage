@@ -3,7 +3,7 @@
  * Übersicht, Logbuch (Historie mit Kosten) und Aufgaben je Fahrzeug.
  */
 
-import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2 } from '../ui.js';
+import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2, accordion, emptyState } from '../ui.js';
 import { Vehicles, Logs, Tasks, LOG_TYPES } from '../store.js';
 import { getModel } from '../data/models.js';
 import { navigate, refresh } from '../router.js';
@@ -77,68 +77,69 @@ export async function renderVehicle({ id, tab = 'uebersicht' }) {
 
 function renderUebersicht(vehicle, model, logs, tasks, totalCost) {
   const openTasks = tasks.filter((t) => !t.done);
-  const spec = (label, value) =>
-    value ? el('div', { class: 'spec' }, el('span', { class: 'muted small' }, label), el('strong', {}, value)) : null;
+  const info = (label, value) => value
+    ? el('div', { class: 'info-row' }, el('span', { class: 'info-label' }, label), el('span', { class: 'info-value' }, value))
+    : null;
 
   return el('div', {},
-    // KPI-Zeile
-    el('div', { class: 'kpi-row' },
+    // Wichtigste Aktionen zuerst
+    el('div', { class: 'quick-grid', style: 'margin-top:0' },
+      actionTile('plus', 'Eintrag', () => openLogForm(vehicle.id)),
+      actionTile('check', 'Aufgabe', null, `#/fahrzeug/${vehicle.id}/aufgaben`),
+      actionTile('box', 'Ersatzteile', null, '#/teile'),
+      actionTile('diag', 'Diagnose', null, '#/diagnose')
+    ),
+
+    // Überblick
+    el('div', { class: 'kpi-row', style: 'margin-top:20px' },
       kpi('book', logs.length, 'Einträge'),
       kpi('euro', fmtEuro(totalCost), 'Investiert'),
       kpi('check', openTasks.length, 'Offen')
     ),
 
-    // Technische Daten des Fahrzeugs
-    el('section', { class: 'section' },
-      el('h2', { class: 'sub-head' }, 'Fahrzeugdaten'),
-      el('div', { class: 'card spec-grid' },
-        spec('Modell', model?.name),
-        spec('Baujahr', vehicle.baujahr),
-        spec('Farbe', vehicle.farbe),
-        spec('Rahmennummer', vehicle.rahmennummer),
-        spec('Motornummer', vehicle.motornummer),
-        spec('Motor', vehicle.motor || model?.engine),
-        spec('Vergaser', vehicle.vergaser),
-        spec('Zündung', vehicle.zuendung),
-        spec('Auspuff', vehicle.auspuff)
-      )
-    ),
-
-    // Modell-Steckbrief aus dem Katalog
-    model && model.id !== 'sonstige'
-      ? el('section', { class: 'section' },
-          el('h2', { class: 'sub-head' }, 'Modell-Steckbrief'),
-          el('div', { class: 'card spec-grid' },
-            spec('Bauzeit', model.years),
-            spec('Motor', model.engine),
-            spec('Hubraum', model.ccm && `${model.ccm} ccm`),
-            spec('Leistung', model.ps && `${model.ps} PS`),
-            spec('V max', model.vmax && `${model.vmax} km/h`),
-            spec('Gemisch', model.mix),
-            spec('Tank', model.tank && `${model.tank} l`),
-            spec('Bordspannung', model.voltage)
-          ),
-          model.notes ? el('p', { class: 'muted small card-note' }, model.notes) : null
-        )
-      : null,
-
-    vehicle.notizen
-      ? el('section', { class: 'section' },
-          el('h2', { class: 'sub-head' }, 'Notizen'),
-          el('div', { class: 'card' }, el('p', { class: 'pre-wrap', style: 'margin:0' }, vehicle.notizen))
-        )
-      : null,
-
-    // Schnellaktionen
-    el('section', { class: 'section' },
-      el('h2', { class: 'sub-head' }, 'Schnellaktionen'),
-      el('div', { class: 'stack' },
-        el('button', { class: 'row-item as-btn', onclick: () => openLogForm(vehicle.id) }, icon('plus', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Logbuch-Eintrag anlegen')), icon('chevR', 18, 'muted')),
-        el('a', { class: 'row-item', href: '#/diagnose' }, icon('diag', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Problem diagnostizieren')), icon('chevR', 18, 'muted')),
-        el('a', { class: 'row-item', href: '#/planer' }, icon('upgrade', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Umbau planen')), icon('chevR', 18, 'muted'))
-      )
+    // Details erst bei Bedarf (progressive Offenlegung)
+    el('div', { style: 'margin-top:20px' },
+      accordion('Fahrzeugdaten',
+        el('div', { class: 'info-list' },
+          info('Modell', model?.name),
+          info('Baujahr', vehicle.baujahr),
+          info('Farbe', vehicle.farbe),
+          info('Motor', vehicle.motor || model?.engine),
+          info('Vergaser', vehicle.vergaser),
+          info('Zündung', vehicle.zuendung),
+          info('Auspuff', vehicle.auspuff),
+          info('Rahmennummer', vehicle.rahmennummer),
+          info('Motornummer', vehicle.motornummer)
+        ), { open: true, icon: 'moped' }),
+      model && model.id !== 'sonstige'
+        ? accordion('Modell-Steckbrief',
+            el('div', {},
+              el('div', { class: 'info-list' },
+                info('Bauzeit', model.years),
+                info('Motor', model.engine),
+                info('Hubraum', model.ccm && `${model.ccm} ccm`),
+                info('Leistung', model.ps && `${model.ps} PS`),
+                info('V max', model.vmax && `${model.vmax} km/h`),
+                info('Gemisch', model.mix),
+                info('Tank', model.tank && `${model.tank} l`),
+                info('Bordspannung', model.voltage)),
+              model.notes ? el('p', { class: 'muted small', style: 'margin:10px 0 0' }, model.notes) : null),
+            { icon: 'book' })
+        : null,
+      vehicle.notizen
+        ? accordion('Notizen', el('p', { class: 'pre-wrap small', style: 'margin:0' }, vehicle.notizen), { icon: 'note' })
+        : null
     )
   );
+}
+
+function actionTile(iconName, label, onclick, href = null) {
+  const attrs = { class: 'quick-tile' };
+  if (href) attrs.href = href;
+  if (onclick) attrs.onclick = onclick;
+  return el(href ? 'a' : 'button', attrs,
+    icon(iconName, 22, 'quick-icon'),
+    el('strong', {}, label));
 }
 
 function kpi(iconName, value, label) {
@@ -154,11 +155,8 @@ function renderLogbuch(vehicle, logs) {
   );
 
   if (!logs.length) {
-    wrap.append(
-      el('div', { class: 'empty-state slim' },
-        icon('book', 40, 'empty-icon'),
-        el('p', { class: 'muted' }, 'Noch keine Einträge. Jede Wartung, Reparatur und jeder Umbau landet hier – so entsteht die lückenlose Historie.'))
-    );
+    wrap.append(emptyState('book', null,
+      'Noch keine Einträge. Jede Wartung, Reparatur und jeder Umbau landet hier – so entsteht die lückenlose Historie.', null, true));
     return wrap;
   }
 
@@ -266,11 +264,8 @@ function renderAufgaben(vehicle, tasks) {
   );
 
   if (!tasks.length) {
-    wrap.append(
-      el('div', { class: 'empty-state slim' },
-        icon('check', 40, 'empty-icon'),
-        el('p', { class: 'muted' }, 'Keine Aufgaben. Plane hier anstehende Arbeiten – der Umbauplaner kann ganze Teilelisten hierher übernehmen.'))
-    );
+    wrap.append(emptyState('check', null,
+      'Keine Aufgaben. Plane hier anstehende Arbeiten – der Umbauplaner kann ganze Teilelisten hierher übernehmen.', null, true));
     return wrap;
   }
 

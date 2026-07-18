@@ -1,166 +1,128 @@
 /**
  * MopedPlaner – Dashboard
- * Einstieg: Fahrzeuge, offene Aufgaben, letzte Aktivitäten, Schnellzugriffe.
+ * Klar priorisiert: 1. Mein Fahrzeug · 2. Schnellaktionen ·
+ * 3. Was ist als Nächstes wichtig? · 4. Weiter entdecken.
  */
 
-import { el, icon, fmtDate, fmtEuro } from '../ui.js';
+import { el, icon, fmtDate, sectionEl, emptyState } from '../ui.js';
 import { Vehicles, Tasks, Logs, LOG_TYPES } from '../store.js';
 import { getModel } from '../data/models.js';
-import { DIAGNOSTIC_FLOWS } from '../data/diagnostics.js';
 
 export async function renderDashboard() {
   const [vehicles, openTasks, recentLogs] = await Promise.all([
     Vehicles.all(),
     Tasks.allOpen(),
-    Logs.recent(4),
+    Logs.recent(3),
   ]);
 
   const wrap = el('div', { class: 'view' });
 
-  // Kopfbereich
+  // ── Kopf: ruhig, eine Zeile Kontext ──
   const hour = new Date().getHours();
   const greet = hour < 5 ? 'Nachtschicht?' : hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Moin' : 'Guten Abend';
   wrap.append(
-    el(
-      'header',
-      { class: 'hero' },
+    el('header', { class: 'hero' },
       el('p', { class: 'hero-kicker' }, greet),
-      el('h1', {}, 'Deine digitale ', el('span', { class: 'accent' }, 'Werkstatt')),
-      el('p', { class: 'muted' }, 'Fahrzeuge verwalten, Probleme finden, Umbauten planen – alles an einem Ort.')
-    )
+      el('h1', {}, 'Deine ', el('span', { class: 'accent' }, 'Werkstatt')))
   );
 
-  // Schnellzugriffe
-  wrap.append(
-    el(
-      'div',
-      { class: 'quick-grid' },
-      quickTile('diag', 'Problemfinder', 'Geführte Diagnose', '#/diagnose'),
-      quickTile('engine', 'Technik', 'Bauteile erkunden', '#/technik'),
-      quickTile('box', 'Ersatzteile', 'Katalog & Kompatibilität', '#/teile'),
-      quickTile('search', 'Suche', 'Ganze Wissensbasis', '#/suche'),
-      quickTile('upgrade', 'Umbauplaner', 'Kits & Teilelisten', '#/planer'),
-      quickTile('nut', 'Schrauben', 'Drehmomente', '#/schrauben')
-    )
-  );
-
-  // Meine Fahrzeuge
-  const vehSection = el('section', { class: 'section' });
-  vehSection.append(sectionHead('Meine Garage', '#/garage', vehicles.length ? 'Alle anzeigen' : null));
-  if (!vehicles.length) {
-    vehSection.append(
-      el(
-        'a',
-        { class: 'card card-cta', href: '#/garage?neu=1' },
-        icon('moped', 30, 'cta-icon'),
-        el('div', {},
-          el('strong', {}, 'Erstes Fahrzeug anlegen'),
-          el('p', { class: 'muted small' }, 'Simson auswählen, Daten eintragen – und die Fahrzeugakte beginnt.')
-        ),
-        icon('chevR', 20, 'muted')
-      )
+  // ── 1. Mein Fahrzeug ──
+  const mainVehicle = vehicles[0] || null; // zuletzt bearbeitet steht vorn
+  const mySec = sectionEl('Mein Fahrzeug', vehicles.length > 1 ? { href: '#/garage', link: 'Garage' } : {});
+  if (!mainVehicle) {
+    mySec.append(
+      emptyState('moped', null,
+        'Lege dein erstes Fahrzeug an, um Wartungen, Aufgaben und passende Ersatzteile zu verwalten.',
+        el('a', { class: 'btn btn-primary', href: '#/garage?neu=1' }, icon('plus', 18), 'Fahrzeug anlegen'), true)
     );
   } else {
-    const scroller = el('div', { class: 'h-scroll' });
-    for (const v of vehicles.slice(0, 6)) scroller.append(vehicleCard(v));
-    vehSection.append(scroller);
-  }
-  wrap.append(vehSection);
-
-  // Offene Aufgaben
-  if (openTasks.length) {
-    const list = el('div', { class: 'stack' });
-    for (const t of openTasks.slice(0, 5)) {
-      const v = vehicles.find((x) => x.id === t.vehicleId);
-      list.append(
-        el(
-          'a',
-          { class: 'row-item', href: v ? `#/fahrzeug/${v.id}/aufgaben` : '#/garage' },
-          icon('check', 18, 'row-lead'),
-          el('div', { class: 'row-main' },
-            el('span', {}, t.title),
-            v ? el('span', { class: 'muted small' }, v.name || modelName(v)) : null
-          ),
-          icon('chevR', 18, 'muted')
-        )
+    const model = getModel(mainVehicle.modelId);
+    const vTasks = openTasks.filter((t) => t.vehicleId === mainVehicle.id);
+    const vLog = recentLogs.find((l) => l.vehicleId === mainVehicle.id);
+    mySec.append(
+      el('a', {
+        class: 'my-vehicle',
+        href: `#/fahrzeug/${mainVehicle.id}`,
+        style: mainVehicle.photo ? `background-image:url('${mainVehicle.photo}')` : '',
+      },
+        el('div', { class: 'my-vehicle-scrim' }),
+        el('div', { class: 'my-vehicle-body' },
+          el('h2', {}, mainVehicle.name || model?.name || 'Fahrzeug'),
+          el('span', { class: 'my-vehicle-meta' },
+            [model?.name, mainVehicle.baujahr && `Bj. ${mainVehicle.baujahr}`, mainVehicle.motor].filter(Boolean).join(' · ') || 'Details in der Akte'),
+          el('div', { class: 'my-vehicle-stats' },
+            el('span', {}, el('strong', {}, String(vTasks.length)), ' offen'),
+            el('span', {}, 'Zuletzt: ', el('strong', {}, vLog ? (vLog.title || 'Eintrag') : '—'))))
+      )
+    );
+    // Schneller Fahrzeugwechsel
+    if (vehicles.length > 1) {
+      mySec.append(
+        el('div', { class: 'vehicle-switch' },
+          vehicles.slice(1, 5).map((v) =>
+            el('a', { class: 'chip', href: `#/fahrzeug/${v.id}` },
+              icon('moped', 14), v.name || getModel(v.modelId)?.name || 'Fahrzeug')))
       );
     }
-    const sec = el('section', { class: 'section' });
-    sec.append(sectionHead(`Offene Aufgaben (${openTasks.length})`), list);
-    wrap.append(sec);
+  }
+  wrap.append(mySec);
+
+  // ── 2. Schnellaktionen (max. 4) ──
+  const quickSec = sectionEl('Schnellaktionen');
+  quickSec.append(
+    el('div', { class: 'quick-grid', style: 'margin-top:0' },
+      quickTile('diag', 'Problem finden', 'Geführte Diagnose', '#/diagnose'),
+      quickTile('box', 'Ersatzteil suchen', 'Katalog & Kompatibilität', '#/teile'),
+      quickTile('engine', 'Technik', 'Bauteile erkunden', '#/technik'),
+      quickTile('search', 'Suche', 'Ganze Wissensbasis', '#/suche'))
+  );
+  wrap.append(quickSec);
+
+  // ── 3. Was ist als Nächstes wichtig? ──
+  const nextItems = [];
+  for (const t of openTasks.slice(0, 4)) {
+    const v = vehicles.find((x) => x.id === t.vehicleId);
+    nextItems.push(rowLink('check', t.title, v ? (v.name || getModel(v.modelId)?.name) : '', v ? `#/fahrzeug/${v.id}/aufgaben` : '#/garage'));
+  }
+  for (const log of recentLogs.slice(0, 2)) {
+    const v = vehicles.find((x) => x.id === log.vehicleId);
+    const type = LOG_TYPES.find((t) => t.id === log.type);
+    nextItems.push(rowLink(type?.icon || 'note', log.title || type?.name || 'Eintrag',
+      `${v ? (v.name || getModel(v.modelId)?.name) + ' · ' : ''}${fmtDate(log.date)}`,
+      v ? `#/fahrzeug/${v.id}/logbuch` : '#/garage'));
+  }
+  if (nextItems.length) {
+    const nextSec = sectionEl('Als Nächstes');
+    nextSec.append(el('div', { class: 'stack' }, nextItems));
+    wrap.append(nextSec);
   }
 
-  // Zuletzt im Logbuch
-  if (recentLogs.length) {
-    const list = el('div', { class: 'stack' });
-    for (const log of recentLogs) {
-      const v = vehicles.find((x) => x.id === log.vehicleId);
-      const type = LOG_TYPES.find((t) => t.id === log.type);
-      list.append(
-        el(
-          'a',
-          { class: 'row-item', href: v ? `#/fahrzeug/${v.id}/logbuch` : '#/garage' },
-          icon(type?.icon || 'note', 18, 'row-lead'),
-          el('div', { class: 'row-main' },
-            el('span', {}, log.title || type?.name || 'Eintrag'),
-            el('span', { class: 'muted small' }, `${v ? (v.name || modelName(v)) + ' · ' : ''}${fmtDate(log.date)}${log.cost ? ' · ' + fmtEuro(log.cost) : ''}`)
-          ),
-          icon('chevR', 18, 'muted')
-        )
-      );
-    }
-    const sec = el('section', { class: 'section' });
-    sec.append(sectionHead('Zuletzt in der Akte'), list);
-    wrap.append(sec);
-  }
-
-  // Häufige Probleme
-  const diagSec = el('section', { class: 'section' });
-  diagSec.append(sectionHead('Häufige Probleme', '#/diagnose', 'Alle'));
-  const chips = el('div', { class: 'chip-wrap' });
-  for (const f of DIAGNOSTIC_FLOWS.slice(0, 5)) {
-    chips.append(el('a', { class: 'chip', href: `#/diagnose/${f.id}` }, icon(f.icon, 16), f.title));
-  }
-  diagSec.append(chips);
-  wrap.append(diagSec);
+  // ── 4. Weiter entdecken ──
+  const moreSec = sectionEl('Entdecken');
+  moreSec.append(
+    el('div', { class: 'stack' },
+      rowLink('calendar', 'Wartungsplan', 'Intervalle & Anleitungen', '#/wartung'),
+      rowLink('tools', 'Reparaturen', 'Geführt, mit Sollwerten', '#/reparaturen'),
+      rowLink('nut', 'Schraubenfinder', 'Drehmomente & Gewinde', '#/schrauben'),
+      rowLink('upgrade', 'Umbauplaner', 'VAPE, Tuning, Restauration', '#/planer'))
+  );
+  wrap.append(moreSec);
 
   return wrap;
 }
 
-function modelName(v) {
-  return getModel(v.modelId)?.name || 'Simson';
-}
-
 function quickTile(iconName, title, sub, href) {
-  return el(
-    'a',
-    { class: 'quick-tile', href },
+  return el('a', { class: 'quick-tile', href },
     icon(iconName, 24, 'quick-icon'),
     el('strong', {}, title),
-    el('span', { class: 'muted small' }, sub)
-  );
+    el('span', { class: 'muted small' }, sub));
 }
 
-function sectionHead(title, href, linkText) {
-  return el(
-    'div',
-    { class: 'section-head' },
-    el('h2', {}, title),
-    href && linkText ? el('a', { class: 'section-link', href }, linkText) : null
-  );
-}
-
-function vehicleCard(v) {
-  const model = getModel(v.modelId);
-  return el(
-    'a',
-    { class: 'vehicle-card', href: `#/fahrzeug/${v.id}` },
-    v.photo
-      ? el('div', { class: 'vehicle-photo', style: `background-image:url('${v.photo}')` })
-      : el('div', { class: 'vehicle-photo placeholder' }, icon('moped', 42)),
-    el('div', { class: 'vehicle-card-body' },
-      el('strong', {}, v.name || model?.name || 'Fahrzeug'),
-      el('span', { class: 'muted small' }, [model?.name, v.baujahr].filter(Boolean).join(' · ') || '—')
-    )
-  );
+function rowLink(iconName, title, sub, href) {
+  return el('a', { class: 'row-item', href },
+    icon(iconName, 18, 'row-lead'),
+    el('div', { class: 'row-main' },
+      el('span', {}, title),
+      sub ? el('span', { class: 'muted small clamp-1' }, sub) : null),
+    icon('chevR', 18, 'muted'));
 }

@@ -76,6 +76,41 @@ mopedplaner/
         └── wissen.js       Motoren, Wartungen, Reparaturen (Liste + Detail)
 ```
 
+## UI-System
+
+Die Oberfläche folgt dem Prinzip **„Weniger gleichzeitig, mehr im richtigen
+Moment"** (progressive Offenlegung):
+
+- **Spacing-System:** `--sp-1` (4 px) bis `--sp-5` (32 px) in `app.css` –
+  Sektionen nutzen `--sp-5`, Listenelemente `--sp-2/3`.
+- **Typografie-Rollen:** Seitentitel (`h1`, 1,7 rem), Detailseiten-Titel
+  (`.comp-head h1`, 1,4 rem), Sektionstitel (`h2`/`.sub-head`), Fließtext,
+  technische Werte (`--mono`, z. B. `.torque`), Hilfetext (`.muted .small`),
+  Status-Kleintext (`.v-text`).
+- **Button-Hierarchie:** `btn-primary` (eine Hauptaktion pro Seite) ·
+  `btn-ghost` (sekundär) · `mini-btn` (tertiär) · `btn-danger` (destruktiv).
+- **Badges sparsam:** nur für Kompatibilität, Wahrscheinlichkeit und
+  wichtige Warnungen. Prüfstatus in Listen = ruhiger Kleintext
+  (`verificationText`), auf Detailseiten = erklärender Block
+  (`verificationNote`).
+- **Wiederverwendbare Komponenten** (`ui.js`): `pageHead`, `sectionEl`,
+  `accordion` (auf `<details>`-Basis), `emptyState` (Warum leer + nächste
+  Aktion), `infoRow`/`.info-list` (Key-Value statt Karten-Gitter),
+  `note(kind)` (info/tip/warn/legal/danger), `openSheet`, `toast`,
+  `verificationText/-Note`, `compatBadge`.
+- **Navigation:** Bottom-Tab-Bar mit 5 Bereichen; Detailseiten tragen
+  Breadcrumbs (`.crumbs`), Technik-Drilldowns behalten den vollen Pfad.
+- **Dashboard-Priorität:** Mein Fahrzeug → Schnellaktionen (max. 4) →
+  Als Nächstes → Entdecken.
+- **Filter:** Detailfilter im Bottom-Sheet, aktive Filter als entfernbare
+  Chips, Fahrzeugbezug als dauerhaft sichtbare Sonderrolle.
+- **Mobil:** keine breiten Tabellen (Key-Value-Listen/Akkordeons),
+  Touch-Ziele ≥ 48 px, Safe-Areas, kein horizontales Scrollen (getestet
+  ab 320 px). **Desktop:** begrenzte Inhaltsbreite (760 px), Garage und
+  Kachelraster zweispaltig – bleibt mobile-first.
+- **Animationen:** nur Seitenwechsel, Sheets, Akkordeon-Chevron und
+  Feedback; `prefers-reduced-motion` deaktiviert alles.
+
 ## Wissensdatenbank & Verknüpfungslogik
 
 Alle technischen Stammdaten sind statisch (ES-Module) und strikt von den

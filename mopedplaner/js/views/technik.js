@@ -1,14 +1,16 @@
 /**
  * MopedPlaner – Technik-Explorer
- * Interaktiver Drilldown durch den Bauteil-Baum:
- * Motor → Kupplung → Kupplungskorb → … mit Details je Ebene.
+ * Interaktiver Drilldown durch den Bauteil-Baum.
+ * Detailseiten: Wichtiges sofort sichtbar (Funktion, Defekte, Reparaturen,
+ * Ersatzteile) – technische Tiefe (Schritte, Drehmomente, Werkzeug)
+ * per Akkordeon (progressive Offenlegung).
  */
 
-import { el, icon, verificationBadge } from '../ui.js';
+import { el, icon, accordion, sectionEl } from '../ui.js';
 import { COMPONENT_TREE, findComponent } from '../data/components.js';
 import {
   partsForComponent, maintenanceForComponent, repairsForComponent,
-  bearingsForComponent, fastenersForComponent,
+  bearingsForComponent,
 } from '../knowledge.js';
 
 export function renderTechnik({ path = [] }) {
@@ -25,7 +27,7 @@ export function renderTechnik({ path = [] }) {
   });
 
   if (!path.length || !node) {
-    // Wurzelebene: alle Baugruppen
+    // ── Wurzelebene ──
     wrap.append(
       el('header', { class: 'page-head' },
         el('div', {},
@@ -45,8 +47,7 @@ export function renderTechnik({ path = [] }) {
     }
     wrap.append(grid);
 
-    // Wissensdatenbank-Einstiege
-    const kb = section('Wissensdatenbank');
+    const kb = sectionEl('Wissensdatenbank');
     kb.append(
       el('div', { class: 'stack' },
         kbRow('search', 'Technische Suche', 'Alles durchsuchen – Teile, Schrauben, Reparaturen …', '#/suche'),
@@ -61,11 +62,12 @@ export function renderTechnik({ path = [] }) {
     return wrap;
   }
 
-  // Detailebene
+  // ── Detailebene ──
+  const currentPath = path.join('/');
   wrap.append(crumbBar);
   wrap.append(
     el('header', { class: 'comp-head' },
-      icon(node.icon || crumbs[0]?.icon || 'wrench', 30, 'comp-icon'),
+      icon(node.icon || crumbs[0]?.icon || 'wrench', 26, 'comp-icon'),
       el('div', {},
         el('h1', {}, node.name),
         node.models ? el('p', { class: 'muted small' }, Array.isArray(node.models) ? node.models.join(' · ') : node.models) : null
@@ -74,9 +76,9 @@ export function renderTechnik({ path = [] }) {
     el('p', { class: 'lead' }, node.summary || '')
   );
 
-  // Unterbauteile
+  // 1. Unterbauteile – Kern der Navigation, immer sichtbar
   if (node.children?.length) {
-    const sec = section('Bauteile');
+    const sec = sectionEl('Bauteile');
     const list = el('div', { class: 'stack' });
     for (const child of node.children) {
       list.append(
@@ -94,55 +96,48 @@ export function renderTechnik({ path = [] }) {
     wrap.append(sec);
   }
 
-  // Typische Defekte
+  // 2. Typische Defekte – wichtig, sichtbar, aber ruhig als Liste
   if (node.defects?.length) {
-    const sec = section('Typische Defekte');
+    const sec = sectionEl('Typische Defekte');
+    const card = el('div', { class: 'card', style: 'padding:4px 16px' });
     for (const d of node.defects) {
-      sec.append(
-        el('div', { class: 'card defect' },
-          el('div', { class: 'defect-head' }, icon('warn', 16, 'warn-icon'), el('strong', {}, d.name)),
-          el('p', { class: 'small muted' }, d.symptom)
-        )
+      card.append(
+        el('div', { class: 'info-row', style: 'display:block' },
+          el('div', { style: 'display:flex;align-items:center;gap:8px' },
+            icon('warn', 15, 'warn-icon'), el('strong', { class: 'small' }, d.name)),
+          el('p', { class: 'small muted', style: 'margin:4px 0 0 23px' }, d.symptom))
       );
     }
+    sec.append(card);
     wrap.append(sec);
   }
 
-  // Ausbau / Einbau
-  if (node.removal?.length) wrap.append(stepsSection('Ausbau', node.removal));
-  if (node.install?.length) wrap.append(stepsSection('Einbau & Einstellung', node.install));
-
-  // Werkzeug
-  if (node.tools?.length) {
-    const sec = section('Werkzeug');
-    sec.append(el('div', { class: 'chip-wrap' }, node.tools.map((t) => el('span', { class: 'chip static' }, icon('wrench', 14), t))));
-    wrap.append(sec);
-  }
-
-  // Schrauben & Drehmomente
-  if (node.fasteners?.length) {
-    const sec = section('Schrauben & Drehmomente');
-    const table = el('div', { class: 'card table-card' });
-    for (const f of node.fasteners) {
-      table.append(
-        el('div', { class: 'fastener-row' },
-          el('div', { class: 'row-main' },
-            el('span', {}, f.name),
-            el('span', { class: 'muted small' }, [f.size, f.note].filter(Boolean).join(' · '))
-          ),
-          el('strong', { class: 'torque' }, f.torque)
-        )
-      );
+  // 3. Aktionen: Reparaturen & Wartungen (verknüpft, klickbar)
+  const repairs = repairsForComponent(currentPath);
+  const maintenance = maintenanceForComponent(currentPath);
+  if (repairs.length || maintenance.length) {
+    const sec = sectionEl('Reparieren & Warten');
+    const list = el('div', { class: 'stack' });
+    for (const r of repairs) {
+      list.append(el('a', { class: 'row-item', href: `#/reparatur/${r.id}` },
+        icon('tools', 18, 'row-lead accent-lead'),
+        el('div', { class: 'row-main' }, el('span', {}, r.name), el('span', { class: 'muted small' }, r.duration)),
+        icon('chevR', 16, 'muted')));
     }
-    sec.append(table);
+    for (const m of maintenance) {
+      list.append(el('a', { class: 'row-item', href: `#/wartung/${m.id}` },
+        icon('calendar', 18, 'row-lead'),
+        el('div', { class: 'row-main' }, el('span', {}, m.name), el('span', { class: 'muted small' }, m.interval)),
+        icon('chevR', 16, 'muted')));
+    }
+    sec.append(list);
     wrap.append(sec);
   }
 
-  // Passende Ersatzteile aus dem Katalog (verknüpft, klickbar)
-  const currentPath = path.join('/');
+  // 4. Passende Ersatzteile (Katalog) – sichtbar
   const linkedParts = partsForComponent(currentPath);
   if (linkedParts.length) {
-    const sec = section('Passende Ersatzteile');
+    const sec = sectionEl('Passende Ersatzteile');
     const list = el('div', { class: 'stack' });
     for (const part of linkedParts) {
       const price = part.estimatedPriceRange;
@@ -150,59 +145,74 @@ export function renderTechnik({ path = [] }) {
         el('a', { class: 'row-item', href: `#/teile/${part.id}` },
           icon('box', 18, 'row-lead accent-lead'),
           el('div', { class: 'row-main' },
-            el('span', {}, part.name),
-            el('span', { class: 'chip-wrap tight' }, verificationBadge(part.verificationStatus))),
-          el('div', { style: 'display:grid;justify-items:end;gap:4px' },
-            price?.min != null ? el('span', { class: 'part-price small' }, `${price.min}–${price.max} €`) : null,
-            icon('chevR', 16, 'muted'))));
+            el('span', {}, part.shortName || part.name),
+            el('span', { class: 'muted small' }, part.category)),
+          price?.min != null ? el('span', { class: 'part-price small' }, `${price.min}–${price.max} €`) : null,
+          icon('chevR', 16, 'muted')));
     }
     sec.append(list);
     wrap.append(sec);
-  } else if (node.parts?.length) {
-    // Fallback: unverknüpfte Alt-Liste aus dem Bauteil-Baum
-    const sec = section('Typische Ersatzteile');
-    const table = el('div', { class: 'card table-card' });
-    for (const p of node.parts) {
-      table.append(
-        el('div', { class: 'fastener-row' },
-          el('div', { class: 'row-main' }, el('span', {}, p.name)),
-          el('span', { class: 'muted price' }, p.price)
-        )
-      );
-    }
-    sec.append(table);
-    wrap.append(sec);
   }
 
-  // Verknüpfte Wartungen, Reparaturen, Lager & Dichtungen
-  linkedRows(wrap, 'Zugehörige Wartungen', 'calendar', maintenanceForComponent(currentPath)
-    .map((m) => ({ label: m.name, sub: m.interval, href: `#/wartung/${m.id}` })));
-  linkedRows(wrap, 'Zugehörige Reparaturen', 'tools', repairsForComponent(currentPath)
-    .map((r) => ({ label: r.name, sub: r.duration, href: `#/reparatur/${r.id}` })));
-  linkedRows(wrap, 'Lager & Dichtungen', 'clutch', bearingsForComponent(currentPath)
-    .map((b) => ({ label: b.name, sub: b.size || b.location || '', href: null, status: b.verificationStatus })));
+  // 5. Technische Tiefe – eingeklappt
+  const details = el('div', { class: 'section' });
+  let hasDetails = false;
+
+  if (node.removal?.length) {
+    details.append(accordion('Ausbau', stepsList(node.removal), { icon: 'wrench', meta: `${node.removal.length} Schritte` }));
+    hasDetails = true;
+  }
+  if (node.install?.length) {
+    details.append(accordion('Einbau & Einstellung', stepsList(node.install), { icon: 'check', meta: `${node.install.length} Schritte` }));
+    hasDetails = true;
+  }
+  if (node.fasteners?.length) {
+    details.append(accordion('Schrauben & Drehmomente',
+      el('div', {}, node.fasteners.map((f) =>
+        el('div', { class: 'fastener-row' },
+          el('div', { class: 'row-main' },
+            el('span', { class: 'small' }, f.name),
+            el('span', { class: 'muted small' }, [f.size, f.note].filter(Boolean).join(' · '))),
+          el('strong', { class: 'torque' }, f.torque)))),
+      { icon: 'nut', meta: String(node.fasteners.length) }));
+    hasDetails = true;
+  }
+  if (node.tools?.length) {
+    details.append(accordion('Werkzeug',
+      el('div', { class: 'chip-wrap' }, node.tools.map((t) => el('span', { class: 'chip static' }, icon('wrench', 14), t))),
+      { icon: 'wrench', meta: String(node.tools.length) }));
+    hasDetails = true;
+  }
+  const bearings = bearingsForComponent(currentPath);
+  if (bearings.length) {
+    details.append(accordion('Lager & Dichtungen',
+      el('div', {}, bearings.map((b) =>
+        el('div', { class: 'info-row', style: 'display:block' },
+          el('strong', { class: 'small' }, b.name),
+          el('p', { class: 'small muted', style: 'margin:2px 0 0' }, [b.size, b.location].filter(Boolean).join(' · ') || b.notes || '')))),
+      { icon: 'clutch', meta: String(bearings.length) }));
+    hasDetails = true;
+  }
+  // Alt-Ersatzteilliste aus dem Baum nur zeigen, wenn keine Katalog-Teile verknüpft sind
+  if (!linkedParts.length && node.parts?.length) {
+    details.append(accordion('Typische Ersatzteile',
+      el('div', {}, node.parts.map((p) =>
+        el('div', { class: 'fastener-row' },
+          el('div', { class: 'row-main' }, el('span', { class: 'small' }, p.name)),
+          el('span', { class: 'muted price' }, p.price)))),
+      { icon: 'box', meta: String(node.parts.length) }));
+    hasDetails = true;
+  }
+  if (hasDetails) wrap.append(details);
 
   wrap.append(disclaimer());
   return wrap;
 }
 
-function linkedRows(wrap, title, iconName, items) {
-  if (!items.length) return;
-  const sec = section(title);
-  const list = el('div', { class: 'stack' });
-  for (const it of items) {
-    const inner = [
-      icon(iconName, 18, 'row-lead'),
-      el('div', { class: 'row-main' },
-        el('span', {}, it.label),
-        it.sub ? el('span', { class: 'muted small' }, it.sub) : null),
-      it.status ? verificationBadge(it.status) : null,
-      it.href ? icon('chevR', 16, 'muted') : null,
-    ];
-    list.append(it.href ? el('a', { class: 'row-item', href: it.href }, ...inner) : el('div', { class: 'row-item' }, ...inner));
-  }
-  sec.append(list);
-  wrap.append(sec);
+function stepsList(steps) {
+  const list = el('ol', { class: 'steps' });
+  for (const s of steps) list.append(el('li', {}, s));
+  return list;
 }
 
 function kbRow(iconName, title, sub, href) {
@@ -212,18 +222,6 @@ function kbRow(iconName, title, sub, href) {
       el('span', {}, title),
       el('span', { class: 'muted small' }, sub)),
     icon('chevR', 18, 'muted'));
-}
-
-function section(title) {
-  return el('section', { class: 'section' }, el('h2', { class: 'sub-head' }, title));
-}
-
-function stepsSection(title, steps) {
-  const sec = section(title);
-  const list = el('ol', { class: 'steps' });
-  for (const s of steps) list.append(el('li', {}, s));
-  sec.append(list);
-  return sec;
 }
 
 function disclaimer() {

@@ -219,3 +219,97 @@ export function verificationBadge(status) {
 export function compatBadge(compat) {
   return el('span', { class: `badge v-${compat.tone}` }, compat.label);
 }
+
+/** Prüfstatus als ruhiger Kleintext (für Listen – Badges nur auf Detailseiten). */
+export function verificationText(status) {
+  const info = VERIFICATION_LABELS[status] || VERIFICATION_LABELS.unverified;
+  return el('span', { class: `v-text v-t-${info.tone}` }, info.label);
+}
+
+const VERIFICATION_EXPLAIN = {
+  verified: 'Gegen Originalunterlagen geprüft.',
+  'partially-verified': 'Angaben basieren auf gängiger Werkstattliteratur, wurden aber noch nicht vollständig gegen Originalunterlagen geprüft.',
+  unverified: 'Angaben noch nicht geprüft – als Orientierung verwenden, im Zweifel Reparaturhandbuch.',
+  disputed: 'Zu diesem Wert gibt es widersprüchliche Angaben – besonders sorgfältig prüfen.',
+  demo: 'Beispiel-Datensatz zur Veranschaulichung – keine echten Daten.',
+};
+
+const VERIFICATION_FULL = {
+  verified: 'Verifiziert',
+  'partially-verified': 'Teilweise geprüft',
+  unverified: 'Ungeprüft',
+  disputed: 'Umstritten',
+  demo: 'Demo-Datensatz',
+};
+
+/** Prüfstatus-Block für Detailseiten: voller Name + kurze Erklärung. */
+export function verificationNote(status) {
+  if (status === 'verified') return null;
+  return el('div', { class: 'note note-info' },
+    icon('info', 15, 'note-icon'),
+    el('div', {},
+      el('strong', { class: 'note-title' }, VERIFICATION_FULL[status] || VERIFICATION_FULL.unverified),
+      el('p', {}, VERIFICATION_EXPLAIN[status] || VERIFICATION_EXPLAIN.unverified)));
+}
+
+/* ─────────────────────────── Layout-Komponenten ─────────────────────────── */
+
+/** Einheitlicher Seitenkopf: Titel, optionaler Kontext, optionale Primäraktion. */
+export function pageHead(title, sub, action = null) {
+  return el('header', { class: 'page-head' },
+    el('div', {},
+      el('h1', {}, title),
+      sub ? el('p', { class: 'muted' }, sub) : null),
+    action);
+}
+
+/** Einheitliche Sektion mit Titel (und optionalem „Alle“-Link). */
+export function sectionEl(title, opts = {}, ...children) {
+  if (typeof opts === 'string' || opts?.nodeType || Array.isArray(opts)) {
+    children = [opts, ...children];
+    opts = {};
+  }
+  return el('section', { class: 'section' },
+    el('div', { class: 'section-head' },
+      el('h2', {}, title),
+      opts.href && opts.link ? el('a', { class: 'section-link', href: opts.href }, opts.link) : null),
+    ...children);
+}
+
+/** Einklappbare Sektion (progressive Offenlegung) auf <details>-Basis. */
+export function accordion(title, content, { open = false, icon: ic = null, meta = null } = {}) {
+  return el('details', { class: 'acc', open: open || null },
+    el('summary', { class: 'acc-head' },
+      ic ? icon(ic, 17, 'acc-icon') : null,
+      el('span', { class: 'acc-title' }, title),
+      meta ? el('span', { class: 'acc-meta' }, meta) : null,
+      icon('chevR', 16, 'acc-chev')),
+    el('div', { class: 'acc-body' }, content));
+}
+
+/** Einheitlicher leerer Zustand: Warum leer + was jetzt zu tun ist. */
+export function emptyState(iconName, title, text, action = null, slim = false) {
+  return el('div', { class: 'empty-state' + (slim ? ' slim' : '') },
+    icon(iconName, slim ? 36 : 48, 'empty-icon'),
+    title ? el('h2', {}, title) : null,
+    el('p', { class: 'muted' }, text),
+    action);
+}
+
+/** Key-Value-Zeile für ruhige Infolisten (statt Karten-Gitter). */
+export function infoRow(label, value) {
+  if (value == null || value === '') return null;
+  return el('div', { class: 'info-row' },
+    el('span', { class: 'info-label' }, label),
+    el('span', { class: 'info-value' }, value));
+}
+
+/** Hinweis-/Warnkomponente: kind = info | tip | warn | legal | danger */
+export function note(kind, text, title = null) {
+  const icons = { info: 'info', tip: 'info', warn: 'warn', legal: 'shield', danger: 'warn' };
+  return el('div', { class: `note note-${kind}` },
+    icon(icons[kind] || 'info', 15, 'note-icon'),
+    el('div', {},
+      title ? el('strong', { class: 'note-title' }, title) : null,
+      el('p', {}, text)));
+}

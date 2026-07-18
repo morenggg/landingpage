@@ -4,7 +4,7 @@
  * Detailansicht. Kompakt in einer Datei, gemeinsame Render-Helfer.
  */
 
-import { el, icon, verificationBadge, difficultyDots } from '../ui.js';
+import { el, icon, verificationText, verificationNote, difficultyDots } from '../ui.js';
 import { ENGINES } from '../data/engines.js';
 import { MAINTENANCE } from '../data/maintenance.js';
 import { REPAIRS } from '../data/repairs.js';
@@ -27,7 +27,7 @@ export function renderMotorenList() {
         el('div', { class: 'row-main' },
           el('span', { class: 'row-title' }, e.name),
           el('span', { class: 'muted small' }, [e.family, e.ccm && `${e.ccm} ccm`, e.gears && `${e.gears} Gänge`.replace('(Handschaltung) Gänge', 'Gänge (Hand)')].filter(Boolean).join(' · ') || 'Daten folgen'),
-          el('span', { class: 'chip-wrap tight' }, verificationBadge(e.verificationStatus))),
+          verificationText(e.verificationStatus)),
         icon('chevR', 18, 'muted'))
     );
   }
@@ -47,12 +47,10 @@ export function renderMotorDetail({ id }) {
       el('div', {},
         el('h1', {}, engine.name),
         el('p', { class: 'muted small' }, engine.family))),
-    el('div', { class: 'chip-wrap tight', style: 'margin-top:10px' }, verificationBadge(engine.verificationStatus))
   );
   if (engine.notes) wrap.append(el('p', { class: 'lead' }, engine.notes));
-  if (engine.verificationStatus !== 'verified') {
-    wrap.append(el('p', { class: 'verify-note' }, icon('warn', 14), ` ${UNVERIFIED_HINT}`));
-  }
+  const vNote = verificationNote(engine.verificationStatus);
+  if (vNote) wrap.append(vNote);
 
   const val = (v) => (v == null || v === '' ? 'Noch nicht erfasst' : String(v));
   wrap.append(section('Technische Daten',

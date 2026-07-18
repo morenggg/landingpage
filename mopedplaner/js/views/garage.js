@@ -3,8 +3,8 @@
  * Fahrzeugliste + Anlegen/Bearbeiten über Bottom-Sheet-Formular.
  */
 
-import { el, icon, openSheet, closeSheet, toast } from '../ui.js';
-import { Vehicles, shrinkImage } from '../store.js';
+import { el, icon, openSheet, closeSheet, toast, emptyState, fmtDate } from '../ui.js';
+import { Vehicles, Tasks, Logs, shrinkImage } from '../store.js';
 import { getModel, modelsByCategory } from '../data/models.js';
 import { navigate, refresh } from '../router.js';
 
@@ -26,19 +26,17 @@ export async function renderGarage(params = {}) {
 
   if (!vehicles.length) {
     wrap.append(
-      el(
-        'div',
-        { class: 'empty-state' },
-        icon('garage', 52, 'empty-icon'),
-        el('h2', {}, 'Deine Garage ist leer'),
-        el('p', { class: 'muted' }, 'Lege dein erstes Fahrzeug an. Modell wählen, ein paar Daten – fertig ist die digitale Fahrzeugakte.'),
-        el('button', { class: 'btn btn-primary', onclick: () => openVehicleForm() }, icon('plus', 18), 'Erstes Fahrzeug anlegen')
-      )
+      emptyState('garage', 'Noch kein Fahrzeug angelegt',
+        'Lege dein erstes Fahrzeug an, um Wartungen, Reparaturen und passende Ersatzteile zu verwalten.',
+        el('button', { class: 'btn btn-primary', onclick: () => openVehicleForm() }, icon('plus', 18), 'Fahrzeug anlegen'))
     );
   } else {
     const grid = el('div', { class: 'garage-grid' });
     for (const v of vehicles) {
       const model = getModel(v.modelId);
+      const [tasks, logs] = await Promise.all([Tasks.byVehicle(v.id), Logs.byVehicle(v.id)]);
+      const open = tasks.filter((t) => !t.done).length;
+      const lastLog = logs[0];
       grid.append(
         el(
           'a',
@@ -50,7 +48,10 @@ export async function renderGarage(params = {}) {
             'div',
             { class: 'vehicle-card-body' },
             el('strong', {}, v.name || model?.name || 'Fahrzeug'),
-            el('span', { class: 'muted small' }, [model?.name, v.baujahr && `Bj. ${v.baujahr}`, v.farbe].filter(Boolean).join(' · ') || 'Keine Details'),
+            el('span', { class: 'muted small' }, [model?.name, v.baujahr && `Bj. ${v.baujahr}`, v.motor].filter(Boolean).join(' · ') || 'Keine Details'),
+            el('span', { class: 'muted small' },
+              open ? `${open} Aufgabe${open > 1 ? 'n' : ''} offen` : 'Nichts offen',
+              lastLog ? ` · Zuletzt: ${fmtDate(lastLog.date)}` : ''),
             zustandBar(v.zustand)
           ),
           icon('chevR', 20, 'muted vehicle-chev')
@@ -129,6 +130,7 @@ export function openVehicleForm(vehicle = null, onSaved = null) {
   const form = el(
     'form',
     { class: 'form-stack' },
+    el('p', { class: 'form-section' }, 'Basisdaten'),
     photoPreview,
     fileInput,
     field('Name / Spitzname', 'name', v.name, { placeholder: 'z. B. „Oma Ilse"' }),
@@ -137,10 +139,7 @@ export function openVehicleForm(vehicle = null, onSaved = null) {
       field('Baujahr', 'baujahr', v.baujahr, { inputmode: 'numeric', placeholder: '1984' }),
       field('Farbe', 'farbe', v.farbe, { placeholder: 'billardgrün' })
     ),
-    el('div', { class: 'field-row' },
-      field('Rahmennummer', 'rahmennummer', v.rahmennummer, { placeholder: 'z. B. 1234567' }),
-      field('Motornummer', 'motornummer', v.motornummer, { placeholder: 'z. B. 7654321' })
-    ),
+    el('p', { class: 'form-section' }, 'Technik'),
     el('div', { class: 'field-row' },
       field('Motor', 'motor', v.motor, { placeholder: 'M541, 60ccm …' }),
       field('Vergaser', 'vergaser', v.vergaser, { placeholder: '16N1-11' })
@@ -149,6 +148,11 @@ export function openVehicleForm(vehicle = null, onSaved = null) {
       field('Zündung', 'zuendung', v.zuendung, { placeholder: 'Original / VAPE' }),
       field('Auspuff', 'auspuff', v.auspuff, { placeholder: 'Original' })
     ),
+    el('div', { class: 'field-row' },
+      field('Rahmennummer', 'rahmennummer', v.rahmennummer, { placeholder: 'optional' }),
+      field('Motornummer', 'motornummer', v.motornummer, { placeholder: 'optional' })
+    ),
+    el('p', { class: 'form-section' }, 'Zustand & Notizen'),
     el('label', { class: 'field' },
       el('span', {}, `Zustand`),
       el('input', { name: 'zustand', type: 'range', min: 1, max: 5, step: 1, value: v.zustand || 3, class: 'range' }),

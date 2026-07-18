@@ -1,11 +1,14 @@
 /**
  * MopedPlaner – Ersatzteile
- * Durchsuchbarer Teilekatalog mit Filtern, Fahrzeugbezug und
- * voll verknüpfter Detailansicht (Bauteile, Schrauben, Werkzeuge,
- * Reparaturen, Wartungen, Alternativen, Angebote-Vorschau).
+ * Moderner Katalog: Suche + Fahrzeugbezug immer sichtbar, Detail-Filter
+ * im Bottom-Sheet, aktive Filter als Chips. Detailseiten zeigen das
+ * Wichtigste sofort, technische Tiefe per Akkordeon.
  */
 
-import { el, icon, verificationBadge, compatBadge, toast } from '../ui.js';
+import {
+  el, icon, verificationText, verificationNote, compatBadge, openSheet, closeSheet,
+  accordion, sectionEl, emptyState, note,
+} from '../ui.js';
 import {
   filterParts, getPart, getModel, getEngine, getTool, getFastener,
   componentByPath, partCompatibility, usagesOfPart, matchEngineFromText,
@@ -14,21 +17,29 @@ import { PARTS, PART_CATEGORIES, QUALITY_LEVELS } from '../data/parts.js';
 import { ENGINES } from '../data/engines.js';
 import { MODELS } from '../data/models.js';
 import { offersForPart, getSeller } from '../data/offers.js';
-import { UNVERIFIED_HINT } from '../data/sources.js';
 import { Vehicles } from '../store.js';
 
-/* Zuletzt angesehene Teile – UI-Zustand, bewusst getrennt von den
-   Nutzdaten (mopedplaner.v1), damit Export/Import unberührt bleiben. */
+/* UI-Zustand (zuletzt angesehen) – getrennt von den Nutzdaten. */
 const UI_KEY = 'mopedplaner.ui.v1';
 
 function readUiState() {
   try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch { return {}; }
 }
+function writeUiState(patch) {
+  try { localStorage.setItem(UI_KEY, JSON.stringify({ ...readUiState(), ...patch })); } catch { /* voll */ }
+}
 function rememberPart(partId) {
   const state = readUiState();
-  state.recentParts = [partId, ...(state.recentParts || []).filter((id) => id !== partId)].slice(0, 6);
-  try { localStorage.setItem(UI_KEY, JSON.stringify(state)); } catch { /* voll → egal */ }
+  writeUiState({ recentParts: [partId, ...(state.recentParts || []).filter((id) => id !== partId)].slice(0, 6) });
 }
+
+const FILTER_LABELS = {
+  category: (v) => v,
+  modelId: (v) => getModel(v)?.name || v,
+  engineId: (v) => getEngine(v)?.name || v,
+  quality: (v) => QUALITY_LEVELS[v] || v,
+  status: (v) => ({ 'partially-verified': 'Teilw. geprüft', unverified: 'Ungeprüft', verified: 'Verifiziert' }[v] || v),
+};
 
 /* ─────────────────────────── Liste ─────────────────────────── */
 
@@ -40,21 +51,25 @@ export async function renderTeileList() {
     el('header', { class: 'page-head' },
       el('div', {},
         el('h1', {}, 'Ersatzteile'),
-        el('p', { class: 'muted' }, `${PARTS.length} Teile im Katalog – händlerunabhängig, voll verknüpft.`))
+        el('p', { class: 'muted' }, 'Händlerunabhängiger Katalog – verknüpft mit Technik & Fahrzeugen.'))
     )
   );
 
   const filters = { query: '', category: '', modelId: '', engineId: '', quality: '', status: '', vehicleId: '' };
 
-  // Suche
+  // Suche + Filter-Button in einer Zeile
   const search = el('input', {
     class: 'search-input', type: 'search',
-    placeholder: 'Suchen: „Kupplung", „Lamellen", „M541", „S51" …',
+    placeholder: '„Kupplung", „M541", „S51" …',
     oninput: (e) => { filters.query = e.target.value; renderList(); },
   });
-  wrap.append(el('div', { class: 'search-wrap' }, icon('search', 18, 'search-icon'), search));
+  wrap.append(
+    el('div', { style: 'display:flex;gap:8px' },
+      el('div', { class: 'search-wrap', style: 'flex:1;margin:0' }, icon('search', 18, 'search-icon'), search),
+      el('button', { class: 'icon-btn', style: 'width:50px;height:50px', 'aria-label': 'Filter', onclick: () => openFilterSheet() }, icon('settings', 20)))
+  );
 
-  // Fahrzeugfilter
+  // Fahrzeugbezug – die wichtigste Filterfunktion, immer sichtbar
   if (vehicles.length) {
     const vSelect = el('select', {
       onchange: (e) => {
@@ -71,73 +86,87 @@ export async function renderTeileList() {
     wrap.append(el('div', { class: 'vehicle-filter' }, icon('moped', 18), vSelect));
   }
 
-  // Filter-Selects
-  const sel = (label, options, key) => {
-    const s = el('select', { class: 'filter-select', onchange: (e) => { filters[key] = e.target.value; renderList(); } },
-      el('option', { value: '' }, label),
-      options);
-    return s;
-  };
-  wrap.append(
-    el('div', { class: 'filter-bar' },
-      sel('Kategorie', PART_CATEGORIES.map((c) => el('option', { value: c }, c)), 'category'),
-      sel('Motor', ENGINES.map((e) => el('option', { value: e.id }, e.name)), 'engineId'),
-      sel('Modell', MODELS.filter((m) => m.id !== 'sonstige').map((m) => el('option', { value: m.id }, m.name)), 'modelId'),
-      sel('Qualität', Object.entries(QUALITY_LEVELS).map(([id, name]) => el('option', { value: id }, name)), 'quality'),
-      sel('Prüfstatus', [
-        el('option', { value: 'partially-verified' }, 'Teilweise geprüft'),
-        el('option', { value: 'unverified' }, 'Ungeprüft'),
-        el('option', { value: 'verified' }, 'Verifiziert'),
-      ], 'status')
-    )
-  );
+  // Aktive Filter als entfernbare Chips
+  const activeBar = el('div', {});
+  wrap.append(activeBar);
 
-  // Hinweis, wenn Fahrzeug ohne gepflegten Motor gefiltert wird
   const vehicleHint = el('div', {});
   wrap.append(vehicleHint);
 
   // Zuletzt angesehen
   const recentIds = (readUiState().recentParts || []).filter((id) => getPart(id));
   if (recentIds.length) {
-    const sec = el('section', { class: 'section' },
-      el('h2', { class: 'sub-head' }, 'Zuletzt angesehen'),
+    wrap.append(sectionEl('Zuletzt angesehen', {},
       el('div', { class: 'link-chips' },
-        recentIds.map((id) => el('a', { class: 'chip', href: `#/teile/${id}` }, icon('box', 14), getPart(id).shortName || getPart(id).name)))
-    );
-    wrap.append(sec);
+        recentIds.map((id) => el('a', { class: 'chip', href: `#/teile/${id}` }, icon('box', 14), getPart(id).shortName || getPart(id).name)))));
   }
 
-  const listWrap = el('div', { class: 'stack', style: 'margin-top:18px' });
-  wrap.append(listWrap);
+  const countLine = el('p', { class: 'result-count' });
+  const listWrap = el('div', { class: 'stack', style: 'margin-top:10px' });
+  wrap.append(countLine, listWrap);
 
   const vehicleForCompat = () => vehicles.find((x) => x.id === filters.vehicleId) || null;
 
+  function renderActiveFilters() {
+    activeBar.replaceChildren();
+    const active = ['category', 'modelId', 'engineId', 'quality', 'status']
+      .filter((k) => filters[k] && !(filters.vehicleId && (k === 'modelId' || k === 'engineId')));
+    if (!active.length) return;
+    activeBar.append(
+      el('div', { class: 'active-filters' },
+        active.map((k) =>
+          el('button', { class: 'chip', onclick: () => { filters[k] = ''; renderList(); } },
+            FILTER_LABELS[k](filters[k]), icon('x', 13))),
+        el('button', { class: 'mini-btn', style: 'align-self:center', onclick: () => { active.forEach((k) => (filters[k] = '')); renderList(); } }, 'Zurücksetzen'))
+    );
+  }
+
+  function openFilterSheet() {
+    const mkSelect = (label, key, options) =>
+      el('label', { class: 'field' },
+        el('span', {}, label),
+        el('select', { class: 'field-input', onchange: (e) => { filters[key] = e.target.value; } },
+          el('option', { value: '' }, 'Alle'),
+          options.map((o) => el('option', { value: o.value, selected: filters[key] === o.value || null }, o.label))));
+
+    const body = el('div', { class: 'form-stack' },
+      mkSelect('Kategorie', 'category', PART_CATEGORIES.map((c) => ({ value: c, label: c }))),
+      mkSelect('Motor', 'engineId', ENGINES.map((e) => ({ value: e.id, label: e.name }))),
+      mkSelect('Modell', 'modelId', MODELS.filter((m) => m.id !== 'sonstige').map((m) => ({ value: m.id, label: m.name }))),
+      mkSelect('Qualitätsstufe', 'quality', Object.entries(QUALITY_LEVELS).map(([id, name]) => ({ value: id, label: name }))),
+      mkSelect('Prüfstatus', 'status', [
+        { value: 'partially-verified', label: 'Teilweise geprüft' },
+        { value: 'unverified', label: 'Ungeprüft' },
+        { value: 'verified', label: 'Verifiziert' },
+      ]),
+      el('div', { class: 'btn-row' },
+        el('button', { class: 'btn btn-ghost', onclick: () => { ['category', 'modelId', 'engineId', 'quality', 'status'].forEach((k) => (filters[k] = '')); closeSheet(); renderList(); } }, 'Zurücksetzen'),
+        el('button', { class: 'btn btn-primary', onclick: () => { closeSheet(); renderList(); } }, 'Anwenden')));
+    openSheet('Filter', body);
+  }
+
   function renderList() {
-    // Fahrzeug-Hinweis aktualisieren
+    renderActiveFilters();
+
     vehicleHint.replaceChildren();
     const v = vehicleForCompat();
     if (v && !matchEngineFromText(v.motor)) {
-      vehicleHint.append(
-        el('p', { class: 'verify-note' }, icon('info', 14),
-          v.motor
-            ? `Der Motor „${v.motor}" konnte keiner Motorfamilie zugeordnet werden – gefiltert wird nur nach Modell. Motor-Kompatibilität bitte je Teil prüfen.`
-            : 'In diesem Fahrzeug ist kein Motor gepflegt (Garage → Bearbeiten) – gefiltert wird nur nach Modell.')
-      );
+      vehicleHint.append(note('info',
+        v.motor
+          ? `Der Motor „${v.motor}" konnte keiner Motorfamilie zugeordnet werden – gefiltert wird nur nach Modell.`
+          : 'In diesem Fahrzeug ist kein Motor gepflegt (Garage → Bearbeiten) – gefiltert wird nur nach Modell.'));
     }
 
     const results = filterParts(filters);
+    countLine.textContent = `${results.length} ${results.length === 1 ? 'Teil' : 'Teile'}`;
     listWrap.replaceChildren();
 
     if (!results.length) {
-      listWrap.append(
-        el('div', { class: 'empty-state slim' },
-          icon('search', 36, 'empty-icon'),
-          el('p', { class: 'muted' }, 'Kein Teil gefunden – Suchbegriff oder Filter anpassen.'))
-      );
+      listWrap.append(emptyState('search', null, 'Kein Teil gefunden – Suchbegriff oder Filter anpassen.',
+        el('button', { class: 'btn btn-ghost', onclick: () => { Object.assign(filters, { query: '', category: '', modelId: '', engineId: '', quality: '', status: '', vehicleId: '' }); search.value = ''; renderList(); } }, 'Filter zurücksetzen'), true));
       return;
     }
 
-    // Verzögertes Rendern großer Listen: erst 20, Rest auf Klick
     const first = results.slice(0, 20);
     for (const part of first) listWrap.append(partRow(part, v));
     if (results.length > first.length) {
@@ -148,18 +177,13 @@ export async function renderTeileList() {
       });
       listWrap.append(more);
     }
-
-    const unverified = results.filter((p) => p.verificationStatus !== 'verified').length;
-    if (unverified) {
-      listWrap.append(el('p', { class: 'disclaimer' }, icon('info', 14),
-        ` ${unverified} der angezeigten Teile sind noch nicht vollständig verifiziert – Prüfstatus je Teil beachten.`));
-    }
   }
 
   renderList();
   return wrap;
 }
 
+/** Ruhige Teile-Zeile: Name, Kategorie, Preis – Status als Kleintext. */
 function partRow(part, vehicle) {
   const price = part.estimatedPriceRange;
   const priceText = price?.min != null ? `${price.min}–${price.max} €` : '';
@@ -167,12 +191,11 @@ function partRow(part, vehicle) {
   return el('a', { class: 'row-item tall', href: `#/teile/${part.id}` },
     icon('box', 20, 'row-lead accent-lead'),
     el('div', { class: 'row-main' },
-      el('span', { class: 'row-title' }, part.name),
-      el('span', { class: 'muted small' }, [part.category, part.subcategory].filter(Boolean).join(' · ')),
-      el('span', { class: 'chip-wrap tight' },
-        verificationBadge(part.verificationStatus),
-        compat ? compatBadge(compat) : null)
-    ),
+      el('span', {}, part.shortName || part.name),
+      el('span', { class: 'muted small' }, part.category),
+      compat
+        ? el('span', { class: 'chip-wrap tight' }, compatBadge(compat))
+        : verificationText(part.verificationStatus)),
     el('div', { style: 'display:grid;justify-items:end;gap:4px' },
       priceText ? el('span', { class: 'part-price small' }, priceText) : null,
       icon('chevR', 18, 'muted'))
@@ -185,14 +208,14 @@ export async function renderTeilDetail({ partId }) {
   const part = getPart(partId);
   const wrap = el('div', { class: 'view' });
   if (!part) {
-    wrap.append(el('div', { class: 'empty-state' },
-      el('h2', {}, 'Teil nicht gefunden'),
+    wrap.append(emptyState('warn', 'Teil nicht gefunden', 'Der Katalog-Eintrag existiert nicht (mehr).',
       el('a', { class: 'btn btn-primary', href: '#/teile' }, 'Zum Katalog')));
     return wrap;
   }
   rememberPart(partId);
 
   const vehicles = await Vehicles.all();
+  const price = part.estimatedPriceRange;
 
   wrap.append(
     el('nav', { class: 'crumbs' },
@@ -200,28 +223,25 @@ export async function renderTeilDetail({ partId }) {
       icon('chevR', 13, 'crumb-sep'),
       el('a', { class: 'current' }, part.shortName || part.name)),
     el('header', { class: 'comp-head' },
-      icon('box', 30, 'comp-icon'),
+      icon('box', 26, 'comp-icon'),
       el('div', {},
         el('h1', {}, part.name),
-        el('p', { class: 'muted small' }, [part.category, part.subcategory].filter(Boolean).join(' · ')))),
-    el('div', { class: 'chip-wrap tight', style: 'margin-top:10px' },
-      verificationBadge(part.verificationStatus),
-      part.estimatedPriceRange?.min != null
-        ? el('span', { class: 'badge accent' }, `ca. ${part.estimatedPriceRange.min}–${part.estimatedPriceRange.max} €`)
-        : null)
+        el('p', { class: 'muted small' },
+          [part.category, part.subcategory, price?.min != null && `ca. ${price.min}–${price.max} €`].filter(Boolean).join(' · '))))
   );
 
   if (part.description) wrap.append(el('p', { class: 'lead' }, part.description));
-  if (part.function) {
-    wrap.append(section('Funktion', el('div', { class: 'card' }, el('p', { class: 'small', style: 'margin:0' }, part.function))));
-  }
+  if (part.function) wrap.append(el('p', { class: 'small muted', style: 'margin:8px 0 0' }, part.function));
 
-  // Prüfstatus-Hinweis
-  if (part.verificationStatus !== 'verified') {
-    wrap.append(el('p', { class: 'verify-note' }, icon('warn', 14), ` ${UNVERIFIED_HINT}`));
-  }
+  // Prüfstatus mit Erklärung (statt reinem Badge)
+  const vNote = verificationNote(part.verificationStatus);
+  if (vNote) wrap.append(vNote);
 
-  // Kompatibilität zum eigenen Fahrzeug
+  // Warnungen & Recht direkt sichtbar
+  for (const w of part.warnings || []) wrap.append(note('warn', w));
+  for (const l of part.legalNotes || []) wrap.append(note('legal', l));
+
+  // Passt das an mein Fahrzeug? – die Kernfrage, prominent
   if (vehicles.length) {
     const compatOut = el('div', { style: 'margin-top:10px' });
     const vSelect = el('select', {
@@ -232,119 +252,130 @@ export async function renderTeilDetail({ partId }) {
           const compat = partCompatibility(part, v);
           compatOut.append(
             el('div', { class: 'chip-wrap tight' }, compatBadge(compat)),
-            el('p', { class: 'small muted', style: 'margin:8px 0 0' }, compat.detail)
-          );
+            el('p', { class: 'small muted', style: 'margin:8px 0 0' }, compat.detail));
         }
       },
     },
       el('option', { value: '' }, 'Fahrzeug wählen …'),
-      vehicles.map((v) => el('option', { value: v.id }, v.name || getModel(v.modelId)?.name || 'Fahrzeug'))
-    );
-    wrap.append(section('Passt das an mein Fahrzeug?',
-      el('div', { class: 'card' }, el('div', { class: 'vehicle-filter', style: 'margin:0' }, icon('moped', 18), vSelect), compatOut)));
+      vehicles.map((v) => el('option', { value: v.id }, v.name || getModel(v.modelId)?.name || 'Fahrzeug')));
+    wrap.append(sectionEl('Passt das an mein Fahrzeug?', {},
+      el('div', { class: 'card' },
+        el('div', { class: 'vehicle-filter', style: 'margin:0' }, icon('moped', 18), vSelect),
+        compatOut)));
   }
 
-  // Kompatibilität (Katalogdaten)
-  const compatCard = el('div', { class: 'card spec-grid' });
-  const spec = (label, value) => value ? el('div', { class: 'spec' }, el('span', { class: 'muted small' }, label), el('strong', {}, value)) : null;
-  compatCard.append(
-    spec('Kompatible Modelle', part.compatibleModelIds.length ? part.compatibleModelIds.map((id) => getModel(id)?.name || id).join(', ') : 'Noch nicht erfasst'),
-    spec('Kompatible Motoren', part.compatibleEngineIds.length ? part.compatibleEngineIds.map((id) => getEngine(id)?.name || id).join(', ') : 'Noch nicht erfasst'),
-    spec('OEM-Nummern', part.oemNumbers.length ? part.oemNumbers.join(', ') : 'Noch nicht erfasst'),
-    spec('Qualitätsstufen', part.qualityLevels.map((q) => QUALITY_LEVELS[q] || q).join(', '))
-  );
-  const compatSec = section('Kompatibilität', compatCard);
-  if (part.compatNotes) compatSec.append(el('p', { class: 'muted small card-note' }, part.compatNotes));
-  wrap.append(compatSec);
+  // Kompatibilität (Katalogdaten) – ruhige Key-Value-Liste
+  const kompatSec = sectionEl('Kompatibilität');
+  kompatSec.append(
+    el('div', { class: 'card' },
+      el('div', { class: 'info-list' },
+        infoRow('Modelle', part.compatibleModelIds.length ? part.compatibleModelIds.map((id) => getModel(id)?.name.replace('Simson ', '') || id).join(', ') : 'Noch nicht erfasst'),
+        infoRow('Motoren', part.compatibleEngineIds.length ? part.compatibleEngineIds.map((id) => getEngine(id)?.name || id).join(', ') : 'Noch nicht erfasst'),
+        infoRow('OEM-Nummern', part.oemNumbers.length ? part.oemNumbers.join(', ') : 'Noch nicht erfasst'),
+        infoRow('Qualitätsstufen', part.qualityLevels.map((q) => QUALITY_LEVELS[q] || q).join(', '))),
+      part.compatNotes ? el('p', { class: 'muted small', style: 'margin:10px 0 0' }, part.compatNotes) : null));
+  wrap.append(kompatSec);
 
-  // Verbaut in (Bauteile)
-  linkSection(wrap, 'Verbaut in', part.componentIds.map((cid) => {
+  // Verbaut in – Kernverknüpfung, sichtbar
+  linkChips(wrap, 'Verbaut in', part.componentIds.map((cid) => {
     const c = componentByPath(cid);
     return c && { icon: 'gearbox', label: c.node.name, href: `#/technik/${c.path}` };
   }));
 
-  // Schrauben & Drehmomente
+  // Technische Tiefe – Akkordeons
+  const details = el('div', { class: 'section' });
+  let hasDetails = false;
+
   const fastenerRows = part.requiredFastenerIds.map(getFastener).filter(Boolean);
   if (fastenerRows.length) {
-    const table = el('div', { class: 'card table-card' },
-      fastenerRows.map((x) =>
+    details.append(accordion('Schrauben & Drehmomente',
+      el('div', {}, fastenerRows.map((x) =>
         el('div', { class: 'fastener-row' },
           el('div', { class: 'row-main' },
-            el('span', {}, x.part),
-            el('span', { class: 'muted small' }, [x.thread, x.note !== '—' && x.note].filter(Boolean).join(' · '))),
-          el('strong', { class: 'torque' }, x.torque))));
-    wrap.append(section('Zugehörige Schrauben & Drehmomente', table));
+            el('span', { class: 'small' }, x.part),
+            el('span', { class: 'muted small' }, x.thread)),
+          el('strong', { class: 'torque' }, x.torque)))),
+      { icon: 'nut', meta: String(fastenerRows.length) }));
+    hasDetails = true;
   }
 
-  // Werkzeuge
-  linkSection(wrap, 'Benötigtes Werkzeug', part.requiredToolIds.map((tid) => {
-    const t = getTool(tid);
-    return t && { icon: 'wrench', label: t.name, href: null, title: t.purpose };
-  }));
+  const tools = part.requiredToolIds.map(getTool).filter(Boolean);
+  if (tools.length) {
+    details.append(accordion('Benötigtes Werkzeug',
+      el('div', { class: 'chip-wrap' }, tools.map((t) => el('span', { class: 'chip static', title: t.purpose }, icon('wrench', 14), t.name))),
+      { icon: 'wrench', meta: String(tools.length) }));
+    hasDetails = true;
+  }
 
-  // Verwandte & Alternative Teile
-  linkSection(wrap, 'Alternative Teile', part.alternativePartIds.map((pid) => {
-    const p2 = getPart(pid);
-    return p2 && { icon: 'box', label: p2.shortName || p2.name, href: `#/teile/${p2.id}` };
-  }));
-  linkSection(wrap, 'Verwandte Teile', part.relatedPartIds.map((pid) => {
-    const p2 = getPart(pid);
-    return p2 && { icon: 'box', label: p2.shortName || p2.name, href: `#/teile/${p2.id}` };
-  }));
+  const related = [
+    ...part.alternativePartIds.map((pid) => ({ p: getPart(pid), alt: true })),
+    ...part.relatedPartIds.map((pid) => ({ p: getPart(pid), alt: false })),
+  ].filter((x) => x.p);
+  if (related.length) {
+    details.append(accordion('Alternative & verwandte Teile',
+      el('div', { class: 'link-chips' }, related.map(({ p, alt }) =>
+        el('a', { class: 'chip', href: `#/teile/${p.id}` }, icon('box', 14), (alt ? 'Alternative: ' : '') + (p.shortName || p.name)))),
+      { icon: 'box', meta: String(related.length) }));
+    hasDetails = true;
+  }
 
-  // Verknüpfte Reparaturen/Wartungen/Diagnosen (aus beiden Richtungen)
   const usages = usagesOfPart(part.id);
-  const repairs = [...new Map([...usages.repairs].map((r) => [r.id, r])).values()];
-  linkSection(wrap, 'Zugehörige Reparaturen', repairs.map((r) => ({ icon: 'tools', label: r.name, href: `#/reparatur/${r.id}` })));
-  linkSection(wrap, 'Zugehörige Wartungen', usages.maintenance.map((m) => ({ icon: 'calendar', label: m.name, href: `#/wartung/${m.id}` })));
-  linkSection(wrap, 'Passende Diagnosen', (part.diagnosticIds || []).map((did) => ({ icon: 'diag', label: 'Problemfinder: ' + did.replaceAll('-', ' '), href: `#/diagnose/${did}` })));
+  const linked = [
+    ...usages.repairs.map((r) => ({ icon: 'tools', label: r.name, href: `#/reparatur/${r.id}` })),
+    ...usages.maintenance.map((m) => ({ icon: 'calendar', label: m.name, href: `#/wartung/${m.id}` })),
+    ...(part.diagnosticIds || []).map((d) => ({ icon: 'diag', label: 'Diagnose: ' + d.replaceAll('-', ' '), href: `#/diagnose/${d}` })),
+  ];
+  if (linked.length) {
+    details.append(accordion('Reparaturen, Wartungen & Diagnosen',
+      el('div', { class: 'link-chips' }, linked.map((it) => el('a', { class: 'chip', href: it.href }, icon(it.icon, 14), it.label))),
+      { icon: 'tools', meta: String(linked.length) }));
+    hasDetails = true;
+  }
 
-  // Warnungen & Recht
-  for (const w of part.warnings || []) {
-    wrap.append(el('div', { class: 'card legal warn', style: 'margin-top:12px' }, icon('warn', 18, 'legal-icon'), el('p', { class: 'small' }, w)));
-  }
-  for (const l of part.legalNotes || []) {
-    wrap.append(el('div', { class: 'card legal', style: 'margin-top:12px' }, icon('shield', 18, 'legal-icon'), el('p', { class: 'small' }, l)));
-  }
   if (part.notes?.length) {
-    wrap.append(section('Hinweise', el('div', { class: 'card' }, part.notes.map((n) => el('p', { class: 'small', style: 'margin:4px 0' }, '• ' + n)))));
+    details.append(accordion('Hinweise',
+      el('div', {}, part.notes.map((n) => el('p', { class: 'small', style: 'margin:4px 0' }, '• ' + n))),
+      { icon: 'note' }));
+    hasDetails = true;
   }
 
-  // Angebote (Demo-Vorschau)
   const offers = offersForPart(part.id, { includeDemo: true });
   if (offers.length) {
-    const sec = section('Angebote & Preisvergleich',
-      el('div', { class: 'stack' },
+    details.append(accordion('Angebote & Preisvergleich',
+      el('div', {},
         offers.map((o) =>
-          el('div', { class: 'card', style: 'padding:14px' },
-            el('div', { class: 'fastener-row', style: 'border:0;padding:0' },
-              el('div', { class: 'row-main' },
-                el('span', {}, o.productName),
-                el('span', { class: 'muted small' }, getSeller(o.sellerId)?.name || '')),
-              el('span', { class: 'chip-wrap tight' }, verificationBadge('demo')))))));
-    sec.append(el('p', { class: 'muted small card-note' },
-      'Die Händleranbindung ist vorbereitet, aber noch nicht aktiv – gezeigt werden nur Demo-Strukturen ohne echte Preise oder Links.'));
-    wrap.append(sec);
+          el('div', { class: 'fastener-row' },
+            el('div', { class: 'row-main' },
+              el('span', { class: 'small' }, o.productName),
+              el('span', { class: 'muted small' }, getSeller(o.sellerId)?.name || '')),
+            verificationText('demo'))),
+        el('p', { class: 'muted small', style: 'margin:10px 0 0' },
+          'Händleranbindung vorbereitet, noch nicht aktiv – nur Demo-Strukturen ohne echte Preise oder Links.')),
+      { icon: 'cart', meta: 'Demo' }));
+    hasDetails = true;
   }
 
+  if (hasDetails) wrap.append(details);
+
   wrap.append(el('p', { class: 'disclaimer' }, icon('info', 14),
-    ' Alle Angaben sind Richtwerte ohne Gewähr – Prüfstatus beachten, im Zweifel Original-Reparaturhandbuch.'));
+    ' Richtwerte ohne Gewähr – im Zweifel Original-Reparaturhandbuch.'));
 
   return wrap;
 }
 
 /* ─────────────────────────── Helfer ─────────────────────────── */
 
-function section(title, ...children) {
-  return el('section', { class: 'section' }, el('h2', { class: 'sub-head' }, title), ...children);
+function infoRow(label, value) {
+  return el('div', { class: 'info-row' },
+    el('span', { class: 'info-label' }, label),
+    el('span', { class: 'info-value' }, value));
 }
 
-/** Zeigt eine Chip-Reihe verlinkter Elemente – oder nichts, wenn leer. */
-function linkSection(wrap, title, entries) {
+function linkChips(wrap, title, entries) {
   const items = (entries || []).filter(Boolean);
   if (!items.length) return;
-  wrap.append(section(title,
+  wrap.append(sectionEl(title, {},
     el('div', { class: 'link-chips' },
-      items.map((it) => el(it.href ? 'a' : 'span', { class: 'chip' + (it.href ? '' : ' static'), href: it.href || null, title: it.title || null },
+      items.map((it) => el(it.href ? 'a' : 'span', { class: 'chip' + (it.href ? '' : ' static'), href: it.href || null },
         icon(it.icon, 14), it.label)))));
 }
