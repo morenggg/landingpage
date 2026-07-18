@@ -19,7 +19,13 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true">◨</span>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+            <rect x="3" y="14" width="4.2" height="7" rx="1.4" fill="currentColor" opacity="0.75"/>
+            <rect x="9.9" y="9" width="4.2" height="12" rx="1.4" fill="currentColor" opacity="0.9"/>
+            <rect x="16.8" y="3.5" width="4.2" height="17.5" rx="1.4" fill="currentColor"/>
+          </svg>
+        </span>
         <div>
           <span class="brand-name">FBA&nbsp;Kapital</span>
           <span class="brand-sub">Startkapital- &amp; Liquiditätsrechner</span>
@@ -40,18 +46,22 @@
 
     <!-- ===================== Erklärvideo ===================== -->
     <section class="video-section" aria-labelledby="video-heading">
-      <div class="video-head">
-        <h2 id="video-heading">So funktioniert der Rechner</h2>
-        <p>Erhalte in nur 90 Sekunden einen Überblick über alle Funktionen.</p>
-      </div>
-      <button type="button" class="video-card" id="video-open" aria-haspopup="dialog">
-        <img class="video-poster" src="assets/explainer-poster.jpg"
-             alt="" loading="lazy" width="1920" height="1080">
-        <span class="video-scrim" aria-hidden="true"></span>
-        <span class="video-play" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+      <h2 id="video-heading" class="sr-only">Erklärvideo</h2>
+      <button type="button" class="video-banner" id="video-open" aria-haspopup="dialog">
+        <span class="video-banner-thumb">
+          <img src="assets/explainer-poster.jpg" alt="" loading="lazy" width="1920" height="1080">
+          <span class="video-banner-playdot" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+          </span>
         </span>
-        <span class="video-meta" aria-hidden="true">Video ansehen · 79 Sek.</span>
+        <span class="video-banner-text">
+          <span class="video-banner-title">So funktioniert der Rechner</span>
+          <span class="video-banner-desc">Kurzes Erklärvideo — Überblick über alle Funktionen in 90 Sekunden</span>
+        </span>
+        <span class="video-banner-cta" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+          <span class="cta-label">Video ansehen · 79 Sek.</span>
+        </span>
         <span class="sr-only">Erklärvideo abspielen: So funktioniert der Rechner (79 Sekunden)</span>
       </button>
     </section>
