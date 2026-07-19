@@ -118,6 +118,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 .icon { display: inline-flex; vertical-align: middle; flex: none; }
 
+/* Sichtbarer Tastatur-Fokus (nur Keyboard, nicht bei Maus/Touch) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Kein Fokusring bei reiner Zeigerbedienung */
+:focus:not(:focus-visible) { outline: none; }
+
 /* ─────────── Werte-Typografie (Drehmomente, ccm, Preise, KPIs) ─────────── */
 /* Kondensierte Normschrift trennt technische Werte klar vom Fließtext.
    Preis = Messing-Ton, Drehmoment/Sollwert = Orange → nie verwechselbar. */
