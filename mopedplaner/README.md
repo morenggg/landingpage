@@ -76,6 +76,62 @@ mopedplaner/
         └── wissen.js       Motoren, Wartungen, Reparaturen (Liste + Detail)
 ```
 
+## Designsprache – „Die Werkbank, nicht das Cockpit"
+
+Eigenständige Werkstatt-Identität statt generischem Dark-SaaS-Look. Leitidee
+ist die aufgeräumte Werkbank eines erfahrenen Schraubers: ruhig, dokumen-
+tarisch, funktional-ehrlich – kein Tuning-Cockpit.
+
+- **Werte-Typografie:** Kondensierte Normschrift (Barlow Condensed, SIL OFL,
+  selbst gehostet in `assets/fonts/`, im SW vorgeladen) via `--font-value`
+  für alle technischen Zahlen. Helfer `techValue()`/`priceValue()` trennen
+  Zahl und Einheit. **Drehmoment = Orange, Preis = Messing** – nie
+  verwechselbar.
+- **Zwei Akzentrollen:** `--accent` (Orange: Aktion, Fokus, hohe Relevanz)
+  und sehr sparsam `--accent-brass` (Messing: Historie, „Original", Preise,
+  eigene Fahrzeugdaten).
+- **Oberflächen-/Radius-Rollen** gegen die „Wall of identical rectangles":
+  `card-personal` (weich, `--radius`) für eigene Inhalte · `card-technical`
+  (gefast, `--radius-technical` 5 px, kühler) für Referenzwissen · flache
+  Zeilen für neutrale Listen. Akkordeons tragen `variant: personal|technical`.
+- **Leitmotiv Lochraster** (`.perfboard`, reines CSS): dezent nur im
+  Fahrzeug-Hero, Onboarding und als Diagnose-Modus-Marker.
+- **Icon-Sprache:** Bestehendes SVG-Set mit `miter`-Ecken statt runder
+  Feather-Rundung → technische Zeichnungs-Anmutung.
+- **Bewegung:** eine mechanisch einrastende Bestätigung (`--ease-mech`,
+  `check-pop`) nur bei abschließenden Aktionen; sonst unverändert
+  zurückhaltend. `prefers-reduced-motion` deaktiviert alles.
+
+### Kernkomponenten dieser Identität
+
+- **Ersatzteilkatalog:** Kategorie-Register mit Sticky-Headern und Zähler,
+  technische Gruppen-Zeilen, Preise dezent in Messing, Kompatibilität mit
+  **Symbol + Text** (`compatBadge`, nicht nur Farbe) – Katalog, kein Shop.
+- **Technik-Explorer:** Breadcrumb als **Aktenzeichen** mit Register-Nummern
+  je Ebene (`01 Motor › 02 Kupplung › 01 Kupplungskorb`).
+- **Suche:** Trefferguppen als Register eines technischen Handbuchs; Enter
+  springt zum ersten Treffer.
+- **Diagnose:** eigener Modus-Marker (Chip + maskiertes Lochraster);
+  wahrscheinlichste Ursache mit ruhigem Messing-Rahmen statt Orange-Glow.
+- **Onboarding:** ein Screen ohne Wizard; Wissensbereiche bleiben ohne
+  Fahrzeug nutzbar. Status im UI-State (`mopedplaner.ui.v1`), getrennt von
+  Nutzerdaten.
+- **Datensicherung:** Zeitstempel der letzten Sicherung (UI-State, erst nach
+  echtem Export/Import gesetzt, nicht mit-exportiert).
+
+### Desktop & Zugänglichkeit
+
+- Ab **1024 px** wird dieselbe Navigation per Media-Query zur linken Sidebar
+  (Markenkopf, aktiver Zustand), Inhalt in lesbarer, linksbündiger Spalte
+  (≤ 880 px, ab 1280 px 960 px). 720–1023 px behalten die Bottom-Bar. Mobil
+  unverändert.
+- **Offline-Indikator** (dezent, `navigator.onLine` nur vorsichtig gedeutet).
+- **Kontrast:** alle Text/Flächen-Paare ≥ WCAG AA (`--muted` angehoben).
+  Sichtbarer **Tastatur-Fokus** via `:focus-visible`. Keine reine Farb-
+  codierung. Touch-Ziele ≥ 48 px.
+
+---
+
 ## UI-System
 
 Die Oberfläche folgt dem Prinzip **„Weniger gleichzeitig, mehr im richtigen
