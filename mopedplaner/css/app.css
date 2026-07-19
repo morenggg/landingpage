@@ -420,9 +420,39 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 .garage-grid { display: grid; gap: 12px; }
 
-.zustand { display: flex; gap: 3px; margin-top: 4px; }
-.z-seg { width: 18px; height: 4px; border-radius: 2px; background: var(--surface-2); }
-.z-seg.on { background: var(--accent); }
+.zustand-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.zustand-word { font-size: var(--fs-caption); font-weight: 600; color: var(--muted-strong); }
+.zustand { display: flex; gap: 3px; }
+.z-seg { width: 16px; height: 4px; border-radius: 1px; background: var(--surface-2); }
+.z-seg.on { background: var(--accent-brass); }
+
+/* ─────────── Offline-Indikator (dezent, nicht alarmistisch) ─────────── */
+#offline-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + 8px);
+  transform: translate(-50%, 8px);
+  z-index: 70;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-caption);
+  color: var(--muted-strong);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+#offline-bar.show { display: flex; opacity: 1; transform: translate(-50%, 0); }
+#offline-bar .icon { color: var(--warn); }
+@media (min-width: 1024px) {
+  #offline-bar { left: calc(var(--sidebar-w) + 50%); }
+}
 
 .card-cta {
   display: flex;
@@ -523,6 +553,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   margin-top: 8px;
 }
 .timeline-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.timeline-head strong { font-size: var(--fs-card); }
+.timeline-head .muted { font-family: var(--font-value); font-weight: 600; font-size: 0.95rem; color: var(--muted-strong); white-space: nowrap; }
+.timeline-meta { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 8px 0 2px; }
 .timeline-actions { display: flex; gap: 8px; margin-top: 10px; }
 .timeline-card p { margin: 6px 0 0; }
 
@@ -542,17 +575,25 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .task-input:focus { border-color: var(--accent); }
 
+/* Technische Checkbox: gefaste Ecke, mechanische Einrast-Bestätigung */
 .task-check {
-  width: 28px; height: 28px;
+  width: 30px; height: 30px;
   flex: none;
-  border-radius: 9px;
+  border-radius: var(--radius-technical);
   border: 2px solid var(--line-strong);
   display: flex; align-items: center; justify-content: center;
   color: #16130f;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .task-check.checked { background: var(--ok); border-color: var(--ok); }
+.task-check.pop { animation: check-pop 0.24s var(--ease-mech); }
+@keyframes check-pop {
+  0% { transform: scale(0.82); }
+  55% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
 .row-item.task.done .row-main span { text-decoration: line-through; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .task-check.pop { animation: none; } }
 
 /* ─────────── Formulare ─────────── */
 
@@ -670,6 +711,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast[data-kind="err"] { border-color: rgba(248, 113, 113, 0.5); color: var(--danger); }
+/* Toast über den Offline-Balken heben, wenn beide sichtbar sind */
+body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 
 /* ─────────── Leere Zustände ─────────── */
 
@@ -699,6 +742,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .crumbs a.current { color: var(--text); }
 .crumb-sep { color: var(--muted); opacity: 0.6; }
+
+/* Technik-Aktenzeichen: Pfad als technische Kennung (Normschrift, Register) */
+.crumbs.aktenzeichen { font-family: var(--font-value); font-size: 0.92rem; font-weight: 600; letter-spacing: 0.02em; gap: 5px; }
+.crumbs.aktenzeichen .crumb-idx { color: var(--accent); margin-right: 3px; }
+.crumbs.aktenzeichen a { color: var(--muted); }
+.crumbs.aktenzeichen a.current { color: var(--text); }
 
 .comp-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
 .comp-head h1 { font-size: 1.4rem; }
@@ -768,6 +817,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 .diag-stage { margin-top: 4px; }
 .diag-card { padding: 20px 18px; }
+/* Diagnose-Modus: Lochraster nur als dezenter Modus-Marker im Kartenkopf */
+.diag-card.perfboard::before {
+  background-size: 15px 15px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0, transparent 130px);
+  mask-image: linear-gradient(180deg, #000 0, transparent 130px);
+}
+.diag-mode { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 4px 10px 4px 8px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-full);
+  font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted-strong); }
+.diag-mode .icon { color: var(--accent); }
 .diag-progress { margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; font-size: 0.72rem; }
 .diag-question { font-size: 1.3rem; }
 .diag-help { display: block; margin: 12px 0 0; font-size: 0.9rem; line-height: 1.5; }
@@ -798,7 +857,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .diag-card.sev-ok { border-color: rgba(52, 211, 153, 0.4); }
 
 .cause { padding: 14px; }
-.cause-top { border-color: rgba(255, 107, 44, 0.4); background: linear-gradient(180deg, rgba(255,107,44,0.06), var(--surface)); }
+/* Wahrscheinlichste Ursache: ruhiger Messing-Rahmen statt Orange-Glow */
+.cause-top { border-color: var(--line-accent); border-left: 2px solid var(--accent-brass); }
 .cause-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cause p { margin: 8px 0 10px; }
 .cause .mini-btn { color: var(--accent); }
@@ -913,6 +973,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .acc-chev { color: var(--muted); transition: transform 0.2s ease; }
 .acc[open] > .acc-head .acc-chev { transform: rotate(90deg); }
 .acc-body { padding: 2px 14px 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+/* Rollen: persönliche Fahrzeugdaten (Messing) vs. technisches Referenzwissen */
+.acc-personal { border-left: 2px solid var(--line-accent); }
+.acc-personal .acc-icon { color: var(--accent-brass); }
+.acc-technical { background: var(--surface-technical); border-radius: var(--radius-technical); }
+.acc-technical .acc-icon { color: var(--muted-strong); }
 
 /* ─────────── Hinweise & Warnungen (einheitlich) ─────────── */
 

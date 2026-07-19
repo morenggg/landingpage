@@ -67,11 +67,14 @@ export async function renderGarage(params = {}) {
   return wrap;
 }
 
+const ZUSTAND_WORDS = { 1: 'Scheunenfund', 2: 'Bastelobjekt', 3: 'Solide', 4: 'Gepflegt', 5: 'Neuwertig' };
+
 function zustandBar(z) {
   const val = Math.max(1, Math.min(5, Number(z) || 3));
-  const bar = el('div', { class: 'zustand', 'aria-label': `Zustand ${val} von 5` });
+  const bar = el('div', { class: 'zustand' });
   for (let i = 1; i <= 5; i++) bar.append(el('span', { class: 'z-seg' + (i <= val ? ' on' : '') }));
-  return bar;
+  return el('div', { class: 'zustand-row', 'aria-label': `Zustand: ${ZUSTAND_WORDS[val]}` },
+    bar, el('span', { class: 'zustand-word' }, ZUSTAND_WORDS[val]));
 }
 
 /** Formular für Anlegen & Bearbeiten. */

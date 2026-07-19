@@ -59,7 +59,8 @@ export function renderDiagnoseFlow({ flowId }) {
     const step = flow.steps[stepId];
     if (!step) return showResult(stepId);
     stage.replaceChildren(
-      el('div', { class: 'card diag-card' },
+      el('div', { class: 'card diag-card perfboard' },
+        el('span', { class: 'diag-mode' }, icon('diag', 13), 'Diagnose'),
         el('p', { class: 'diag-progress muted small' }, `Frage ${history.length + 1}`),
         el('h2', { class: 'diag-question' }, step.question),
         step.help ? el('p', { class: 'muted diag-help' }, icon('info', 15), ' ', step.help) : null,

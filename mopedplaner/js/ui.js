@@ -91,6 +91,8 @@ const ICON_PATHS = {
   book: '<path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z"/>',
   nut: '<path d="m12 2 8 4.6v9.2L12 22l-8-6.2V6.6z" transform="rotate(90 12 12)"/><circle cx="12" cy="12" r="3.4"/>',
   box: '<path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  offline: '<path d="M5 12.5a7 7 0 0 1 11-1M8.5 15.5a3.5 3.5 0 0 1 5 0"/><circle cx="12" cy="19" r="0.6"/><path d="M3 3l18 18"/>',
+  clock2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
 };
 
 /** Inline-SVG-Icon. size in px.
@@ -319,9 +321,10 @@ export function sectionEl(title, opts = {}, ...children) {
     ...children);
 }
 
-/** Einklappbare Sektion (progressive Offenlegung) auf <details>-Basis. */
-export function accordion(title, content, { open = false, icon: ic = null, meta = null } = {}) {
-  return el('details', { class: 'acc', open: open || null },
+/** Einklappbare Sektion (progressive Offenlegung) auf <details>-Basis.
+ *  variant: 'personal' (Messing – eigene Fahrzeugdaten) | 'technical' | null */
+export function accordion(title, content, { open = false, icon: ic = null, meta = null, variant = null } = {}) {
+  return el('details', { class: 'acc' + (variant ? ` acc-${variant}` : ''), open: open || null },
     el('summary', { class: 'acc-head' },
       ic ? icon(ic, 17, 'acc-icon') : null,
       el('span', { class: 'acc-title' }, title),

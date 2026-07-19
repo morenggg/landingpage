@@ -17,13 +17,17 @@ export function renderTechnik({ path = [] }) {
   const wrap = el('div', { class: 'view' });
   const { node, crumbs } = findComponent(path);
 
-  // Breadcrumbs
-  const crumbBar = el('nav', { class: 'crumbs', 'aria-label': 'Pfad' });
+  // Breadcrumbs als technisches Aktenzeichen (Register-Nummern je Ebene)
+  const crumbBar = el('nav', { class: 'crumbs aktenzeichen', 'aria-label': 'Pfad' });
   crumbBar.append(el('a', { href: '#/technik', class: crumbs.length ? '' : 'current' }, 'Technik'));
+  let level = COMPONENT_TREE;
   crumbs.forEach((c, i) => {
-    crumbBar.append(icon('chevR', 13, 'crumb-sep'));
+    const idx = level.findIndex((n) => n.id === c.id);
+    crumbBar.append(icon('chevR', 12, 'crumb-sep'));
     const href = '#/technik/' + crumbs.slice(0, i + 1).map((x) => x.id).join('/');
-    crumbBar.append(el('a', { href, class: i === crumbs.length - 1 ? 'current' : '' }, c.name));
+    crumbBar.append(el('a', { href, class: i === crumbs.length - 1 ? 'current' : '' },
+      el('span', { class: 'crumb-idx' }, String(idx + 1).padStart(2, '0')), c.name));
+    level = c.children || [];
   });
 
   if (!path.length || !node) {

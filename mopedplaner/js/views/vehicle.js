@@ -3,7 +3,7 @@
  * Übersicht, Logbuch (Historie mit Kosten) und Aufgaben je Fahrzeug.
  */
 
-import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2, accordion, emptyState } from '../ui.js';
+import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2, accordion, emptyState, techValue } from '../ui.js';
 import { Vehicles, Logs, Tasks, LOG_TYPES } from '../store.js';
 import { getModel } from '../data/models.js';
 import { navigate, refresh } from '../router.js';
@@ -110,7 +110,7 @@ function renderUebersicht(vehicle, model, logs, tasks, totalCost) {
           info('Auspuff', vehicle.auspuff),
           info('Rahmennummer', vehicle.rahmennummer),
           info('Motornummer', vehicle.motornummer)
-        ), { open: true, icon: 'moped' }),
+        ), { open: true, icon: 'moped', variant: 'personal' }),
       model && model.id !== 'sonstige'
         ? accordion('Modell-Steckbrief',
             el('div', {},
@@ -124,10 +124,10 @@ function renderUebersicht(vehicle, model, logs, tasks, totalCost) {
                 info('Tank', model.tank && `${model.tank} l`),
                 info('Bordspannung', model.voltage)),
               model.notes ? el('p', { class: 'muted small', style: 'margin:10px 0 0' }, model.notes) : null),
-            { icon: 'book' })
+            { icon: 'book', variant: 'technical' })
         : null,
       vehicle.notizen
-        ? accordion('Notizen', el('p', { class: 'pre-wrap small', style: 'margin:0' }, vehicle.notizen), { icon: 'note' })
+        ? accordion('Notizen', el('p', { class: 'pre-wrap small', style: 'margin:0' }, vehicle.notizen), { icon: 'note', variant: 'personal' })
         : null
     )
   );
@@ -171,10 +171,10 @@ function renderLogbuch(vehicle, logs) {
             el('strong', {}, log.title || type.name),
             el('span', { class: 'muted small' }, fmtDate(log.date))
           ),
-          el('div', { class: 'chip-wrap tight' },
+          el('div', { class: 'timeline-meta' },
             el('span', { class: 'badge' }, type.name),
-            log.km ? el('span', { class: 'badge' }, `${log.km} km`) : null,
-            log.cost ? el('span', { class: 'badge accent' }, fmtEuro2(parseFloat(log.cost))) : null
+            log.km ? techValue(`${log.km} km`, { kind: 'plain' }) : null,
+            log.cost ? techValue(fmtEuro2(parseFloat(log.cost)), { kind: 'price' }) : null
           ),
           log.parts ? el('p', { class: 'small' }, el('span', { class: 'muted' }, 'Teile: '), log.parts) : null,
           log.notes ? el('p', { class: 'small muted pre-wrap' }, log.notes) : null,
@@ -276,7 +276,13 @@ function renderAufgaben(vehicle, tasks) {
         el('button', {
           class: 'task-check' + (t.done ? ' checked' : ''),
           'aria-label': t.done ? 'Als offen markieren' : 'Als erledigt markieren',
-          onclick: async () => { await Tasks.toggle(t.id); refresh(); },
+          onclick: async (e) => {
+            const cb = e.currentTarget;
+            const willCheck = !t.done;
+            if (willCheck) { cb.classList.add('checked', 'pop'); cb.replaceChildren(icon('check', 15)); }
+            await Tasks.toggle(t.id);
+            setTimeout(refresh, willCheck ? 240 : 0);
+          },
         }, t.done ? icon('check', 15) : ''),
         el('div', { class: 'row-main' }, el('span', {}, t.title)),
         el('button', { class: 'icon-btn subtle', 'aria-label': 'Löschen', onclick: async () => { await Tasks.remove(t.id); refresh(); } }, icon('x', 16))

@@ -101,6 +101,20 @@ setNotFound(() => mount(renderDashboard));
 buildTabbar();
 startRouter();
 
+/* Offline-Indikator – dezent, nicht alarmistisch. navigator.onLine wird
+   nur vorsichtig interpretiert: „online" ist nicht garantiert, aber
+   „offline" ist verlässlich genug für den Hinweis, dass lokal alles
+   weiterläuft. Statuswechsel ohne Neuladen. */
+(function setupOfflineIndicator() {
+  const bar = el('div', { id: 'offline-bar', role: 'status', 'aria-live': 'polite' },
+    icon('offline', 16), el('span', {}, 'Offline – gespeicherte Inhalte bleiben verfügbar.'));
+  document.body.append(bar);
+  const sync = () => bar.classList.toggle('show', navigator.onLine === false);
+  window.addEventListener('online', sync);
+  window.addEventListener('offline', sync);
+  sync();
+})();
+
 /* PWA: Service Worker (nur auf http/https, scoped auf /mopedplaner/) */
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
