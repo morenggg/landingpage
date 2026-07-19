@@ -35,6 +35,11 @@ const TABS = [
 
 function buildTabbar() {
   const bar = document.getElementById('tabbar');
+  // Markenkopf – nur in der Desktop-Sidebar sichtbar (mobil per CSS versteckt)
+  bar.append(
+    el('a', { class: 'nav-brand', href: '#/', 'aria-label': 'MopedPlaner Start' },
+      icon('nut', 20), el('span', {}, 'MopedPlaner'))
+  );
   for (const tab of TABS) {
     bar.append(
       el('a', { class: 'tab', href: '#/' + tab.id, dataset: { tab: tab.id } },
