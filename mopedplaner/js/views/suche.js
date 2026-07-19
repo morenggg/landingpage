@@ -52,6 +52,12 @@ export function renderSuche() {
       if (q.length >= 3 && searchKnowledge(q).length) rememberSearch(q);
     }, 1200);
   });
+  // Tastatur: Enter springt zum ersten Treffer (Desktop-Bedienung)
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const first = out.querySelector('.result-group a.row-item');
+    if (first) { e.preventDefault(); const q = input.value.trim(); if (q.length >= 3) rememberSearch(q); location.hash = first.getAttribute('href').replace(/^#/, ''); }
+  });
 
   function startScreen() {
     const box = el('div', {});
@@ -91,7 +97,10 @@ export function renderSuche() {
 
     for (const group of groups) {
       const sec = el('section', { class: 'result-group' },
-        el('div', { class: 'result-group-head' }, icon(group.icon, 16), `${group.label} (${group.count})`));
+        el('div', { class: 'result-group-head' },
+          icon(group.icon, 15),
+          el('span', {}, group.label),
+          el('span', { class: 'rg-count' }, String(group.count))));
       const list = el('div', { class: 'stack' });
       for (const item of group.items) {
         const inner = [

@@ -156,7 +156,7 @@ function renderLogbuch(vehicle, logs) {
 
   if (!logs.length) {
     wrap.append(emptyState('book', null,
-      'Noch keine Einträge. Jede Wartung, Reparatur und jeder Umbau landet hier – so entsteht die lückenlose Historie.', null, true));
+      'Hier ist noch nichts dokumentiert. Trag die nächste Wartung, Reparatur oder den Umbau ein – so wächst mit der Zeit die lückenlose Historie deines Mopeds.', null, true));
     return wrap;
   }
 
@@ -265,7 +265,7 @@ function renderAufgaben(vehicle, tasks) {
 
   if (!tasks.length) {
     wrap.append(emptyState('check', null,
-      'Keine Aufgaben. Plane hier anstehende Arbeiten – der Umbauplaner kann ganze Teilelisten hierher übernehmen.', null, true));
+      'Nichts offen. Schreib dir hier auf, was als Nächstes ansteht – der Umbauplaner kann ganze Teilelisten direkt hierher übernehmen.', null, true));
     return wrap;
   }
 

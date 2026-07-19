@@ -108,7 +108,7 @@ export function renderWartungList() {
         icon('calendar', 22, 'row-lead accent-lead'),
         el('div', { class: 'row-main' },
           el('span', { class: 'row-title' }, m.name),
-          el('span', { class: 'muted small' }, `${m.interval} · ${m.duration}`)),
+          el('span', { class: 'interval-lead' }, icon('clock2', 13), ' ', m.interval)),
         icon('chevR', 18, 'muted'))
     );
   }

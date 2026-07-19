@@ -5,6 +5,29 @@
 
 import { el, icon, toast, confirmSheet } from '../ui.js';
 import { Backup } from '../store.js';
+import { refresh } from '../router.js';
+
+/* Zeitstempel der letzten Sicherung – im UI-State, getrennt von Nutzerdaten,
+   damit er nicht mit exportiert wird. Erst nach echtem Erfolg gesetzt. */
+const UI_KEY = 'mopedplaner.ui.v1';
+function markBackup(kind) {
+  try {
+    const s = JSON.parse(localStorage.getItem(UI_KEY)) || {};
+    s.lastBackup = { at: new Date().toISOString(), kind };
+    localStorage.setItem(UI_KEY, JSON.stringify(s));
+  } catch { /* voll – egal */ }
+}
+function lastBackup() {
+  try { return (JSON.parse(localStorage.getItem(UI_KEY)) || {}).lastBackup || null; } catch { return null; }
+}
+function agoText(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days <= 0) return 'heute';
+  if (days === 1) return 'gestern';
+  if (days < 30) return `vor ${days} Tagen`;
+  return `vor ${Math.floor(days / 30)} Monaten`;
+}
 
 export function renderEinstellungen() {
   const wrap = el('div', { class: 'view' });
@@ -12,7 +35,7 @@ export function renderEinstellungen() {
     el('header', { class: 'page-head' },
       el('div', {},
         el('h1', {}, 'Mehr'),
-        el('p', { class: 'muted' }, 'Deine Daten, Sicherung und Infos zur App.'))
+        el('p', { class: 'muted' }, 'Werkzeuge, Datensicherung und Infos zur App.'))
     )
   );
 
@@ -35,18 +58,28 @@ export function renderEinstellungen() {
   const backupSec = el('section', { class: 'section' }, el('h2', { class: 'sub-head' }, 'Datensicherung'));
   backupSec.append(
     el('p', { class: 'muted small' },
-      'Alle Daten liegen ausschließlich lokal auf diesem Gerät (offline-first). Sichere sie regelmäßig als Datei – so kannst du sie auf ein neues Gerät mitnehmen.')
+      'Deine Daten liegen nur auf diesem Gerät – keine Cloud, kein Konto. Sicher sie ab und zu als Datei, dann kannst du sie aufs nächste Gerät mitnehmen.')
+  );
+
+  const lb = lastBackup();
+  backupSec.append(
+    el('div', { class: 'backup-status' },
+      icon(lb ? 'check' : 'info', 16, lb ? 'brass' : 'muted'),
+      el('span', {}, lb
+        ? `Letzte Sicherung: ${agoText(lb.at)} (${lb.kind === 'import' ? 'eingespielt' : 'exportiert'})`
+        : 'Noch keine Sicherung erstellt.'))
   );
 
   const fileInput = el('input', { type: 'file', accept: 'application/json,.json', style: 'display:none' });
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files[0];
     if (!file) return;
-    const yes = await confirmSheet('Sicherung einspielen?', 'Die aktuellen Daten auf diesem Gerät werden durch die Sicherung ersetzt.', 'Einspielen');
+    const yes = await confirmSheet('Sicherung einspielen?', 'Die aktuellen Daten auf diesem Gerät werden durch die Sicherung ersetzt. Das lässt sich nicht rückgängig machen.', 'Einspielen');
     if (!yes) { fileInput.value = ''; return; }
     try {
       await Backup.import(await file.text());
-      toast('Sicherung eingespielt 🎉');
+      markBackup('import');
+      toast('Sicherung eingespielt.');
       setTimeout(() => location.reload(), 600);
     } catch (e) {
       toast(e.message || 'Import fehlgeschlagen.', 'err');
@@ -59,18 +92,24 @@ export function renderEinstellungen() {
       el('button', {
         class: 'row-item as-btn',
         onclick: async () => {
-          const json = await Backup.export();
-          const blob = new Blob([json], { type: 'application/json' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `mopedplaner-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-          toast('Sicherung erstellt');
+          try {
+            const json = await Backup.export();
+            const blob = new Blob([json], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `mopedplaner-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            markBackup('export');
+            toast('Sicherung als Datei gespeichert.');
+            refresh();
+          } catch {
+            toast('Export fehlgeschlagen.', 'err');
+          }
         },
-      }, icon('download', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Daten exportieren'), el('span', { class: 'muted small' }, 'JSON-Datei herunterladen')), icon('chevR', 18, 'muted')),
+      }, icon('download', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Daten sichern'), el('span', { class: 'muted small' }, 'Als JSON-Datei herunterladen')), icon('chevR', 18, 'muted')),
       el('button', { class: 'row-item as-btn', onclick: () => fileInput.click() },
-        icon('upload', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Sicherung einspielen'), el('span', { class: 'muted small' }, 'JSON-Datei auswählen')), icon('chevR', 18, 'muted')),
+        icon('upload', 18, 'row-lead'), el('div', { class: 'row-main' }, el('span', {}, 'Sicherung einspielen'), el('span', { class: 'muted small' }, 'JSON-Datei vom Gerät wählen')), icon('chevR', 18, 'muted')),
       fileInput
     )
   );
@@ -81,14 +120,14 @@ export function renderEinstellungen() {
   aboutSec.append(
     el('div', { class: 'card' },
       el('p', { class: 'small', style: 'margin-top:0' },
-        'MopedPlaner ist deine digitale Werkstatt für alle Simson-Fahrzeuge: Garage, Fahrzeugakte, geführte Diagnose, Technik-Wissen, Umbauplaner und Schraubenfinder.'),
+        'MopedPlaner ist die digitale Werkbank für alle Simson: Fahrzeugakte, geführte Diagnose, Technik-Wissen, Umbauplaner und Schraubenfinder – gemacht für die Garage, nicht fürs Büro.'),
       el('p', { class: 'small muted' },
-        'Als App installierbar: Im Browser-Menü „Zum Startbildschirm hinzufügen" wählen – MopedPlaner funktioniert danach auch offline in der Garage.'),
+        'Als App aufs Handy: im Browser-Menü „Zum Startbildschirm hinzufügen". Danach läuft alles offline – auch ohne Empfang in der Werkstatt.'),
       el('p', { class: 'small muted', style: 'margin-bottom:0' },
-        'In Planung: Community-Projekte, Werkstattfinder, Foto-Analyse, Wartungserinnerungen und Cloud-Synchronisation.')
+        'Geplant: Community-Projekte, Werkstattfinder, Foto-Analyse, Wartungserinnerungen und Cloud-Sicherung.')
     ),
     el('p', { class: 'disclaimer' }, icon('info', 14),
-      ' Alle technischen Angaben sind Richtwerte ohne Gewähr. Sicherheitsrelevante Arbeiten (Bremsen, Rahmen) im Zweifel von einer Fachwerkstatt prüfen lassen.')
+      ' Alle technischen Angaben sind Richtwerte ohne Gewähr. Bei sicherheitsrelevanten Arbeiten (Bremsen, Rahmen, Lenkung) im Zweifel die Fachwerkstatt fragen.')
   );
   wrap.append(aboutSec);
 

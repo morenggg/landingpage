@@ -892,8 +892,15 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 .legal { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; }
 .legal p { margin: 0; }
 .legal-icon { color: var(--ok); margin-top: 2px; }
-.legal.warn { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.06); }
+.legal.warn { border-color: rgba(251, 191, 36, 0.45); border-left: 3px solid var(--warn); background: rgba(251, 191, 36, 0.07); }
 .legal.warn .legal-icon { color: var(--warn); }
+
+/* Wartungsintervall visuell führend */
+.interval-lead { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-strong); font-size: var(--fs-caption); font-weight: 600; }
+.interval-lead .icon { color: var(--accent); }
+
+/* Status der letzten Datensicherung */
+.backup-status { display: flex; align-items: center; gap: 8px; margin: 10px 0 12px; font-size: var(--fs-caption); color: var(--muted-strong); }
 
 /* ─────────── Suche (Schraubenfinder) ─────────── */
 
@@ -1154,19 +1161,23 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 }
 .verify-note .icon { color: var(--warn); margin-top: 1px; }
 
-.result-group { margin-top: 20px; }
+.result-group { margin-top: 22px; }
+/* Suchgruppen wie Register eines technischen Handbuchs */
 .result-group-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 0.8rem;
+  gap: 9px;
+  margin: 0 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+  color: var(--muted-strong);
+  font-size: var(--fs-micro);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
 }
 .result-group-head .icon { color: var(--accent); }
+.result-group-head .rg-count { margin-left: auto; font-family: var(--font-value); font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
 
 .link-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .link-chips .chip { font-size: 0.82rem; padding: 8px 12px; }
