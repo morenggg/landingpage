@@ -93,12 +93,15 @@ const ICON_PATHS = {
   box: '<path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
 };
 
-/** Inline-SVG-Icon. size in px. */
+/** Inline-SVG-Icon. size in px.
+ *  Konstruktion: gefaste (miter) Ecken + runde Kappen = technische
+ *  Zeichnungs-Anmutung statt generischer Feather/Lucide-Rundung.
+ *  miterlimit begrenzt spitze Ecken, damit bei kleinen Größen nichts ausreißt. */
 export function icon(name, size = 22, cls = '') {
   const path = ICON_PATHS[name] || ICON_PATHS.info;
   const span = document.createElement('span');
   span.className = 'icon ' + cls;
-  span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="miter" stroke-miterlimit="2.4" aria-hidden="true">${path}</svg>`;
   return span;
 }
 
@@ -193,6 +196,35 @@ export function difficultyDots(level, max = 5) {
   return wrap;
 }
 
+/* ─────────────────────────── Technische Werte ─────────────────────────── */
+
+/**
+ * Werte-Element in Normschrift. Trennt Zahl und Einheit typografisch und
+ * unterscheidet Rollen farblich: 'torque' (orange) ≠ 'price' (messing) ≠ 'plain'.
+ * Erkennt Einheit automatisch (Nm, ccm, cm³, km/h, PS, l, V, mm, €, km, %).
+ * value darf bereits eine ganze Angabe sein (z. B. "60–70 Nm", "15–30 €").
+ */
+const UNIT_RE = /\s*(Nm|ccm|cm³|km\/h|PS|mm|km|kg|%|€|V|l)\s*$/;
+
+export function techValue(value, { kind = 'plain', size = null, unit = null, aria = null } = {}) {
+  let text = value == null ? '—' : String(value).trim();
+  let u = unit;
+  if (u == null) {
+    const m = text.match(UNIT_RE);
+    if (m) { u = m[1]; text = text.slice(0, m.index).trim(); }
+  }
+  const cls = ['val', `val-${kind}`, size ? `val-${size}` : ''].filter(Boolean).join(' ');
+  const node = el('span', { class: cls, 'aria-label': aria || (u ? `${text} ${u}` : text) });
+  node.append(document.createTextNode(text));
+  if (u) node.append(el('span', { class: 'val-unit' }, u));
+  return node;
+}
+
+/** Preis als Messing-Wert (Preisspanne oder Einzelpreis, inkl. €). */
+export function priceValue(text, size = null) {
+  return techValue(text, { kind: 'price', size });
+}
+
 export const LIKELIHOOD_ORDER = { hoch: 0, mittel: 1, gering: 2 };
 
 export function likelihoodBadge(likelihood) {
@@ -215,9 +247,20 @@ export function verificationBadge(status) {
   return el('span', { class: `badge v-${info.tone}` }, info.label);
 }
 
-/** Kompatibilitäts-Badge – erwartet { label, tone } aus knowledge.partCompatibility(). */
+/** Symbol je Kompatibilitätszustand – Unterscheidung ohne reine Farbe. */
+const COMPAT_ICONS = {
+  direkt: 'check',
+  einschraenkung: 'warn',
+  umbau: 'wrench',
+  nicht: 'x',
+  ungeprueft: 'info',
+};
+
+/** Kompatibilitäts-Badge mit Symbol + Text (nicht nur Farbe). Erwartet { id, label, tone }. */
 export function compatBadge(compat) {
-  return el('span', { class: `badge v-${compat.tone}` }, compat.label);
+  return el('span', { class: `badge badge-compat v-${compat.tone}` },
+    icon(COMPAT_ICONS[compat.id] || 'info', 13),
+    compat.label);
 }
 
 /** Prüfstatus als ruhiger Kleintext (für Listen – Badges nur auf Detailseiten). */

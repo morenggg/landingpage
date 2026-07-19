@@ -4,7 +4,7 @@
  * Detailansicht. Kompakt in einer Datei, gemeinsame Render-Helfer.
  */
 
-import { el, icon, verificationText, verificationNote, difficultyDots } from '../ui.js';
+import { el, icon, verificationText, verificationNote, difficultyDots, techValue } from '../ui.js';
 import { ENGINES } from '../data/engines.js';
 import { MAINTENANCE } from '../data/maintenance.js';
 import { REPAIRS } from '../data/repairs.js';
@@ -69,11 +69,11 @@ export function renderMotorDetail({ id }) {
 
   if (engine.torques.length) {
     wrap.append(section('Wichtige Drehmomente',
-      el('div', { class: 'card table-card' },
+      el('div', { class: 'card-technical table-card' },
         engine.torques.map((t) =>
           el('div', { class: 'fastener-row' },
             el('div', { class: 'row-main' }, el('span', {}, t.name)),
-            el('strong', { class: 'torque' }, t.value))))));
+            techValue(t.value, { kind: 'torque' }))))));
   }
 
   linkChips(wrap, 'Verbaut in', engine.modelIds.map((mid) => {
@@ -184,11 +184,11 @@ export function renderReparaturDetail({ id }) {
 
   if (r.values?.length) {
     wrap.append(section('Einstell- & Sollwerte',
-      el('div', { class: 'card table-card' },
+      el('div', { class: 'card-technical table-card' },
         r.values.map((v) =>
           el('div', { class: 'fastener-row' },
             el('div', { class: 'row-main' }, el('span', {}, v.name)),
-            el('strong', { class: 'torque' }, v.value))))));
+            techValue(v.value, { kind: 'torque' }))))));
   }
   stepsSection(wrap, 'Vorgehen', r.steps);
   toolChips(wrap, r.toolIds);
@@ -273,13 +273,13 @@ function fastenerTable(wrap, fastenerIds) {
   const rows = (fastenerIds || []).map(getFastener).filter(Boolean);
   if (!rows.length) return;
   wrap.append(section('Schrauben & Drehmomente',
-    el('div', { class: 'card table-card' },
+    el('div', { class: 'card-technical table-card' },
       rows.map((x) =>
         el('div', { class: 'fastener-row' },
           el('div', { class: 'row-main' },
             el('span', {}, x.part),
             el('span', { class: 'muted small' }, x.thread)),
-          el('strong', { class: 'torque' }, x.torque))))));
+          techValue(x.torque, { kind: 'torque' }))))));
 }
 
 function warningsBlock(wrap, warnings) {
@@ -300,4 +300,9 @@ function notFound(wrap, title, backHref) {
     el('h2', {}, title),
     el('a', { class: 'btn btn-primary', href: backHref }, 'Zurück')));
   return wrap;
+}
+
+function disclaimer() {
+  return el('p', { class: 'disclaimer' }, icon('info', 14),
+    ' Alle Angaben sind Richtwerte aus gängiger Werkstattliteratur – im Zweifel gilt das Original-Reparaturhandbuch.');
 }

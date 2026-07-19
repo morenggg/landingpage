@@ -7,7 +7,7 @@
 
 import {
   el, icon, verificationText, verificationNote, compatBadge, openSheet, closeSheet,
-  accordion, sectionEl, emptyState, note,
+  accordion, sectionEl, emptyState, note, techValue, priceValue,
 } from '../ui.js';
 import {
   filterParts, getPart, getModel, getEngine, getTool, getFastener,
@@ -167,15 +167,21 @@ export async function renderTeileList() {
       return;
     }
 
-    const first = results.slice(0, 20);
-    for (const part of first) listWrap.append(partRow(part, v));
-    if (results.length > first.length) {
-      const more = el('button', { class: 'btn btn-ghost btn-block' }, `${results.length - first.length} weitere anzeigen`);
-      more.addEventListener('click', () => {
-        more.remove();
-        for (const part of results.slice(20)) listWrap.append(partRow(part, v));
-      });
-      listWrap.append(more);
+    // Nach Kategorie gruppieren – technischer Teilekatalog mit Registern
+    const byCat = new Map();
+    for (const part of results) {
+      if (!byCat.has(part.category)) byCat.set(part.category, []);
+      byCat.get(part.category).push(part);
+    }
+    for (const [cat, parts] of byCat) {
+      listWrap.append(
+        el('div', { class: 'cat-header' },
+          el('span', {}, cat),
+          techValue(String(parts.length), { kind: 'plain' }))
+      );
+      const group = el('div', { class: 'cat-group' });
+      for (const part of parts) group.append(partRow(part, v));
+      listWrap.append(group);
     }
   }
 
@@ -183,22 +189,20 @@ export async function renderTeileList() {
   return wrap;
 }
 
-/** Ruhige Teile-Zeile: Name, Kategorie, Preis – Status als Kleintext. */
+/** Katalog-Zeile: Name, Unterkategorie, Kompatibilität – Preis dezent in Messing. */
 function partRow(part, vehicle) {
   const price = part.estimatedPriceRange;
-  const priceText = price?.min != null ? `${price.min}–${price.max} €` : '';
   const compat = vehicle ? partCompatibility(part, vehicle) : null;
-  return el('a', { class: 'row-item tall', href: `#/teile/${part.id}` },
-    icon('box', 20, 'row-lead accent-lead'),
-    el('div', { class: 'row-main' },
-      el('span', {}, part.shortName || part.name),
-      el('span', { class: 'muted small' }, part.category),
-      compat
-        ? el('span', { class: 'chip-wrap tight' }, compatBadge(compat))
-        : verificationText(part.verificationStatus)),
-    el('div', { style: 'display:grid;justify-items:end;gap:4px' },
-      priceText ? el('span', { class: 'part-price small' }, priceText) : null,
-      icon('chevR', 18, 'muted'))
+  return el('a', { class: 'part-row', href: `#/teile/${part.id}` },
+    el('div', { class: 'part-row-main' },
+      el('span', { class: 'part-row-name' }, part.shortName || part.name),
+      el('span', { class: 'part-row-meta' },
+        compat
+          ? el('span', { class: 'chip-wrap tight' }, compatBadge(compat))
+          : el('span', {}, part.subcategory || part.category, ' · ', verificationText(part.verificationStatus)))),
+    el('div', { class: 'part-row-side' },
+      price?.min != null ? techValue(`${price.min}–${price.max} €`, { kind: 'price' }) : null,
+      icon('chevR', 16, 'muted'))
   );
 }
 
