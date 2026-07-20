@@ -3,13 +3,15 @@
  * Übersicht, Logbuch (Historie mit Kosten) und Aufgaben je Fahrzeug.
  */
 
-import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2, accordion, emptyState, techValue } from '../ui.js';
+import { el, icon, openSheet, closeSheet, confirmSheet, toast, fmtDate, fmtEuro, fmtEuro2, accordion, emptyState, techValue, note } from '../ui.js';
 import { Vehicles, Logs, Tasks, LOG_TYPES } from '../store.js';
 import { getModel } from '../data/models.js';
+import { getAnatomy, attentionAssemblies } from '../data/anatomy.js';
+import { findComponent } from '../data/components.js';
 import { navigate, refresh } from '../router.js';
 import { openVehicleForm } from './garage.js';
 
-export async function renderVehicle({ id, tab = 'uebersicht' }) {
+export async function renderVehicle({ id, tab = 'zwilling' }) {
   const vehicle = await Vehicles.get(id);
   if (!vehicle) {
     return el('div', { class: 'view' },
@@ -48,6 +50,7 @@ export async function renderVehicle({ id, tab = 'uebersicht' }) {
 
   // ── Tabs ──
   const tabs = [
+    { id: 'zwilling', name: 'Zwilling' },
     { id: 'uebersicht', name: 'Übersicht' },
     { id: 'logbuch', name: `Logbuch${logs.length ? ` (${logs.length})` : ''}` },
     { id: 'aufgaben', name: `Aufgaben${tasks.filter((t) => !t.done).length ? ` (${tasks.filter((t) => !t.done).length})` : ''}` },
@@ -57,7 +60,7 @@ export async function renderVehicle({ id, tab = 'uebersicht' }) {
       tabs.map((t) =>
         el('a', {
           class: 'seg-tab' + (t.id === tab ? ' active' : ''),
-          href: `#/fahrzeug/${id}${t.id === 'uebersicht' ? '' : '/' + t.id}`,
+          href: `#/fahrzeug/${id}${t.id === 'zwilling' ? '' : '/' + t.id}`,
           role: 'tab', 'aria-selected': String(t.id === tab),
         }, t.name)
       )
@@ -67,8 +70,84 @@ export async function renderVehicle({ id, tab = 'uebersicht' }) {
   const body = el('div', { class: 'tab-body' });
   if (tab === 'logbuch') body.append(renderLogbuch(vehicle, logs));
   else if (tab === 'aufgaben') body.append(renderAufgaben(vehicle, tasks));
-  else body.append(renderUebersicht(vehicle, model, logs, tasks, totalCost));
+  else if (tab === 'uebersicht') body.append(renderUebersicht(vehicle, model, logs, tasks, totalCost));
+  else body.append(renderZwilling(vehicle, model, tasks));
   wrap.append(body);
+
+  return wrap;
+}
+
+/* ─────────────────────────── Zwilling (digitaler Zwilling) ─────────────────────────── */
+
+/**
+ * Interaktive Prinzipzeichnung: Baugruppen antippen führt in die Bauteil-Akte.
+ * Was Aufmerksamkeit braucht (offene, thematisch passende Aufgabe) glüht.
+ * Die Zeichnung ist die Navigation – darunter dieselben Baugruppen als
+ * klare, bedienbare Liste (Zugänglichkeit + Übersicht).
+ */
+function renderZwilling(vehicle, model, tasks) {
+  const anatomy = getAnatomy(vehicle, model);
+  const attention = attentionAssemblies(tasks);
+  const wrap = el('div', { class: 'twin' });
+
+  // Kontextzeile
+  wrap.append(
+    el('p', { class: 'twin-lead' },
+      attention.size
+        ? el('span', {}, techValue(String(attention.size), { kind: 'torque' }),
+            attention.size === 1 ? ' Baugruppe braucht Aufmerksamkeit' : ' Baugruppen brauchen Aufmerksamkeit')
+        : 'Alles ruhig. Tippe ein Bauteil, um einzutauchen.')
+  );
+
+  // Bühne mit Zeichnung + Hotspots
+  const stage = el('div', { class: 'twin-stage' });
+  const blueprint = el('div', {
+    class: 'twin-blueprint',
+    html: `<svg viewBox="${anatomy.viewBox}" fill="none" role="img" aria-label="Schematische Seitenansicht">${anatomy.svg}</svg>`,
+  });
+  // Baugruppen mit Aufmerksamkeit in der Zeichnung hervorheben
+  for (const id of attention) {
+    blueprint.querySelectorAll(`[data-part="${id}"]`).forEach((n) => n.classList.add('lit'));
+  }
+  stage.append(blueprint);
+
+  for (const h of anatomy.hotspots) {
+    const lit = attention.has(h.componentId);
+    const hot = el('a', {
+      class: 'twin-hot' + (lit ? ' lit' : ''),
+      href: `#/technik/${h.componentId}`,
+      style: `left:${h.x}%;top:${h.y}%`,
+      'aria-label': h.label,
+    }, el('span', { class: 'twin-hot-dot' }), el('span', { class: 'twin-hot-label' }, h.label));
+    stage.append(hot);
+  }
+  wrap.append(stage);
+
+  if (anatomy.approximate) {
+    wrap.append(note('info', 'Für diese Baureihe ist noch keine eigene Zeichnung hinterlegt – gezeigt wird die schematische Moped-Ansicht. Die Baugruppen und Werte stimmen dennoch.', 'Schematische Darstellung'));
+  }
+
+  // Baugruppen als klare Liste (dieselben Ziele wie die Hotspots)
+  const list = el('div', { class: 'twin-groups' });
+  for (const h of anatomy.hotspots) {
+    const node = findComponent([h.componentId]).node;
+    if (!node) continue;
+    const lit = attention.has(h.componentId);
+    list.append(
+      el('a', { class: 'twin-group' + (lit ? ' lit' : ''), href: `#/technik/${h.componentId}` },
+        icon(node.icon || 'nut', 20, 'twin-group-icon'),
+        el('div', { class: 'twin-group-main' },
+          el('span', { class: 'twin-group-name' }, node.name),
+          el('span', { class: 'muted small clamp-1' }, node.summary || '')),
+        lit ? el('span', { class: 'twin-group-flag' }, 'fällig') : null,
+        icon('chevR', 18, 'muted'))
+    );
+  }
+  wrap.append(
+    el('div', { class: 'twin-groups-wrap' },
+      el('p', { class: 'twin-groups-lab' }, 'Alle Baugruppen'),
+      list)
+  );
 
   return wrap;
 }

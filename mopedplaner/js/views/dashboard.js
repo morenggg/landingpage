@@ -1,139 +1,139 @@
 /**
- * MopedPlaner – Dashboard
- * Klar priorisiert: 1. Mein Fahrzeug · 2. Schnellaktionen ·
- * 3. Was ist als Nächstes wichtig? · 4. Weiter entdecken.
+ * MopedPlaner – Start (Werkstatt-Assistent)
+ *
+ * Design-DNA: maximale Ruhe. Genau ein aktives Fahrzeug, genau eine
+ * dominante Aufgabe, große Leitfrage „Was ist heute dran?". Keine
+ * Kartenwand, keine KPI-Flut – der Nutzer betritt seine Garage.
+ *
+ * Der Start besitzt keine eigenen Daten. Er liest nur (Fahrzeug, Aufgaben,
+ * Logbuch) und führt in den Bereich, dem die Antwort gehört.
  */
 
-import { el, icon, fmtDate, sectionEl, techValue } from '../ui.js';
+import { el, icon, fmtDate, techValue } from '../ui.js';
 import { Vehicles, Tasks, Logs, LOG_TYPES } from '../store.js';
 import { getModel } from '../data/models.js';
+import { openLogForm } from './vehicle.js';
 
 export async function renderDashboard() {
   const [vehicles, openTasks, recentLogs] = await Promise.all([
     Vehicles.all(),
     Tasks.allOpen(),
-    Logs.recent(3),
+    Logs.recent(4),
   ]);
 
-  const wrap = el('div', { class: 'view' });
-  const mainVehicle = vehicles[0] || null; // zuletzt bearbeitet steht vorn
+  const wrap = el('div', { class: 'view view-start' });
+  const vehicle = vehicles[0] || null; // zuletzt bearbeitet steht vorn
 
-  if (!mainVehicle) {
-    // ── Onboarding: erster Start ohne Fahrzeug ──
+  if (!vehicle) return renderOnboarding(wrap);
+
+  const model = getModel(vehicle.modelId);
+  const vTasks = openTasks.filter((t) => t.vehicleId === vehicle.id);
+  const vLog = recentLogs.find((l) => l.vehicleId === vehicle.id);
+
+  const hour = new Date().getHours();
+  const greet = hour < 5 ? 'Nachtschicht?' : hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Moin' : 'Guten Abend';
+
+  // ── Kopf: Gruß + genau ein Fahrzeug (Zustand + Name) ──
+  wrap.append(
+    el('div', { class: 'start-top' },
+      el('span', { class: 'start-greet' }, greet),
+      el('a', { class: 'start-veh', href: `#/fahrzeug/${vehicle.id}` },
+        conditionBars(vehicle.zustand),
+        el('span', { class: 'start-veh-name' }, vehicle.name || model?.name || 'Fahrzeug')),
+      vehicles.length > 1
+        ? el('a', { class: 'start-garage', href: '#/garage' }, 'Garage', icon('chevR', 14))
+        : null)
+  );
+
+  // ── Leitfrage ──
+  wrap.append(el('h1', { class: 'start-q' }, 'Was ist', el('br'), 'heute dran?'));
+
+  // ── Eine dominante Aufgabe ──
+  const primaryTask = vTasks[0] || null;
+  if (primaryTask) {
+    const rest = vTasks.length - 1;
     wrap.append(
-      el('header', { class: 'hero' },
-        el('p', { class: 'hero-kicker' }, 'MopedPlaner'),
-        el('h1', {}, 'Deine digitale ', el('span', { class: 'accent' }, 'Werkbank')))
-    );
-    wrap.append(
-      el('section', { class: 'section', style: 'margin-top:18px' },
-        el('div', { class: 'onboard perfboard' },
-          el('div', { class: 'onboard-body' },
-            icon('moped', 38, 'onboard-icon'),
-            el('h2', {}, 'Leg dein Moped an – der Rest ergibt sich.'),
-            el('p', { class: 'onboard-lead' },
-              'Fahrzeugakte, geführte Diagnose und passende Ersatzteile für jede Simson – alles offline, direkt in der Garage.'),
-            el('a', { class: 'btn btn-primary', href: '#/garage?neu=1' }, icon('plus', 18), 'Fahrzeug anlegen'),
-            el('p', { class: 'onboard-hint' },
-              'Nur stöbern? Technik, Reparaturen und der Schraubenfinder funktionieren auch ohne Fahrzeug.'))))
+      el('a', { class: 'start-primary', href: `#/fahrzeug/${vehicle.id}/aufgaben` },
+        icon('chevR', 22, 'start-primary-arr'),
+        el('span', { class: 'start-primary-lead' }, 'Weiter'),
+        el('p', { class: 'start-primary-main' }, primaryTask.title),
+        el('p', { class: 'start-primary-meta' },
+          rest > 0 ? `+${rest} weitere ${rest === 1 ? 'Aufgabe' : 'Aufgaben'} offen` : 'Deine einzige offene Aufgabe'))
     );
   } else {
-    // ── Kopf: ruhig, eine Zeile Kontext ──
-    const hour = new Date().getHours();
-    const greet = hour < 5 ? 'Nachtschicht?' : hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Moin' : 'Guten Abend';
     wrap.append(
-      el('header', { class: 'hero' },
-        el('p', { class: 'hero-kicker' }, greet),
-        el('h1', {}, 'Deine ', el('span', { class: 'accent' }, 'Werkstatt')))
+      el('a', { class: 'start-primary calm', href: `#/fahrzeug/${vehicle.id}` },
+        icon('chevR', 22, 'start-primary-arr'),
+        el('span', { class: 'start-primary-lead' }, 'Alles erledigt'),
+        el('p', { class: 'start-primary-main' }, 'Zwilling ansehen'),
+        el('p', { class: 'start-primary-meta' }, 'Bauteile, Werte und Historie deiner Maschine'))
     );
+  }
 
-    // ── 1. Mein Fahrzeug ──
-    const model = getModel(mainVehicle.modelId);
-    const vTasks = openTasks.filter((t) => t.vehicleId === mainVehicle.id);
-    const vLog = recentLogs.find((l) => l.vehicleId === mainVehicle.id);
-    const mySec = sectionEl('Mein Fahrzeug', vehicles.length > 1 ? { href: '#/garage', link: 'Garage' } : {});
-    mySec.append(
-      el('a', {
-        class: 'my-vehicle perfboard',
-        href: `#/fahrzeug/${mainVehicle.id}`,
-        style: mainVehicle.photo ? `background-image:url('${mainVehicle.photo}')` : '',
-      },
-        el('div', { class: 'my-vehicle-scrim' }),
-        el('div', { class: 'my-vehicle-body' },
-          el('h2', {}, mainVehicle.name || model?.name || 'Fahrzeug'),
-          el('span', { class: 'my-vehicle-meta' },
-            [model?.name, mainVehicle.baujahr && `Bj. ${mainVehicle.baujahr}`, mainVehicle.motor].filter(Boolean).join(' · ') || 'Details in der Akte'),
-          el('div', { class: 'my-vehicle-stats' },
-            el('span', { class: vTasks.length ? 'stat-lit' : '' }, techValue(String(vTasks.length), { kind: vTasks.length ? 'torque' : 'plain' }), vTasks.length === 1 ? 'offene Aufgabe' : 'offene Aufgaben'),
-            vLog ? el('span', {}, 'Zuletzt: ', el('strong', { style: 'color:var(--muted-strong);font-weight:600' }, vLog.title || 'Eintrag')) : el('span', {}, 'Noch nichts dokumentiert')))
-      )
+  // ── Drei Verben (keine Kacheln, klare Aktionen) ──
+  wrap.append(
+    el('div', { class: 'start-verbs' },
+      verb('diag', 'Diagnose', '#/diagnose'),
+      verb('box', 'Teil finden', '#/teile'),
+      verb('plus', 'Eintragen', null, () => openLogForm(vehicle.id)))
+  );
+
+  // ── Dezente Hinweise (verdienen sich ihren Platz) ──
+  const hints = el('div', { class: 'start-hints' });
+  if (vLog) {
+    const type = LOG_TYPES.find((t) => t.id === vLog.type);
+    hints.append(
+      el('a', { class: 'start-hint', href: `#/fahrzeug/${vehicle.id}/logbuch` },
+        el('span', { class: 'hint-dot brass' }),
+        el('span', { class: 'hint-text' }, 'Zuletzt: ', el('strong', {}, vLog.title || type?.name || 'Eintrag'),
+          el('span', { class: 'hint-when' }, ` · ${fmtDate(vLog.date)}`)),
+        icon('chevR', 16, 'hint-arr'))
     );
-    if (vehicles.length > 1) {
-      mySec.append(
-        el('div', { class: 'vehicle-switch' },
-          vehicles.slice(1, 5).map((v) =>
-            el('a', { class: 'chip', href: `#/fahrzeug/${v.id}` },
-              icon('moped', 14), v.name || getModel(v.modelId)?.name || 'Fahrzeug')))
-      );
-    }
-    wrap.append(mySec);
   }
-
-  // ── 2. Schnellzugriff als kompakte Werkzeugleiste ──
-  const quickSec = sectionEl('Schnellzugriff');
-  quickSec.append(
-    el('div', { class: 'action-bar' },
-      actionBarItem('diag', 'Diagnose', '#/diagnose'),
-      actionBarItem('box', 'Ersatzteile', '#/teile'),
-      actionBarItem('engine', 'Technik', '#/technik'),
-      actionBarItem('search', 'Suche', '#/suche'))
-  );
-  wrap.append(quickSec);
-
-  // ── 3. Was ist als Nächstes wichtig? ──
-  const nextItems = [];
-  for (const t of openTasks.slice(0, 4)) {
-    const v = vehicles.find((x) => x.id === t.vehicleId);
-    nextItems.push(rowLink('check', t.title, v ? (v.name || getModel(v.modelId)?.name) : '', v ? `#/fahrzeug/${v.id}/aufgaben` : '#/garage'));
+  if (vehicles.length > 1) {
+    const others = vehicles.length - 1;
+    hints.append(
+      el('a', { class: 'start-hint', href: '#/garage' },
+        el('span', { class: 'hint-dot' }),
+        el('span', { class: 'hint-text' }, techValue(String(others), { kind: 'plain' }),
+          ` weiteres ${others === 1 ? 'Fahrzeug' : 'Fahrzeuge'} in der Garage`),
+        icon('chevR', 16, 'hint-arr'))
+    );
   }
-  for (const log of recentLogs.slice(0, 2)) {
-    const v = vehicles.find((x) => x.id === log.vehicleId);
-    const type = LOG_TYPES.find((t) => t.id === log.type);
-    nextItems.push(rowLink(type?.icon || 'note', log.title || type?.name || 'Eintrag',
-      `${v ? (v.name || getModel(v.modelId)?.name) + ' · ' : ''}${fmtDate(log.date)}`,
-      v ? `#/fahrzeug/${v.id}/logbuch` : '#/garage'));
-  }
-  if (nextItems.length) {
-    const nextSec = sectionEl('Als Nächstes');
-    nextSec.append(el('div', { class: 'stack' }, nextItems));
-    wrap.append(nextSec);
-  }
-
-  // ── 4. Weiter entdecken ──
-  const moreSec = sectionEl('Entdecken');
-  moreSec.append(
-    el('div', { class: 'stack' },
-      rowLink('calendar', 'Wartungsplan', 'Intervalle & Anleitungen', '#/wartung'),
-      rowLink('tools', 'Reparaturen', 'Geführt, mit Sollwerten', '#/reparaturen'),
-      rowLink('nut', 'Schraubenfinder', 'Drehmomente & Gewinde', '#/schrauben'),
-      rowLink('upgrade', 'Umbauplaner', 'VAPE, Tuning, Restauration', '#/planer'))
-  );
-  wrap.append(moreSec);
+  if (hints.childElementCount) wrap.append(hints);
 
   return wrap;
 }
 
-function actionBarItem(iconName, label, href) {
-  return el('a', { class: 'action-bar-item', href },
-    icon(iconName, 23),
-    el('span', {}, label));
+/* ── Onboarding: erster Start ohne Fahrzeug ── */
+function renderOnboarding(wrap) {
+  wrap.classList.add('view-start-empty');
+  wrap.append(
+    el('div', { class: 'onboard perfboard' },
+      el('div', { class: 'onboard-body' },
+        icon('moped', 40, 'onboard-icon'),
+        el('h1', { class: 'onboard-title' }, 'Du betrittst deine Garage.'),
+        el('p', { class: 'onboard-lead' },
+          'Leg dein Moped an – der Start beantwortet danach jeden Tag nur eine Frage: Was ist dran? Fahrzeugakte, Zwilling, Diagnose und Teile für jede Simson, komplett offline.'),
+        el('a', { class: 'btn btn-primary', href: '#/garage?neu=1' }, icon('plus', 18), 'Fahrzeug anlegen'),
+        el('p', { class: 'onboard-hint' },
+          'Nur stöbern? Technik, Reparaturen und der Schraubenfinder laufen auch ohne Fahrzeug.')))
+  );
+  return wrap;
 }
 
-function rowLink(iconName, title, sub, href) {
-  return el('a', { class: 'row-item', href },
-    icon(iconName, 18, 'row-lead'),
-    el('div', { class: 'row-main' },
-      el('span', {}, title),
-      sub ? el('span', { class: 'muted small clamp-1' }, sub) : null),
-    icon('chevR', 18, 'muted'));
+/* ── kleine Bausteine ── */
+
+function conditionBars(zustand = 3) {
+  const n = Math.max(1, Math.min(5, Number(zustand) || 3));
+  const wrap = el('span', { class: 'cond-bars', 'aria-label': `Zustand ${n} von 5` });
+  for (let i = 1; i <= 5; i++) wrap.append(el('i', { class: i <= n ? 'on' : '' }));
+  return wrap;
+}
+
+function verb(iconName, label, href, onclick = null) {
+  const attrs = { class: 'start-verb' };
+  if (href) attrs.href = href;
+  if (onclick) attrs.onclick = onclick;
+  return el(href ? 'a' : 'button', attrs, icon(iconName, 20, 'verb-icon'), el('span', {}, label));
 }
