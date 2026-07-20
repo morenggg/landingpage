@@ -55,17 +55,28 @@ export async function renderDashboard() {
   // ── Leitfrage ──
   wrap.append(el('h1', { class: 'start-q' }, 'Was ist', el('br'), 'heute dran?'));
 
-  // ── Eine dominante Aktion ──
-  const primaryTask = vTasks[0] || null;
+  // ── Eine dominante Aktion: eine laufende geführte Reparatur bevorzugt ──
+  const guided = vTasks.find((t) => (t.steps || []).length);
+  const primaryTask = guided || vTasks[0] || null;
   if (primaryTask) {
-    const rest = vTasks.length - 1;
+    const steps = primaryTask.steps || [];
+    let meta, href;
+    if (steps.length) {
+      const done = Math.max(0, Math.min(primaryTask.stepDone || 0, steps.length));
+      const remaining = primaryTask.minutes ? Math.max(1, Math.round(primaryTask.minutes * (steps.length - done) / steps.length)) : null;
+      meta = `Schritt ${Math.min(done + 1, steps.length)} von ${steps.length}${remaining ? ` · ~${remaining} min` : ''}`;
+      href = `#/fahrzeug/${vehicle.id}/schritt/${primaryTask.id}`;
+    } else {
+      const rest = vTasks.length - 1;
+      meta = rest > 0 ? `+${rest} weitere ${rest === 1 ? 'Aufgabe' : 'Aufgaben'} offen` : 'Deine offene Aufgabe';
+      href = `#/fahrzeug/${vehicle.id}/aufgaben`;
+    }
     wrap.append(
-      el('a', { class: 'start-primary', href: `#/fahrzeug/${vehicle.id}/aufgaben` },
+      el('a', { class: 'start-primary', href },
         el('span', { class: 'start-primary-lead' }, 'Weiter, wo du warst'),
         el('p', { class: 'start-primary-main' }, primaryTask.title),
         el('div', { class: 'start-primary-foot' },
-          el('span', { class: 'start-primary-meta' },
-            rest > 0 ? `+${rest} weitere ${rest === 1 ? 'Aufgabe' : 'Aufgaben'} offen` : 'Deine offene Aufgabe'),
+          el('span', { class: 'start-primary-meta' }, meta),
           icon('back', 22, 'start-primary-arr')))
     );
   } else {

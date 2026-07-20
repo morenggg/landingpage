@@ -228,6 +228,15 @@ export const Tasks = {
     if (!task) return;
     return adapter.put('tasks', { ...task, done: !task.done, doneAt: !task.done ? now() : null });
   },
+  /** Fortschritt einer geführten Aufgabe setzen (0 … Anzahl Schritte). */
+  async setStep(id, stepDone) {
+    const list = await adapter.getAll('tasks');
+    const task = list.find((t) => t.id === id);
+    if (!task) return;
+    const total = (task.steps || []).length;
+    const sd = Math.max(0, Math.min(total, Number(stepDone) || 0));
+    return adapter.put('tasks', { ...task, stepDone: sd });
+  },
   async remove(id) {
     await adapter.remove('tasks', id);
   },
@@ -244,6 +253,54 @@ export const Backup = {
   export: () => adapter.exportJSON(),
   import: (json) => adapter.importJSON(json),
 };
+
+/* ─────────────────────────── Demo-Datensatz (Entwicklungsprototyp) ───────────────────────────
+ *
+ * Beim allerersten Start (leere Garage, noch nie geseedet) wird ein
+ * realistisches Beispiel-Fahrzeug mit einer laufenden, geführten Reparatur
+ * angelegt – damit die App sofort ihren Charakter zeigt statt leer zu sein.
+ * Es sind ganz normale, löschbare Daten. Nach dem Seeden merkt sich die App
+ * das (settings.demoSeeded) und legt nie wieder etwas an.
+ */
+const DEMO_REPAIR_STEPS = [
+  'Getriebeöl ablassen – Ablassschraube unten am Motor öffnen, Öl auffangen.',
+  'Kupplungsdeckel abschrauben – die unterschiedlichen Schraubenlängen dokumentieren.',
+  'Federschrauben über Kreuz gleichmäßig entlasten, Lamellenpaket entnehmen (Reihenfolge fotografieren).',
+  'Neue Reiblamellen in Getriebeöl einlegen und mindestens 10 Minuten ziehen lassen.',
+  'Paket in Originalreihenfolge einsetzen, Deckel mit neuer Dichtung montieren (M6: 8–10 Nm).',
+  'Getriebeöl auffüllen, Kupplungsspiel am Hebel auf 2–3 mm einstellen, Probelauf.',
+];
+
+export async function seedDemoIfEmpty() {
+  try {
+    const settings = await Settings.get();
+    if (settings.demoSeeded) return false;
+    const existing = await Vehicles.all();
+    if (existing.length) { await Settings.set({ demoSeeded: true }); return false; }
+
+    const v = await Vehicles.create({
+      name: 'Oma Ilse', modelId: 's51', baujahr: '1987', farbe: 'blau',
+      motor: 'M541 · 4-Gang', vergaser: 'BVF 16N1-11', zuendung: 'Unterbrecher 6 V',
+      zustand: 3, notizen: 'Beispiel-Fahrzeug zum Ausprobieren – kannst du jederzeit löschen.',
+    });
+    await Tasks.create(v.id, 'Kupplungslamellen wechseln', {
+      repairId: 'rep-lamellen-wechseln', componentId: 'motor',
+      steps: DEMO_REPAIR_STEPS, stepDone: 2, minutes: 60,
+    });
+    await Tasks.create(v.id, 'Bremse vorn einstellen', { componentId: 'bremsen' });
+
+    const d = new Date(); d.setDate(d.getDate() - 8);
+    await Logs.create(v.id, {
+      type: 'reparatur', title: 'Vergaser gereinigt', date: d.toISOString().slice(0, 10),
+      km: '8450', cost: '28', parts: 'Dichtsatz BVF', notes: 'Düsen frei, läuft wieder rund.',
+    });
+
+    await Settings.set({ demoSeeded: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /* ─────────────────────────── Foto-Verkleinerung ─────────────────────────── */
 

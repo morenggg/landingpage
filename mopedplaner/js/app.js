@@ -6,9 +6,11 @@
 
 import { el, icon, closeSheet } from './ui.js';
 import { route, setNotFound, startRouter, currentPath } from './router.js';
+import { seedDemoIfEmpty } from './store.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderGarage } from './views/garage.js';
 import { renderVehicle } from './views/vehicle.js';
+import { renderRepairStep } from './views/repair.js';
 import { renderTechnik } from './views/technik.js';
 import { renderDiagnoseList, renderDiagnoseFlow } from './views/diagnose.js';
 import { renderPlanerList, renderPlanerKit } from './views/planer.js';
@@ -83,6 +85,7 @@ function withQuery(handler) {
 route('', withQuery(() => mount(renderDashboard)));
 route('garage', withQuery((p) => mount(renderGarage, p)));
 route('fahrzeug/:id', withQuery((p) => mount(renderVehicle, p)));
+route('fahrzeug/:id/schritt/:taskId', (p) => mount(renderRepairStep, p));
 route('fahrzeug/:id/:tab', withQuery((p) => mount(renderVehicle, p)));
 route('technik/*path', (p) => mount(renderTechnik, p));
 route('technik', () => mount(renderTechnik, { path: [] }));
@@ -104,7 +107,9 @@ route('mehr', () => mount(renderEinstellungen));
 setNotFound(() => mount(renderDashboard));
 
 buildTabbar();
-startRouter();
+// Beim allerersten Start ein Beispiel-Fahrzeug anlegen (löschbar), damit die
+// App sofort ihren Charakter zeigt – dann erst rendern.
+seedDemoIfEmpty().catch(() => {}).finally(() => startRouter());
 
 /* Offline-Indikator – dezent, nicht alarmistisch. navigator.onLine wird
    nur vorsichtig interpretiert: „online" ist nicht garantiert, aber

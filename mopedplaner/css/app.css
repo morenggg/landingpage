@@ -1507,3 +1507,50 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
   0%, 100% { box-shadow: 0 0 0 6px var(--accent-soft), 0 0 18px 3px rgba(255,107,44,0.6); }
   50% { box-shadow: 0 0 0 9px rgba(255,107,44,0.05), 0 0 26px 6px rgba(255,107,44,0.85); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GEFÜHRTE REPARATUR – ein Schritt pro Blick, klarer Fortschritt
+   ═══════════════════════════════════════════════════════════════ */
+.rep { padding-top: 8px; }
+.rep-bar { display: flex; align-items: flex-start; gap: 12px; }
+.rep-bar-main { min-width: 0; padding-top: 2px; }
+.rep-bar-lead { font-family: var(--font-value); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--fs-micro); color: var(--accent-brass); }
+.rep-title { margin: 2px 0 0; font-family: var(--font-value); font-weight: 700; font-size: 1.6rem; line-height: 1.02; }
+
+.rep-progress { margin-top: 16px; }
+.rep-progress-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px; }
+.rep-progress-step { font-family: var(--font-value); font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.rep-progress-min { font-size: var(--fs-caption); color: var(--muted); }
+.rep-progress-track { height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.rep-progress-track span { display: block; height: 100%; background: linear-gradient(90deg, #ff6b2c, #ff8f5c); box-shadow: 0 0 12px rgba(255,107,44,0.5); transition: width 0.35s var(--ease-mech); }
+
+.rep-current { margin-top: 18px; padding: 18px; border-radius: var(--radius); background: linear-gradient(165deg, #1b1c21, #101014); border: 1px solid var(--line-strong); }
+.rep-current-lead { font-family: var(--font-value); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: var(--fs-micro); color: var(--accent); }
+.rep-current-text { margin: 8px 0 0; font-size: 1.25rem; line-height: 1.3; color: var(--text); }
+.rep-vals { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.rep-val { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; }
+.rep-val-k { font-size: var(--fs-micro); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.rep-val-v { font-family: var(--font-value); font-weight: 600; }
+.rep-current .note { margin-top: 12px; }
+
+.rep-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.rep-actions .btn-ghost { min-width: 96px; }
+.rep-next { flex: 1; }
+
+.rep-steps-wrap { margin-top: 24px; }
+.rep-steps-lab { font-family: var(--font-value); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--fs-micro); color: var(--accent-brass); margin: 0 0 8px; }
+.rep-steps { display: flex; flex-direction: column; }
+.rep-step { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 12px 2px; border-top: 1px solid var(--line); background: none; color: var(--muted); font-family: inherit; font-size: var(--fs-body); cursor: pointer; }
+.rep-step:last-child { border-bottom: 1px solid var(--line); }
+.rep-step-idx { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-strong); font-family: var(--font-value); font-weight: 700; font-size: 0.82rem; color: var(--muted); }
+.rep-step-text { padding-top: 2px; }
+.rep-step-done { color: var(--muted); }
+.rep-step-done .rep-step-idx { background: var(--accent-brass-soft); border-color: var(--line-accent); color: var(--accent-brass); }
+.rep-step-now { color: var(--text); }
+.rep-step-now .rep-step-idx { background: var(--accent-soft); border-color: rgba(255,107,44,0.5); color: var(--accent); }
+
+.rep-done { margin-top: 22px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.rep-done-mark { width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 8px rgba(255,107,44,0.05); }
+.rep-done h2 { margin: 14px 0 4px; font-family: var(--font-value); font-weight: 700; font-size: 1.5rem; }
+.rep-done p { max-width: 34ch; margin: 0; }
+.rep-done-actions { width: 100%; margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }

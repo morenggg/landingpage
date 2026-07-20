@@ -274,9 +274,9 @@ function renderLogbuch(vehicle, logs) {
   return wrap;
 }
 
-export function openLogForm(vehicleId, log = null) {
+export function openLogForm(vehicleId, log = null, prefill = null) {
   const isEdit = !!log;
-  const l = log || {};
+  const l = log || prefill || {};
 
   const typeSelect = el('select', { name: 'type', class: 'field-input' },
     LOG_TYPES.map((t) => el('option', { value: t.id, selected: t.id === (l.type || 'wartung') || null }, t.name))
