@@ -20,14 +20,28 @@ project-map/index.html
 (Doppelklick oder per `file://…` öffnen. Alle Bibliotheken sind eingebettet,
 es wird nichts von einem CDN geladen.)
 
+## PIN-Schutz
+
+Beim Öffnen erscheint ein PIN-Overlay (Standard-PIN: **1234**). Der PIN wird
+nur als SHA-256-Hash verglichen – die Konstante `PIN_HASH` steht zentral am
+Anfang von `app.js`, direkt daneben ist beschrieben, wie man einen neuen Hash
+erzeugt (`echo -n 'neuerpin' | sha256sum`). Nach 3 Fehlversuchen sperrt die
+Eingabe 30 Sekunden, nach 10 Fehlversuchen 5 Minuten (lokal im Browser
+gespeichert). Hinweis: Das ist ein Sichtschutz für eine statische Seite,
+kein echter Server-Login.
+
 ## Bedienung
 
 | Aktion | Bedienung |
 | --- | --- |
-| Zoomen | Mausrad, `＋`/`－`-Buttons, Pinch auf Touchgeräten |
-| Verschieben | Fläche ziehen (Drag), Minimap unten rechts anklicken/ziehen |
+| Zoomen | Mausrad (weich), `＋`/`－`-Buttons, Pinch mit zwei Fingern |
+| Verschieben | Fläche ziehen (mit Trägheit beim Loslassen), Minimap anklicken/ziehen |
+| Doppeltipp / Doppelklick | auf Node: fokussieren & heranzoomen · auf Fläche: hineinzoomen |
+| Zwei-Finger-Tipp | herauszoomen (Touch) |
+| Cluster öffnen | In der Mindmap Bereich/Ordner antippen → klappt animiert auf (▸/▾) |
+| Level of Detail | Beim Herauszoomen werden automatisch nur Hauptbereiche/Hubs gezeigt |
 | Node verschieben | Karte anklicken und ziehen |
-| Details öffnen | Node anklicken → rechtes Panel (Pfad, Beziehungen, Funktionen, Env-Vars, Hinweise) |
+| Details öffnen | Node anklicken → Panel rechts (Desktop) bzw. Bottom Sheet (Mobil) |
 | Verbindungstiefe | Im Detailpanel: Tiefe 1 / 2 / 3 / Alle, Button „Abhängigkeiten weiterverfolgen“ |
 | Verbindungsart | Mauszeiger über eine Linie halten → Tooltip mit Beziehungstyp |
 | Ansicht wechseln | Kopfleiste: **Mindmap · Abhängigkeiten · Ordner · Datenfluss · System** |
