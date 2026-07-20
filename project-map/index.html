@@ -9,6 +9,21 @@
 </head>
 <body>
 
+  <!-- PIN-Schutz (Overlay über allem, bis korrekt entsperrt) -->
+  <div id="pin-gate">
+    <div id="pin-card" class="glass">
+      <div class="pin-logo">PM</div>
+      <h2>Repository Map</h2>
+      <div class="pin-sub">Geschützter Bereich</div>
+      <form id="pin-form" autocomplete="off">
+        <input id="pin-input" type="password" inputmode="numeric" autocomplete="off"
+               placeholder="PIN eingeben" aria-label="PIN eingeben" maxlength="12">
+        <button type="submit" id="pin-submit">Öffnen</button>
+      </form>
+      <div id="pin-msg" role="alert"></div>
+    </div>
+  </div>
+
   <!-- Arbeitsfläche -->
   <div id="stage-wrap">
     <svg id="stage" xmlns="http://www.w3.org/2000/svg">
@@ -50,12 +65,13 @@
 
     <div id="search-box">
       <span class="icon">⌕</span>
-      <input id="search" type="search" placeholder="Suchen: Dateien, Funktionen, APIs, Pfade …" autocomplete="off" spellcheck="false">
+      <input id="search" type="search" placeholder="Suchen: Dateien, Ordner, Funktionen, APIs …" autocomplete="off" spellcheck="false">
       <div id="search-results" class="glass"></div>
     </div>
 
     <div class="spacer"></div>
 
+    <button id="btn-search-toggle" class="iconbtn" title="Suche">⌕</button>
     <button id="btn-filters" class="iconbtn active" title="Filter ein-/ausblenden">☰</button>
     <button id="btn-findings" class="iconbtn" title="Auffälligkeiten">⚠</button>
     <button id="btn-legend" class="iconbtn" title="Legende">🗺</button>
@@ -73,6 +89,7 @@
 
   <!-- Detail-Seitenleiste -->
   <aside id="detail" class="glass" aria-live="polite">
+    <div class="sheet-handle" id="d-handle" aria-hidden="true"><span></span></div>
     <div class="head">
       <div class="row1">
         <span class="dot" id="d-dot"></span>

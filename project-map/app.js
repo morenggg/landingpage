@@ -2,21 +2,184 @@
    Projekt-Map – interaktive Repository-Visualisierung
    Eigenständiger Renderer (SVG + Vanilla JS, keine externen Bibliotheken).
    Daten: repository-data.js (erzeugt von generate-project-map.js)
+
+   Aufbau dieser Datei (modular, von oben nach unten):
+     1. PIN-Schutz (SHA-256, Sperrlogik)
+     2. Konstanten & Datenindizes
+     3. Kamera (weiches Zoomen/Pannen, Trägheit, Kameraflüge)
+     4. View-Graph-Builder (Mindmap/Cluster, Deps, Ordner, Datenfluss, System)
+     5. Rendering & Sichtbarkeits-Pipeline (Filter → Cluster → LOD → Culling)
+     6. Interaktion (Pointer-Gesten, Suche, Detailpanel, Panels)
    =========================================================================== */
 
 'use strict';
 
 (function () {
 
+// ===========================================================================
+// 1. PIN-SCHUTZ
+// ===========================================================================
+// Der PIN wird NICHT im Klartext gespeichert, sondern nur als SHA-256-Hash
+// verglichen. Neuen PIN setzen: Hash erzeugen und PIN_HASH ersetzen, z. B.
+//   Terminal:        echo -n '1234' | sha256sum
+//   Browser-Konsole: crypto.subtle.digest('SHA-256', new TextEncoder()
+//                      .encode('1234')).then(b => console.log([...new Uint8Array(b)]
+//                      .map(x => x.toString(16).padStart(2, '0')).join('')))
+// Hinweis: Das ist ein Sichtschutz für eine statische Seite, kein echter
+// Server-Login – die Daten liegen weiterhin im Repository.
+const PIN_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // "1234"
+
+const PIN_LOCK = [
+  { fails: 10, ms: 5 * 60 * 1000 },  // ab 10 Fehlversuchen: 5 Minuten
+  { fails: 3, ms: 30 * 1000 },       // ab 3 Fehlversuchen: 30 Sekunden
+];
+const LS_FAILS = 'pm_pin_fails';
+const LS_LOCK = 'pm_pin_lock_until';
+const SS_OK = 'pm_pin_ok';
+
+/** SHA-256 (hex). Nutzt crypto.subtle; Fallback für Kontexte ohne SubtleCrypto. */
+async function sha256Hex(str) {
+  if (window.crypto && crypto.subtle) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) { /* Fallback unten */ }
+  }
+  return sha256Fallback(str);
+}
+
+/** Kompakte, reine JS-Implementierung von SHA-256 (nur ASCII-Eingaben). */
+function sha256Fallback(ascii) {
+  function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+  const maxWord = Math.pow(2, 32);
+  let result = '';
+  const words = [];
+  const asciiBitLength = ascii.length * 8;
+  let hash = sha256Fallback.h = sha256Fallback.h || [];
+  const k = sha256Fallback.k = sha256Fallback.k || [];
+  let primeCounter = k.length;
+  const isComposite = {};
+  for (let candidate = 2; primeCounter < 64; candidate++) {
+    if (!isComposite[candidate]) {
+      for (let i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+      hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+      k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+    }
+  }
+  ascii += '\x80';
+  while (ascii.length % 64 - 56) ascii += '\x00';
+  for (let i = 0; i < ascii.length; i++) {
+    const j = ascii.charCodeAt(i);
+    if (j >> 8) return '';
+    words[i >> 2] |= j << ((3 - i) % 4) * 8;
+  }
+  words[words.length] = (asciiBitLength / maxWord) | 0;
+  words[words.length] = asciiBitLength;
+  for (let j = 0; j < words.length;) {
+    const w = words.slice(j, j += 16);
+    const oldHash = hash.slice(0, 8);
+    hash = hash.slice(0, 8);
+    for (let i = 0; i < 64; i++) {
+      const w15 = w[i - 15], w2 = w[i - 2];
+      const a = hash[0], e = hash[4];
+      const temp1 = hash[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+        (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[i - 7] +
+          (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+      const temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+      hash = [(temp1 + temp2) | 0].concat(hash);
+      hash[4] = (hash[4] + temp1) | 0;
+    }
+    for (let i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+  }
+  for (let i = 0; i < 8; i++) {
+    for (let j = 3; j + 1; j--) {
+      const b = (hash[i] >> (j * 8)) & 255;
+      result += ((b < 16) ? 0 : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+
+function initPinGate() {
+  const gate = document.getElementById('pin-gate');
+  const card = document.getElementById('pin-card');
+  const form = document.getElementById('pin-form');
+  const input = document.getElementById('pin-input');
+  const submit = document.getElementById('pin-submit');
+  const msg = document.getElementById('pin-msg');
+
+  if (sessionStorage.getItem(SS_OK) === '1') { gate.classList.add('hidden'); return; }
+
+  let lockTimer = null;
+
+  function lockedUntil() { return +(localStorage.getItem(LS_LOCK) || 0); }
+  function fails() { return +(localStorage.getItem(LS_FAILS) || 0); }
+
+  function refreshLockUI() {
+    const until = lockedUntil();
+    const left = until - Date.now();
+    if (left > 0) {
+      input.disabled = submit.disabled = true;
+      msg.classList.remove('info');
+      msg.textContent = 'Gesperrt – bitte ' + Math.ceil(left / 1000) + ' s warten.';
+      if (!lockTimer) lockTimer = setInterval(refreshLockUI, 500);
+    } else {
+      input.disabled = submit.disabled = false;
+      if (lockTimer) { clearInterval(lockTimer); lockTimer = null; msg.textContent = ''; }
+    }
+  }
+  refreshLockUI();
+
+  function fail() {
+    const f = fails() + 1;
+    localStorage.setItem(LS_FAILS, String(f));
+    for (const rule of PIN_LOCK) {
+      if (f >= rule.fails) {
+        localStorage.setItem(LS_LOCK, String(Date.now() + rule.ms));
+        break;
+      }
+    }
+    card.classList.remove('shake');
+    void card.offsetWidth; // Animation neu starten
+    card.classList.add('shake');
+    msg.classList.remove('info');
+    msg.textContent = 'Falscher PIN.';
+    input.value = '';
+    refreshLockUI();
+  }
+
+  function unlock() {
+    localStorage.removeItem(LS_FAILS);
+    localStorage.removeItem(LS_LOCK);
+    sessionStorage.setItem(SS_OK, '1');
+    gate.classList.add('leaving');
+    document.getElementById('stage-wrap').classList.add('reveal');
+    setTimeout(() => gate.classList.add('hidden'), 500);
+  }
+
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if (lockedUntil() > Date.now()) { refreshLockUI(); return; }
+    const pin = input.value.trim();
+    if (!pin) return;
+    submit.disabled = true;
+    const h = await sha256Hex(pin);
+    submit.disabled = false;
+    if (h === PIN_HASH) unlock();
+    else fail();
+  });
+  setTimeout(() => input.focus(), 300);
+}
+
+// ===========================================================================
+// 2. KONSTANTEN & DATENINDIZES
+// ===========================================================================
+
 const D = window.REPO_DATA;
 if (!D) {
   document.body.innerHTML = '<p style="padding:2rem;font-family:monospace">repository-data.js fehlt – bitte zuerst <b>node project-map/generate-project-map.js</b> ausführen.</p>';
   return;
 }
-
-// ---------------------------------------------------------------------------
-// Konstanten: Farben & Stile
-// ---------------------------------------------------------------------------
 
 const CAT_COLORS = {
   'Seite': '#e8734a',
@@ -74,12 +237,8 @@ const EXT_BADGE = {
 function catColor(cat) { return CAT_COLORS[cat] || '#8a94a6'; }
 function kindStyle(kind) { return KIND_STYLE[kind] || { color: '#8a94a6', label: kind }; }
 
-// ---------------------------------------------------------------------------
-// Datenindizes
-// ---------------------------------------------------------------------------
-
 const nodeById = new Map(D.nodes.map(n => [n.id, n]));
-const outEdges = new Map(); // id -> edges[]
+const outEdges = new Map();
 const inEdges = new Map();
 for (const e of D.edges) {
   if (!outEdges.has(e.source)) outEdges.set(e.source, []);
@@ -91,7 +250,7 @@ const degree = id => ((outEdges.get(id) || []).length + (inEdges.get(id) || []).
 const HUB_MIN = 8;
 
 // ---------------------------------------------------------------------------
-// DOM-Referenzen
+// DOM-Referenzen & Helfer
 // ---------------------------------------------------------------------------
 
 const $ = s => document.querySelector(s);
@@ -116,16 +275,27 @@ const measureCtx = document.createElement('canvas').getContext('2d');
 measureCtx.font = '600 12px "Segoe UI", system-ui, sans-serif';
 function textW(t) { return measureCtx.measureText(t).width; }
 
+const isMobile = () => window.innerWidth <= 640;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function fmtSize(b) {
+  if (!b) return '–';
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1024 / 1024).toFixed(1) + ' MB';
+}
+
 // ---------------------------------------------------------------------------
 // Zustand
 // ---------------------------------------------------------------------------
 
 const state = {
   view: 'mindmap',
-  transform: { x: 0, y: 0, k: 1 },
-  selected: null,          // node-id (Daten-Knoten)
-  depth: 1,                // 1|2|3|Infinity
-  hoverEdge: null,
+  selected: null,
+  depth: 1,
   filters: {
     areas: new Set(D.meta.areas),
     cats: new Set(D.meta.categories.concat(['Gruppe'])),
@@ -134,15 +304,143 @@ const state = {
     onlyFindings: false,
     onlyHubs: false,
   },
-  multiHl: null,           // Set von ids (Findings-Hervorhebung)
+  multiHl: null,
+  // Cluster-System (Mindmap): welche Gruppen sind aufgeklappt?
+  expanded: new Set(['root']),
 };
 
-let VG = null; // aktueller View-Graph { nodes, edges, hulls, texts }
+let VG = null;
 let vgNodeById = new Map();
+let lodLevel = 2; // 0 = nur Hauptbereiche, 1 = + Ordner/Hubs, 2 = alles
+
+// ===========================================================================
+// 3. KAMERA – weiches Zoomen, Pannen, Trägheit, Kameraflüge (Google-Maps-Gefühl)
+// ===========================================================================
+
+const cam = { x: 0, y: 0, k: 1 };
+let camAnim = null;     // laufender Kameraflug
+let inertiaAnim = null; // laufende Trägheit nach dem Loslassen
+
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+function stopCamAnim() {
+  if (camAnim) { cancelAnimationFrame(camAnim); camAnim = null; }
+  wheelZoom = null; // smoothZoomAt setzt sein Ziel nach flyTo() selbst neu
+}
+function stopInertia() { if (inertiaAnim) { cancelAnimationFrame(inertiaAnim); inertiaAnim = null; } }
+
+/** Kamera sofort setzen (ohne Animation). */
+function setCam(x, y, k) {
+  cam.x = x; cam.y = y; cam.k = Math.max(0.04, Math.min(4, k));
+  applyTransform();
+}
+
+/** Weicher Kameraflug zu Ziel-Transformation. Zoom wird in Log-Raum interpoliert. */
+function flyTo(tx, ty, tk, dur, ease, opts) {
+  stopCamAnim(); stopInertia();
+  if (!opts || !opts.isWheel) wheelZoom = null; // Radzoom-Akkumulation beenden
+  tk = Math.max(0.04, Math.min(4, tk));
+  const s = { x: cam.x, y: cam.y, k: cam.k };
+  const lk0 = Math.log(s.k), lk1 = Math.log(tk);
+  const t0 = performance.now();
+  dur = dur || 600;
+  const fn = ease || easeInOut;
+  function step(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = fn(p);
+    const k = Math.exp(lk0 + (lk1 - lk0) * e);
+    // Translation so interpolieren, dass der Weltmittelpunkt gleichmäßig wandert
+    const cx0 = (svg.clientWidth / 2 - s.x) / s.k, cy0 = (svg.clientHeight / 2 - s.y) / s.k;
+    const cx1 = (svg.clientWidth / 2 - tx) / tk, cy1 = (svg.clientHeight / 2 - ty) / tk;
+    const cx = cx0 + (cx1 - cx0) * e, cy = cy0 + (cy1 - cy0) * e;
+    cam.k = k;
+    cam.x = svg.clientWidth / 2 - cx * k;
+    cam.y = svg.clientHeight / 2 - cy * k;
+    applyTransform();
+    if (p < 1) camAnim = requestAnimationFrame(step);
+    else { camAnim = null; if (opts && opts.isWheel) wheelZoom = null; }
+  }
+  camAnim = requestAnimationFrame(step);
+}
+
+/** Flug zu einem Weltpunkt mit Ziel-Zoom; offset berücksichtigt offene Panels. */
+function flyToWorld(wx, wy, k, dur) {
+  const off = panelOffset();
+  flyTo(svg.clientWidth / 2 - wx * k + off.x, svg.clientHeight / 2 - wy * k + off.y, k, dur);
+}
+
+/** Flug, sodass eine Welt-Bounding-Box eingepasst ist. */
+function flyToBounds(bb, dur, maxK) {
+  const W = svg.clientWidth, H = svg.clientHeight;
+  const k = Math.min(maxK || 1.4, Math.max(0.05,
+    Math.min(W / (bb.x1 - bb.x0 + 240), H / (bb.y1 - bb.y0 + 240))));
+  const off = panelOffset();
+  flyTo(W / 2 - (bb.x0 + bb.x1) / 2 * k + off.x,
+        H / 2 - (bb.y0 + bb.y1) / 2 * k + off.y, k, dur);
+}
+
+/** Versatz des Kamerazentrums, wenn Detail-Panel/Bottom-Sheet offen ist. */
+function panelOffset() {
+  if (!$('#detail').classList.contains('open')) return { x: 0, y: 0 };
+  if (isMobile()) return { x: 0, y: -svg.clientHeight * 0.16 };
+  return { x: -170, y: 0 };
+}
+
+/** Weiches Zoomen um einen Bildschirmpunkt (Mausrad, Buttons, Doppeltipp).
+    Schnell aufeinanderfolgende Aufrufe (Radbewegungen) akkumulieren ihr Ziel,
+    damit zügiges Scrollen auch zügig zoomt. */
+let wheelZoom = null; // { k: aktuelles Zoom-Ziel der laufenden Rad-Animation }
+function smoothZoomAt(cx, cy, factor, dur) {
+  const base = wheelZoom ? wheelZoom.k : cam.k;
+  const k = Math.max(0.04, Math.min(4, base * factor));
+  const f = k / cam.k;
+  const tx = cx - (cx - cam.x) * f;
+  const ty = cy - (cy - cam.y) * f;
+  flyTo(tx, ty, k, dur || 220, easeOutCubic, { isWheel: true });
+  wheelZoom = { k };
+}
+
+/** Trägheit nach dem Loslassen (Geschwindigkeit in px/ms). */
+function startInertia(vx, vy) {
+  stopInertia();
+  let last = performance.now();
+  function step(now) {
+    const dt = Math.min(40, now - last);
+    last = now;
+    cam.x += vx * dt;
+    cam.y += vy * dt;
+    const decay = Math.pow(0.94, dt / 16);
+    vx *= decay; vy *= decay;
+    applyTransform();
+    if (Math.hypot(vx, vy) > 0.02) inertiaAnim = requestAnimationFrame(step);
+    else inertiaAnim = null;
+  }
+  inertiaAnim = requestAnimationFrame(step);
+}
 
 // ---------------------------------------------------------------------------
-// View-Graph-Knoten bauen
+// Transformation anwenden: Viewport, Raster, LOD, Culling, Minimap-Viewport
 // ---------------------------------------------------------------------------
+
+let cullScheduled = false;
+
+function applyTransform() {
+  viewportG.style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.k + ')';
+  const grid = $('#grid-bg');
+  const cell = 28 * cam.k;
+  grid.setAttribute('transform', 'translate(' + (cam.x % cell) + ',' + (cam.y % cell) + ') scale(' + cam.k + ')');
+  updateLOD();
+  if (!cullScheduled) {
+    cullScheduled = true;
+    requestAnimationFrame(() => { cullScheduled = false; refreshCulling(); });
+  }
+  drawMinimapViewport();
+}
+
+// ===========================================================================
+// 4. VIEW-GRAPH-BUILDER
+// ===========================================================================
 
 function makeVNode(dataNode, opts) {
   opts = opts || {};
@@ -162,20 +460,20 @@ function makeVNode(dataNode, opts) {
     actor: !!opts.actor,
     virtual: dataNode ? dataNode.virtual : false,
     flag: dataNode && (dataNode.findings.length || dataNode.unused),
+    parentId: opts.parentId || null,
   };
 }
 
 function makeGroupNode(id, label, sub, color, scale) {
-  const w = Math.max(120, textW(label) * 1.25 + 60) * (scale || 1.2);
+  const w = Math.max(120, textW(label) * 1.25 + 72) * (scale || 1.2);
   return {
     id, ref: null, label, sub: sub || '', color: color || '#8a94a6',
-    x: 0, y: 0, w, h: 46 * (scale || 1.2), group: true, actor: false, virtual: false, flag: false,
+    x: 0, y: 0, w, h: 46 * (scale || 1.2), group: true, actor: false, virtual: false,
+    flag: false, parentId: null,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Layout 1: Mindmap (radial)
-// ---------------------------------------------------------------------------
+// --- Mindmap (mit Cluster-System) ------------------------------------------
 
 function buildMindmap() {
   const nodes = [];
@@ -184,16 +482,14 @@ function buildMindmap() {
   nodes.push(root);
 
   const areas = D.meta.areas.filter(a => D.nodes.some(n => n.area === a));
-  const tree = new Map(); // areaId -> Map(dir -> files[])
+  const tree = new Map();
   for (const a of areas) tree.set(a, new Map());
   for (const n of D.nodes) {
     const dirs = tree.get(n.area);
-    const key = n.dir;
-    if (!dirs.has(key)) dirs.set(key, []);
-    dirs.get(key).push(n);
+    if (!dirs.has(n.dir)) dirs.set(n.dir, []);
+    dirs.get(n.dir).push(n);
   }
 
-  // Blattzahl je Bereich → Winkelanteile
   const leafCount = a => [...tree.get(a).values()].reduce((s, f) => s + f.length, 0);
   const totalLeaves = areas.reduce((s, a) => s + leafCount(a), 0);
   let ang = -Math.PI / 2;
@@ -203,6 +499,7 @@ function buildMindmap() {
     const span = (leafCount(a) / totalLeaves) * Math.PI * 2;
     const aMid = ang + span / 2;
     const areaNode = makeGroupNode('area:' + a, a, leafCount(a) + ' Dateien', '#8a94a6', 1.25);
+    areaNode.parentId = 'root';
     areaNode.x = Math.cos(aMid) * R_AREA;
     areaNode.y = Math.sin(aMid) * R_AREA;
     nodes.push(areaNode);
@@ -214,12 +511,12 @@ function buildMindmap() {
       const span2 = (filesInDir.length / totalLeaves) * Math.PI * 2;
       const gMid = ang2 + span2 / 2;
       let parentId = areaNode.id;
-      // Eigener Ordner-Zwischenknoten nur bei Unterordnern
       const isRootDir = dir === '/' || !dir.includes('/');
       if (!isRootDir || (dir !== '/' && dirs.length > 1)) {
         const gid = 'dir:' + dir;
         if (!nodes.some(n => n.id === gid)) {
           const g = makeGroupNode(gid, dir.split('/').pop() + '/', dir, '#7d8798', 1);
+          g.parentId = areaNode.id;
           g.x = Math.cos(gMid) * R_GROUP;
           g.y = Math.sin(gMid) * R_GROUP;
           nodes.push(g);
@@ -231,7 +528,9 @@ function buildMindmap() {
       filesInDir.forEach((f, i) => {
         const fa = ang2 + ((i + 0.5) / filesInDir.length) * span2;
         const r = R_FILE + (i % 2) * 85 + (parentId === areaNode.id ? -160 : 0);
-        const vn = makeVNode(f, { x: Math.cos(fa) * r, y: Math.sin(fa) * r, scale: 0.92 });
+        const vn = makeVNode(f, {
+          x: Math.cos(fa) * r, y: Math.sin(fa) * r, scale: 0.92, parentId,
+        });
         nodes.push(vn);
         edges.push({ source: parentId, target: f.id, kind: 'tree', label: 'enthält' });
       });
@@ -240,14 +539,13 @@ function buildMindmap() {
     ang += span;
   }
 
-  // Echte Beziehungen sehr dezent mit einblenden (leuchten bei Auswahl auf)
   for (const e of D.edges) edges.push(Object.assign({ faint: true }, e));
+  // Layout-Zielpositionen merken (für Cluster-Animationen)
+  for (const n of nodes) { n.homeX = n.x; n.homeY = n.y; }
   return { nodes, edges, hulls: [], texts: [] };
 }
 
-// ---------------------------------------------------------------------------
-// Layout 2: Abhängigkeitsgraph (Force-Simulation)
-// ---------------------------------------------------------------------------
+// --- Force-Simulation (Abhängigkeitsgraph & Systemübersicht) ----------------
 
 function forceSim(nodes, edges, opts) {
   opts = opts || {};
@@ -257,14 +555,13 @@ function forceSim(nodes, edges, opts) {
     .filter(e => idx.has(e.source) && idx.has(e.target) && !e.faint)
     .map(e => ({ a: idx.get(e.source), b: idx.get(e.target) }));
 
-  // Startpositionen: nach Bereich gruppiert auf einem Ring
   const areas = [...new Set(nodes.map(nd => nd.ref ? nd.ref.area : 'x'))];
   const anchor = new Map();
   areas.forEach((a, i) => {
     const t = (i / areas.length) * Math.PI * 2 - Math.PI / 2;
     anchor.set(a, { x: Math.cos(t) * (opts.anchorR || 620), y: Math.sin(t) * (opts.anchorR || 620) });
   });
-  nodes.forEach((nd, i) => {
+  nodes.forEach(nd => {
     const a = anchor.get(nd.ref ? nd.ref.area : 'x') || { x: 0, y: 0 };
     if (nd.x === 0 && nd.y === 0) {
       nd.x = a.x + (Math.random() - 0.5) * 500;
@@ -280,7 +577,6 @@ function forceSim(nodes, edges, opts) {
 
   for (let t = 0; t < ticks; t++) {
     const alpha = 1 - t / ticks;
-    // Abstoßung
     for (let i = 0; i < n; i++) {
       const a = nodes[i];
       for (let j = i + 1; j < n; j++) {
@@ -296,7 +592,6 @@ function forceSim(nodes, edges, opts) {
         b.vx -= dx * f; b.vy -= dy * f;
       }
     }
-    // Federn
     for (const s of springs) {
       const a = nodes[s.a], b = nodes[s.b];
       const dx = b.x - a.x, dy = b.y - a.y;
@@ -306,7 +601,6 @@ function forceSim(nodes, edges, opts) {
       a.vx += ux * f; a.vy += uy * f;
       b.vx -= ux * f; b.vy -= uy * f;
     }
-    // Anker & Zentrum
     for (const nd of nodes) {
       const a = anchor.get(nd.ref ? nd.ref.area : 'x') || { x: 0, y: 0 };
       nd.vx += (a.x - nd.x) * 0.012 * alpha;
@@ -320,17 +614,13 @@ function forceSim(nodes, edges, opts) {
 }
 
 function buildDeps() {
-  const nodes = D.nodes.map(n => makeVNode(n, {
-    scale: 1 + Math.min(0.5, degree(n.id) / 40),
-  }));
+  const nodes = D.nodes.map(n => makeVNode(n, { scale: 1 + Math.min(0.5, degree(n.id) / 40) }));
   const edges = D.edges.map(e => Object.assign({}, e));
   forceSim(nodes, edges, {});
   return { nodes, edges, hulls: [], texts: [] };
 }
 
-// ---------------------------------------------------------------------------
-// Layout 3: Ordnerstruktur (Cluster)
-// ---------------------------------------------------------------------------
+// --- Ordnerstruktur ---------------------------------------------------------
 
 function buildFolders() {
   const byDir = new Map();
@@ -368,9 +658,7 @@ function buildFolders() {
   return { nodes, edges, hulls, texts };
 }
 
-// ---------------------------------------------------------------------------
-// Layout 4: Datenfluss (Lanes)
-// ---------------------------------------------------------------------------
+// --- Datenfluss -------------------------------------------------------------
 
 function buildFlow() {
   const nodes = [], edges = [], texts = [];
@@ -394,13 +682,11 @@ function buildFlow() {
   return { nodes, edges, hulls: [], texts };
 }
 
-// ---------------------------------------------------------------------------
-// Layout 5: Systemübersicht (aggregiert)
-// ---------------------------------------------------------------------------
+// --- Systemübersicht --------------------------------------------------------
 
 function buildSystem() {
   const nodes = [];
-  const mapTo = new Map(); // data-node-id -> system-node-id
+  const mapTo = new Map();
 
   const areas = D.meta.areas.filter(a => a !== 'Externe Dienste & Daten');
   for (const a of areas) {
@@ -409,21 +695,18 @@ function buildSystem() {
     nodes.push(g);
     for (const n of D.nodes) if (n.area === a && !n.virtual) mapTo.set(n.id, g.id);
   }
-  // Dienste, Datenbank, Auth als echte Knoten
   for (const n of D.nodes) {
     if (n.virtual) {
       nodes.push(makeVNode(n, { scale: 1.15 }));
       mapTo.set(n.id, n.id);
     }
   }
-  // Zentrale Dateien (Hubs) einzeln zeigen
   const hubs = D.nodes.filter(n => !n.virtual && degree(n.id) >= 12).slice(0, 8);
   for (const h of hubs) {
     nodes.push(makeVNode(h, { scale: 1.05 }));
     mapTo.set(h.id, h.id);
   }
 
-  // Kanten aggregieren
   const agg = new Map();
   for (const e of D.edges) {
     const s = mapTo.get(e.source), t = mapTo.get(e.target);
@@ -440,24 +723,25 @@ function buildSystem() {
   return { nodes, edges, hulls: [], texts: [] };
 }
 
-// ---------------------------------------------------------------------------
-// Rendering
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 5. RENDERING & SICHTBARKEITS-PIPELINE
+// ===========================================================================
+// Sichtbarkeit einer Karte = Filter ∧ Cluster-Zustand ∧ LOD ∧ Viewport-Culling.
+// Die ersten drei sind "logisch" (_show/_lod), Culling passiert pro Frame und
+// schreibt nur bei Änderungen ins DOM (virtuelles Rendering).
 
 function edgePath(a, b) {
-  // Leichte Krümmung; Endpunkt am Kartenrand des Ziels
   const dx = b.x - a.x, dy = b.y - a.y;
   const d = Math.max(1, Math.hypot(dx, dy));
   const ux = dx / d, uy = dy / d;
-  // Schnitt mit Ziel-Rechteck (angenähert)
-  const tx = Math.abs(ux) > 0.0001 ? (b.w / 2 + 6) / Math.abs(ux) : 1e9;
-  const ty = Math.abs(uy) > 0.0001 ? (b.h / 2 + 6) / Math.abs(uy) : 1e9;
-  const cut = Math.min(tx, ty, d);
-  const ex = b.x - ux * cut, ey = b.y - uy * cut;
-  const sx = a.x + ux * Math.min(Math.abs(ux) > 0.0001 ? (a.w / 2 + 4) / Math.abs(ux) : 1e9,
-                                 Math.abs(uy) > 0.0001 ? (a.h / 2 + 4) / Math.abs(uy) : 1e9, d);
-  const sy = a.y + uy * Math.min(Math.abs(ux) > 0.0001 ? (a.w / 2 + 4) / Math.abs(ux) : 1e9,
-                                 Math.abs(uy) > 0.0001 ? (a.h / 2 + 4) / Math.abs(uy) : 1e9, d);
+  const cutT = Math.min(
+    Math.abs(ux) > 1e-4 ? (b.w / 2 + 6) / Math.abs(ux) : 1e9,
+    Math.abs(uy) > 1e-4 ? (b.h / 2 + 6) / Math.abs(uy) : 1e9, d);
+  const ex = b.x - ux * cutT, ey = b.y - uy * cutT;
+  const cutS = Math.min(
+    Math.abs(ux) > 1e-4 ? (a.w / 2 + 4) / Math.abs(ux) : 1e9,
+    Math.abs(uy) > 1e-4 ? (a.h / 2 + 4) / Math.abs(uy) : 1e9, d);
+  const sx = a.x + ux * cutS, sy = a.y + uy * cutS;
   const mx = (sx + ex) / 2 - dy / d * Math.min(40, d * 0.08);
   const my = (sy + ey) / 2 + dx / d * Math.min(40, d * 0.08);
   return 'M' + sx.toFixed(1) + ',' + sy.toFixed(1) +
@@ -465,7 +749,8 @@ function edgePath(a, b) {
          ' ' + ex.toFixed(1) + ',' + ey.toFixed(1);
 }
 
-function render() {
+function render(opts) {
+  opts = opts || {};
   layerHulls.innerHTML = '';
   layerEdges.innerHTML = '';
   layerEdgeHits.innerHTML = '';
@@ -496,19 +781,34 @@ function render() {
     });
     if (e.faint) p.style.opacity = 0.07;
     if (e.kind === 'tree') p.style.opacity = 0.28;
+    // Einzeichnen-Animation (pathLength=1 macht die Dash-Werte längenunabhängig)
+    if (opts.animate && !ks.dashed && !e.faint) {
+      p.setAttribute('pathLength', '1');
+      p.classList.add('draw');
+      p.style.animationDelay = Math.min(300, i * 3) + 'ms';
+    } else if (opts.animate) {
+      p.classList.add('fadein');
+    }
     layerEdges.appendChild(p);
     e._el = p;
-    // unsichtbare Hover-Fläche
     const hit = svgEl('path', { class: 'edge hit', d: p.getAttribute('d'), stroke: '#fff' });
     hit.style.pointerEvents = 'stroke';
     hit.dataset.ei = i;
     layerEdgeHits.appendChild(hit);
     e._hit = hit;
+    e._disp = true;
   });
 
   for (const n of VG.nodes) {
     const g = svgEl('g', { class: 'node' + (n.virtual ? ' virtual' : '') + (n.group ? ' group' : '') + (n.actor ? ' actor' : '') });
     g.dataset.id = n.id;
+    // Großzügige unsichtbare Klickfläche (Touch), Karte selbst bleibt klein
+    const pad = isMobile() ? 16 : 8;
+    g.appendChild(svgEl('rect', {
+      class: 'hitarea',
+      x: -n.w / 2 - pad, y: -n.h / 2 - pad,
+      width: n.w + pad * 2, height: n.h + pad * 2,
+    }));
     const rect = svgEl('rect', {
       class: 'card', x: -n.w / 2, y: -n.h / 2, width: n.w, height: n.h,
       rx: n.group ? 14 : 9,
@@ -524,23 +824,31 @@ function render() {
       sub.textContent = n.sub;
       g.appendChild(sub);
     }
+    // Cluster-Indikator (Mindmap-Gruppen)
+    if (n.group && state.view === 'mindmap' && n.id !== 'root') {
+      const chev = svgEl('text', { class: 'chev', x: n.w / 2 - 18, y: 5 });
+      chev.textContent = state.expanded.has(n.id) ? '▾' : '▸';
+      g.appendChild(chev);
+      n._chev = chev;
+    }
     if (n.flag) {
       const f = svgEl('text', { class: 'badge-flag', x: n.w / 2 - 16, y: -n.h / 2 + 13, fill: '#ffd166' });
       f.textContent = '⚠';
       g.appendChild(f);
     }
-    g.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
+    g.style.transform = 'translate(' + n.x + 'px,' + n.y + 'px)';
     layerNodes.appendChild(g);
     n._el = g;
+    n._disp = true;
   }
 
-  applyFilters();
+  updateVisibility();
   applyHighlight();
   drawMinimap();
 }
 
 function updateNodePos(n) {
-  n._el.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
+  n._el.style.transform = 'translate(' + n.x + 'px,' + n.y + 'px)';
   for (const e of VG.edges) {
     if (!e._el) continue;
     if (e.source === n.id || e.target === n.id) {
@@ -551,13 +859,11 @@ function updateNodePos(n) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Filter
-// ---------------------------------------------------------------------------
+// --- Logische Sichtbarkeit: Filter + Cluster --------------------------------
 
-function nodeVisible(vn) {
+function nodePassesFilters(vn) {
   const n = vn.ref;
-  if (!n) return true; // Gruppen-/Actor-Knoten immer sichtbar
+  if (!n) return true;
   const f = state.filters;
   if (!f.areas.has(n.area)) return false;
   if (!f.cats.has(n.category)) return false;
@@ -569,36 +875,209 @@ function nodeVisible(vn) {
   return true;
 }
 
-function applyFilters() {
-  const hidden = new Set();
+/** Mindmap: sichtbar nur, wenn alle Eltern-Cluster aufgeklappt sind. */
+function clusterVisible(vn) {
+  if (state.view !== 'mindmap') return true;
+  let p = vn.parentId;
+  while (p) {
+    if (!state.expanded.has(p)) return false;
+    const pn = vgNodeById.get(p);
+    p = pn ? pn.parentId : null;
+  }
+  return true;
+}
+
+/** LOD-Ausblendung je Zoomstufe (nur Abhängigkeits-/Ordner-Ansicht). */
+function lodHidden(vn) {
+  if (state.view !== 'deps' && state.view !== 'folders') return false;
+  if (vn.group) return false;
+  if (lodLevel === 0) return !vn.ref || (!vn.ref.virtual && degree(vn.id) < HUB_MIN);
+  return false;
+}
+
+function updateVisibility() {
   for (const vn of VG.nodes) {
-    const vis = nodeVisible(vn);
-    vn._el.style.display = vis ? '' : 'none';
-    if (!vis) hidden.add(vn.id);
+    vn._show = nodePassesFilters(vn) && clusterVisible(vn) && !lodHidden(vn);
   }
   for (const e of VG.edges) {
     if (!e._el) continue;
-    const off = hidden.has(e.source) || hidden.has(e.target);
-    e._el.style.display = off ? 'none' : '';
-    if (e._hit) e._hit.style.display = off ? 'none' : '';
+    const a = vgNodeById.get(e.source), b = vgNodeById.get(e.target);
+    e._show = a && b && a._show && b._show &&
+      !(lodLevel === 0 && e.kind !== 'tree' && (state.view === 'deps' || state.view === 'folders')) &&
+      !(lodLevel <= 1 && e.faint && state.view === 'folders');
   }
+  refreshCulling(true);
   updateStats();
   drawMinimap();
 }
 
-// ---------------------------------------------------------------------------
-// Auswahl & Hervorhebung
-// ---------------------------------------------------------------------------
+// --- LOD (Level of Detail, wie bei Google Maps) -----------------------------
+
+function updateLOD() {
+  svg.classList.toggle('lod-far', cam.k < 0.75); // Sub-Labels erst nah zeigen
+  const lvl = cam.k < 0.17 ? 0 : cam.k < 0.42 ? 1 : 2;
+  if (lvl !== lodLevel) {
+    lodLevel = lvl;
+    if (VG) updateVisibility();
+  }
+}
+
+// --- Viewport-Culling (virtuelles Rendering) --------------------------------
+
+function refreshCulling(force) {
+  if (!VG) return;
+  const W = svg.clientWidth, H = svg.clientHeight;
+  const M = 260; // Rand, damit nichts sichtbar "aufploppt"
+  const x0 = (-cam.x - M) / cam.k, y0 = (-cam.y - M) / cam.k;
+  const x1 = (W - cam.x + M) / cam.k, y1 = (H - cam.y + M) / cam.k;
+
+  for (const vn of VG.nodes) {
+    const vis = vn._show &&
+      vn.x + vn.w / 2 > x0 && vn.x - vn.w / 2 < x1 &&
+      vn.y + vn.h / 2 > y0 && vn.y - vn.h / 2 < y1;
+    if (vis !== vn._disp || force) {
+      vn._disp = vis;
+      vn._el.style.display = vis ? '' : 'none';
+    }
+  }
+  for (const e of VG.edges) {
+    if (!e._el) continue;
+    const a = vgNodeById.get(e.source), b = vgNodeById.get(e.target);
+    const bx0 = Math.min(a.x, b.x), bx1 = Math.max(a.x, b.x);
+    const by0 = Math.min(a.y, b.y), by1 = Math.max(a.y, b.y);
+    const vis = !!e._show && bx1 > x0 && bx0 < x1 && by1 > y0 && by0 < y1;
+    if (vis !== e._disp || force) {
+      e._disp = vis;
+      e._el.style.display = vis ? '' : 'none';
+      if (e._hit) e._hit.style.display = vis ? '' : 'none';
+    }
+  }
+}
+
+// --- Cluster auf-/zuklappen (animiert) --------------------------------------
+
+let clusterAnim = null;
+
+function directChildren(gid) {
+  return VG.nodes.filter(n => n.parentId === gid);
+}
+
+function descendantGroups(gid) {
+  const out = [];
+  const stack = [gid];
+  while (stack.length) {
+    const cur = stack.pop();
+    for (const n of VG.nodes) {
+      if (n.parentId === cur && n.group) { out.push(n.id); stack.push(n.id); }
+    }
+  }
+  return out;
+}
+
+function toggleCluster(gid) {
+  const gn = vgNodeById.get(gid);
+  if (!gn) return;
+  const willExpand = !state.expanded.has(gid);
+
+  if (willExpand) {
+    state.expanded.add(gid);
+    updateVisibility();
+    // Kinder fliegen animiert aus dem Cluster heraus
+    const kids = directChildren(gid).filter(k => k._show);
+    animateFrom(kids, gn.x, gn.y, 420);
+    // Kamera passt Cluster + Kinder ein
+    let bb = { x0: gn.x, y0: gn.y, x1: gn.x, y1: gn.y };
+    for (const k of kids) {
+      bb.x0 = Math.min(bb.x0, k.homeX - k.w); bb.x1 = Math.max(bb.x1, k.homeX + k.w);
+      bb.y0 = Math.min(bb.y0, k.homeY - k.h); bb.y1 = Math.max(bb.y1, k.homeY + k.h);
+    }
+    flyToBounds(bb, 650, 1.1);
+  } else {
+    // Zuklappen: Kinder fliegen zurück in den Cluster, dann ausblenden
+    state.expanded.delete(gid);
+    for (const dg of descendantGroups(gid)) state.expanded.delete(dg);
+    const kids = VG.nodes.filter(k => k._show && k.parentId && !clusterVisible(k));
+    animateTo(kids, gn.x, gn.y, 320, () => updateVisibility());
+  }
+  if (gn._chev) gn._chev.textContent = willExpand ? '▾' : '▸';
+}
+
+/** Knoten von einem Punkt zu ihren Home-Positionen animieren (Aufklappen). */
+function animateFrom(nodes, fx, fy, dur) {
+  if (clusterAnim) cancelAnimationFrame(clusterAnim);
+  const t0 = performance.now();
+  for (const n of nodes) {
+    n.x = fx; n.y = fy;
+    n._el.classList.remove('enter');
+    void n._el.getBBox; // reflow-frei; Klasse einfach neu setzen
+    n._el.classList.add('enter');
+  }
+  function step(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = easeOutCubic(p);
+    for (const n of nodes) {
+      n.x = fx + (n.homeX - fx) * e;
+      n.y = fy + (n.homeY - fy) * e;
+      updateNodePos(n);
+    }
+    if (p < 1) clusterAnim = requestAnimationFrame(step);
+    else { clusterAnim = null; drawMinimap(); }
+  }
+  clusterAnim = requestAnimationFrame(step);
+}
+
+/** Knoten zu einem Punkt hin animieren (Zuklappen), danach Callback. */
+function animateTo(nodes, tx, ty, dur, done) {
+  if (clusterAnim) cancelAnimationFrame(clusterAnim);
+  const t0 = performance.now();
+  const start = nodes.map(n => ({ n, x: n.x, y: n.y }));
+  function step(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = easeOutCubic(p);
+    for (const s of start) {
+      s.n.x = s.x + (tx - s.x) * e;
+      s.n.y = s.y + (ty - s.y) * e;
+      updateNodePos(s.n);
+    }
+    if (p < 1) clusterAnim = requestAnimationFrame(step);
+    else {
+      clusterAnim = null;
+      for (const s of start) { s.n.x = s.n.homeX; s.n.y = s.n.homeY; updateNodePos(s.n); }
+      if (done) done();
+    }
+  }
+  clusterAnim = requestAnimationFrame(step);
+}
+
+/** Stellt sicher, dass ein Daten-Knoten im aktuellen View sichtbar sein kann
+    (klappt in der Mindmap die nötigen Cluster auf). */
+function ensureNodeVisible(dataId) {
+  if (state.view !== 'mindmap') return;
+  const ids = viewIdsForDataId(dataId);
+  for (const id of ids) {
+    let vn = vgNodeById.get(id);
+    let p = vn && vn.parentId;
+    let changed = false;
+    while (p) {
+      if (!state.expanded.has(p)) { state.expanded.add(p); changed = true; }
+      const pn = vgNodeById.get(p);
+      if (pn && pn._chev) pn._chev.textContent = '▾';
+      p = pn ? pn.parentId : null;
+    }
+    if (changed) updateVisibility();
+  }
+}
+
+// --- Auswahl & Hervorhebung -------------------------------------------------
 
 function reachSet(startIds, depth, dir) {
-  // BFS über sichtbare Kanten; dir: 'out' | 'in'
   const lvl = new Map();
   let frontier = startIds.filter(id => vgNodeById.has(id));
   frontier.forEach(id => lvl.set(id, 0));
   for (let d = 0; d < depth && frontier.length; d++) {
     const next = [];
     for (const e of VG.edges) {
-      if (!e._el || e._el.style.display === 'none' || e.kind === 'tree') continue;
+      if (!e._el || !e._show || e.kind === 'tree') continue;
       const from = dir === 'out' ? e.source : e.target;
       const to = dir === 'out' ? e.target : e.source;
       if (lvl.get(from) === d && !lvl.has(to)) { lvl.set(to, d + 1); next.push(to); }
@@ -639,7 +1118,6 @@ function applyHighlight() {
   }
 }
 
-/** Daten-Knoten-ID → im aktuellen View vorhandene VG-Knoten-IDs. */
 function viewIdsForDataId(dataId) {
   const ids = [];
   for (const vn of VG.nodes) if (vn.ref && vn.ref.id === dataId) ids.push(vn.id);
@@ -655,20 +1133,11 @@ function clearSelection() {
   applyHighlight();
 }
 
-// ---------------------------------------------------------------------------
-// Detailpanel
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 6. INTERAKTION
+// ===========================================================================
 
-function fmtSize(b) {
-  if (!b) return '–';
-  if (b < 1024) return b + ' B';
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-  return (b / 1024 / 1024).toFixed(1) + ' MB';
-}
-
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
+// --- Detailpanel ------------------------------------------------------------
 
 function depItemHtml(otherId, relLabel, dirCls) {
   const o = nodeById.get(otherId);
@@ -685,6 +1154,7 @@ function selectNode(dataId, opts) {
   if (!n) return;
   state.multiHl = null;
   state.selected = dataId;
+  ensureNodeVisible(dataId);
 
   $('#d-dot').style.background = catColor(n.category);
   $('#d-title').textContent = n.label;
@@ -704,7 +1174,6 @@ function selectNode(dataId, opts) {
   let html = '';
   html += '<section><h4>Beschreibung</h4><div class="desc">' + esc(n.desc) + '</div></section>';
 
-  // Verbindungstiefe + Weiterverfolgen
   html += '<section><h4>Hervorhebung</h4><div class="depth-row"><span class="lab">Tiefe:</span>';
   for (const d of [1, 2, 3, 'Alle']) {
     const val = d === 'Alle' ? 'inf' : d;
@@ -739,10 +1208,11 @@ function selectNode(dataId, opts) {
       }).join('') + '</section>';
   }
   $('#d-body').innerHTML = html;
+  $('#d-body').scrollTop = 0;
 
-  // Interaktionen im Panel
+  // Sprung zu verbundenen Dateien
   $('#d-body').querySelectorAll('.dep-item').forEach(el => {
-    el.addEventListener('click', () => { selectNode(el.dataset.id); focusNode(el.dataset.id); });
+    el.addEventListener('click', () => selectNode(el.dataset.id));
   });
   $('#d-body').querySelectorAll('.depth-btn').forEach(el => {
     el.addEventListener('click', () => {
@@ -752,11 +1222,12 @@ function selectNode(dataId, opts) {
   });
   const fb = $('#btn-follow');
   if (fb) fb.addEventListener('click', () => {
-    state.depth = state.depth === Infinity ? Infinity : Math.min(3, state.depth + 1) === state.depth ? Infinity : state.depth + 1;
+    state.depth = state.depth >= 3 ? Infinity : state.depth + 1;
     selectNode(dataId, { noFocus: true });
   });
 
   $('#detail').classList.add('open');
+  $('#detail').style.transform = '';
   $('#minimap-wrap').classList.add('shifted');
   $('#legend').classList.remove('open');
   $('#findings-panel').classList.remove('open');
@@ -764,149 +1235,65 @@ function selectNode(dataId, opts) {
   if (!opts || !opts.noFocus) focusNode(dataId, true);
 }
 
-// ---------------------------------------------------------------------------
-// Transformation (Pan/Zoom)
-// ---------------------------------------------------------------------------
-
-function applyTransform() {
-  const t = state.transform;
-  viewportG.setAttribute('transform', 'translate(' + t.x + ',' + t.y + ') scale(' + t.k + ')');
-  // Rasterhintergrund mitbewegen
-  const grid = $('#grid-bg');
-  grid.setAttribute('transform', 'translate(' + (t.x % (28 * t.k)) + ',' + (t.y % (28 * t.k)) + ') scale(' + t.k + ')');
-  drawMinimapViewport();
-}
-
-function zoomAt(cx, cy, factor) {
-  const t = state.transform;
-  const k = Math.max(0.04, Math.min(4, t.k * factor));
-  const f = k / t.k;
-  t.x = cx - (cx - t.x) * f;
-  t.y = cy - (cy - t.y) * f;
-  t.k = k;
-  applyTransform();
-}
-
-function contentBBox(visibleOnly) {
-  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-  for (const n of VG.nodes) {
-    if (visibleOnly && n._el && n._el.style.display === 'none') continue;
-    x0 = Math.min(x0, n.x - n.w); x1 = Math.max(x1, n.x + n.w);
-    y0 = Math.min(y0, n.y - n.h); y1 = Math.max(y1, n.y + n.h);
-  }
-  for (const h of VG.hulls) {
-    x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x + h.w);
-    y0 = Math.min(y0, h.y); y1 = Math.max(y1, h.y + h.h);
-  }
-  if (x0 > x1) { x0 = -500; y0 = -500; x1 = 500; y1 = 500; }
-  return { x0, y0, x1, y1 };
-}
-
-function fitView() {
-  const bb = contentBBox(true);
-  const W = svg.clientWidth, H = svg.clientHeight;
-  const k = Math.min(3, Math.min(W / (bb.x1 - bb.x0 + 200), H / (bb.y1 - bb.y0 + 200)));
-  state.transform.k = Math.max(0.05, k);
-  state.transform.x = W / 2 - (bb.x0 + bb.x1) / 2 * state.transform.k;
-  state.transform.y = H / 2 - (bb.y0 + bb.y1) / 2 * state.transform.k;
-  applyTransform();
-}
-
+/** Kameraflug zu einem Daten-Knoten. */
 function focusNode(dataId, zoom) {
   const ids = viewIdsForDataId(dataId);
   if (!ids.length) return;
   const vn = vgNodeById.get(ids[0]);
-  const W = svg.clientWidth, H = svg.clientHeight;
-  const k = zoom ? Math.max(state.transform.k, 0.85) : state.transform.k;
-  state.transform.k = k;
-  state.transform.x = W / 2 - vn.x * k - (window.innerWidth > 900 ? 170 : 0) * ($('#detail').classList.contains('open') ? 1 : 0);
-  state.transform.y = H / 2 - vn.y * k;
-  applyTransform();
+  const k = zoom ? Math.max(cam.k, 0.9) : cam.k;
+  flyToWorld(vn.x, vn.y, k, 650);
 }
 
-// ---------------------------------------------------------------------------
-// Minimap
-// ---------------------------------------------------------------------------
+// --- Bottom Sheet (mobil): am Griff nach unten ziehen schließt ---------------
 
-let mmScale = 1, mmOff = { x: 0, y: 0 };
+(function initSheetDrag() {
+  const handle = $('#d-handle');
+  const detail = $('#detail');
+  let startY = null;
+  handle.addEventListener('pointerdown', ev => {
+    startY = ev.clientY;
+    handle.setPointerCapture(ev.pointerId);
+  });
+  handle.addEventListener('pointermove', ev => {
+    if (startY === null) return;
+    const dy = Math.max(0, ev.clientY - startY);
+    detail.style.transition = 'none';
+    detail.style.transform = 'translateY(' + dy + 'px)';
+  });
+  handle.addEventListener('pointerup', ev => {
+    if (startY === null) return;
+    const dy = ev.clientY - startY;
+    detail.style.transition = '';
+    startY = null;
+    if (dy > 90) { detail.style.transform = ''; clearSelection(); }
+    else detail.style.transform = '';
+  });
+})();
 
-function drawMinimap() {
-  const W = minimap.width, H = minimap.height;
-  mmCtx.clearRect(0, 0, W, H);
-  const bb = contentBBox(false);
-  const pad = 12;
-  mmScale = Math.min((W - pad * 2) / (bb.x1 - bb.x0 + 1), (H - pad * 2) / (bb.y1 - bb.y0 + 1));
-  mmOff.x = pad - bb.x0 * mmScale + (W - pad * 2 - (bb.x1 - bb.x0) * mmScale) / 2;
-  mmOff.y = pad - bb.y0 * mmScale + (H - pad * 2 - (bb.y1 - bb.y0) * mmScale) / 2;
-  for (const n of VG.nodes) {
-    if (n._el && n._el.style.display === 'none') continue;
-    mmCtx.fillStyle = n.color;
-    mmCtx.globalAlpha = 0.85;
-    mmCtx.fillRect(n.x * mmScale + mmOff.x - 1.5, n.y * mmScale + mmOff.y - 1.5, 3, 3);
-  }
-  mmCtx.globalAlpha = 1;
-  drawMinimapViewport(true);
-}
-
-let mmViewportOnly = null;
-function drawMinimapViewport(skipRedraw) {
-  if (!skipRedraw) {
-    // Viewport-Rechteck neu zeichnen ohne alles zu rastern: einfach neu zeichnen
-    const W = minimap.width, H = minimap.height;
-    mmCtx.clearRect(0, 0, W, H);
-    const bbDummy = null;
-    // komplettes Neuzeichnen ist billig genug (≤ 150 Punkte)
-    drawMinimap();
-    return;
-  }
-  const t = state.transform;
-  const x0 = (-t.x / t.k) * mmScale + mmOff.x;
-  const y0 = (-t.y / t.k) * mmScale + mmOff.y;
-  const w = (svg.clientWidth / t.k) * mmScale;
-  const h = (svg.clientHeight / t.k) * mmScale;
-  mmCtx.strokeStyle = 'rgba(110,168,254,0.9)';
-  mmCtx.lineWidth = 1.2;
-  mmCtx.strokeRect(x0, y0, w, h);
-  mmCtx.fillStyle = 'rgba(110,168,254,0.08)';
-  mmCtx.fillRect(x0, y0, w, h);
-}
-
-minimap.addEventListener('pointerdown', ev => {
-  minimap.setPointerCapture(ev.pointerId);
-  const move = e => {
-    const r = minimap.getBoundingClientRect();
-    const wx = (e.clientX - r.left - mmOff.x) / mmScale;
-    const wy = (e.clientY - r.top - mmOff.y) / mmScale;
-    state.transform.x = svg.clientWidth / 2 - wx * state.transform.k;
-    state.transform.y = svg.clientHeight / 2 - wy * state.transform.k;
-    applyTransform();
-  };
-  move(ev);
-  const up = () => {
-    minimap.removeEventListener('pointermove', move);
-    minimap.removeEventListener('pointerup', up);
-  };
-  minimap.addEventListener('pointermove', move);
-  minimap.addEventListener('pointerup', up);
-});
-
-// ---------------------------------------------------------------------------
-// Maus-/Touch-Interaktion auf der Bühne
-// ---------------------------------------------------------------------------
+// --- Pointer-Gesten auf der Bühne -------------------------------------------
+// 1 Finger / linke Maustaste: Pannen (mit Trägheit beim Loslassen)
+// 2 Finger: Pinch-Zoom; kurzer 2-Finger-Tipp: herauszoomen
+// Doppeltipp/Doppelklick: Node fokussieren bzw. hineinzoomen
 
 const pointers = new Map();
 let panStart = null, dragNode = null, pinchStart = null;
+let panSamples = [];   // für Trägheit: letzte Bewegungsproben
+let lastTap = null;    // für Doppeltipp-Erkennung
 
 svg.addEventListener('wheel', ev => {
   ev.preventDefault();
-  zoomAt(ev.clientX, ev.clientY, Math.pow(1.0016, -ev.deltaY));
+  smoothZoomAt(ev.clientX, ev.clientY, Math.pow(1.0016, -ev.deltaY), 140);
 }, { passive: false });
 
 svg.addEventListener('pointerdown', ev => {
+  stopInertia(); stopCamAnim();
   pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
   if (pointers.size === 2) {
     const [a, b] = [...pointers.values()];
-    pinchStart = { d: Math.hypot(a.x - b.x, a.y - b.y), k: state.transform.k };
+    pinchStart = {
+      d: Math.hypot(a.x - b.x, a.y - b.y), k: cam.k,
+      t0: performance.now(), moved: false,
+    };
     panStart = null; dragNode = null;
     return;
   }
@@ -916,7 +1303,8 @@ svg.addEventListener('pointerdown', ev => {
     dragNode = { vn, sx: ev.clientX, sy: ev.clientY, ox: vn.x, oy: vn.y, moved: false };
     svg.setPointerCapture(ev.pointerId);
   } else {
-    panStart = { sx: ev.clientX, sy: ev.clientY, tx: state.transform.x, ty: state.transform.y };
+    panStart = { sx: ev.clientX, sy: ev.clientY, tx: cam.x, ty: cam.y };
+    panSamples = [{ t: performance.now(), x: ev.clientX, y: ev.clientY }];
     svg.classList.add('panning');
     svg.setPointerCapture(ev.pointerId);
   }
@@ -924,31 +1312,38 @@ svg.addEventListener('pointerdown', ev => {
 
 svg.addEventListener('pointermove', ev => {
   if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+
   if (pinchStart && pointers.size === 2) {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (Math.abs(d - pinchStart.d) > 12) pinchStart.moved = true;
     const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
     const target = pinchStart.k * d / pinchStart.d;
-    zoomAt(cx, cy, target / state.transform.k);
+    const f = Math.max(0.04, Math.min(4, target)) / cam.k;
+    cam.x = cx - (cx - cam.x) * f;
+    cam.y = cy - (cy - cam.y) * f;
+    cam.k = cam.k * f;
+    applyTransform();
     return;
   }
   if (dragNode) {
-    const dx = (ev.clientX - dragNode.sx) / state.transform.k;
-    const dy = (ev.clientY - dragNode.sy) / state.transform.k;
+    const dx = (ev.clientX - dragNode.sx) / cam.k;
+    const dy = (ev.clientY - dragNode.sy) / cam.k;
     if (Math.abs(dx) + Math.abs(dy) > 3) dragNode.moved = true;
     dragNode.vn.x = dragNode.ox + dx;
     dragNode.vn.y = dragNode.oy + dy;
     updateNodePos(dragNode.vn);
-    drawMinimap();
     return;
   }
   if (panStart) {
-    state.transform.x = panStart.tx + (ev.clientX - panStart.sx);
-    state.transform.y = panStart.ty + (ev.clientY - panStart.sy);
+    cam.x = panStart.tx + (ev.clientX - panStart.sx);
+    cam.y = panStart.ty + (ev.clientY - panStart.sy);
+    panSamples.push({ t: performance.now(), x: ev.clientX, y: ev.clientY });
+    if (panSamples.length > 6) panSamples.shift();
     applyTransform();
     return;
   }
-  // Hover-Effekte
+  // Hover-Effekte (nur Desktop relevant)
   const nodeG = ev.target.closest('.node');
   svg.classList.toggle('node-hover', !!nodeG);
   if (nodeG) {
@@ -963,17 +1358,65 @@ svg.addEventListener('pointermove', ev => {
 
 svg.addEventListener('pointerup', ev => {
   pointers.delete(ev.pointerId);
-  pinchStart = null;
-  if (dragNode) {
-    if (!dragNode.moved) {
-      const vn = dragNode.vn;
-      if (vn.ref) selectNode(vn.ref.id, { noFocus: true });
-      else if (vn.group) focusNode(vn.id);
+
+  // Kurzer 2-Finger-Tipp ohne Bewegung → herauszoomen (Google-Maps-Geste)
+  if (pinchStart) {
+    if (!pinchStart.moved && performance.now() - pinchStart.t0 < 260) {
+      smoothZoomAt(svg.clientWidth / 2, svg.clientHeight / 2, 1 / 1.7, 260);
     }
-    dragNode = null;
+    pinchStart = null;
+    return;
   }
-  if (panStart) { panStart = null; svg.classList.remove('panning'); }
+
+  if (dragNode) {
+    const vn = dragNode.vn;
+    if (!dragNode.moved) handleTap(vn, ev);
+    else drawMinimap();
+    dragNode = null;
+    return;
+  }
+  if (panStart) {
+    const moved = Math.hypot(ev.clientX - panStart.sx, ev.clientY - panStart.sy);
+    panStart = null;
+    svg.classList.remove('panning');
+    if (moved < 4) {
+      handleTap(null, ev); // Tipp auf freie Fläche
+    } else if (panSamples.length >= 2) {
+      // Trägheit aus den letzten Bewegungsproben
+      const a = panSamples[0], b = panSamples[panSamples.length - 1];
+      const dt = Math.max(1, b.t - a.t);
+      const vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt;
+      if (Math.hypot(vx, vy) > 0.18) startInertia(vx, vy);
+    }
+  }
 });
+
+/** Einfacher Tipp / Doppeltipp auf Node oder freie Fläche. */
+function handleTap(vn, ev) {
+  const now = performance.now();
+  const isDouble = lastTap && now - lastTap.t < 320 &&
+    Math.hypot(ev.clientX - lastTap.x, ev.clientY - lastTap.y) < 36;
+  lastTap = isDouble ? null : { t: now, x: ev.clientX, y: ev.clientY };
+
+  if (vn) {
+    // Tap-Animation
+    vn._el.classList.remove('tapped');
+    void vn._el.getBoundingClientRect();
+    vn._el.classList.add('tapped');
+    if (vn.group && state.view === 'mindmap' && vn.id !== 'root') {
+      toggleCluster(vn.id);
+    } else if (vn.ref) {
+      if (isDouble) { selectNode(vn.ref.id, { noFocus: true }); flyToWorld(vn.x, vn.y, Math.max(cam.k * 1.5, 1.2), 550); }
+      else selectNode(vn.ref.id, { noFocus: !isMobile() ? true : false });
+      if (!isDouble && !isMobile()) focusNode(vn.ref.id, false); // sanft hinschwenken ohne Zoomsprung
+    } else if (vn.group) {
+      flyToWorld(vn.x, vn.y, Math.max(cam.k, 0.5), 550);
+    }
+  } else {
+    if (isDouble) smoothZoomAt(ev.clientX, ev.clientY, 1.7, 260);
+    else clearSelection();
+  }
+}
 
 svg.addEventListener('pointercancel', ev => {
   pointers.delete(ev.pointerId);
@@ -981,9 +1424,7 @@ svg.addEventListener('pointercancel', ev => {
   svg.classList.remove('panning');
 });
 
-svg.addEventListener('dblclick', ev => {
-  if (!ev.target.closest('.node')) clearSelection();
-});
+svg.addEventListener('dblclick', ev => ev.preventDefault());
 
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape') {
@@ -991,12 +1432,11 @@ document.addEventListener('keydown', ev => {
     $('#legend').classList.remove('open');
     $('#findings-panel').classList.remove('open');
     $('#search-results').classList.remove('open');
+    $('#search-box').classList.remove('expanded');
   }
 });
 
-// ---------------------------------------------------------------------------
-// Tooltips
-// ---------------------------------------------------------------------------
+// --- Tooltips ---------------------------------------------------------------
 
 function showTooltip(html, x, y) {
   tooltip.innerHTML = html;
@@ -1024,73 +1464,134 @@ function showEdgeTooltip(e, x, y) {
     '<div class="tt-sub">' + esc((a ? a.label : e.source) + '  →  ' + (b ? b.label : e.target)) + '</div>', x, y);
 }
 
-// ---------------------------------------------------------------------------
-// Suche
-// ---------------------------------------------------------------------------
-
-const searchIndex = D.nodes.map(n => ({
-  id: n.id,
-  hay: (n.label + ' ' + n.path + ' ' + n.category + ' ' + n.desc + ' ' +
-        n.symbols.join(' ') + ' ' + n.envVars.join(' ') + ' ' + n.ext).toLowerCase(),
-}));
+// --- Suche: gruppierte Vorschläge (Dateien, Ordner, Funktionen, APIs) -------
 
 const searchInput = $('#search');
 const searchResults = $('#search-results');
 let searchSel = 0;
 
+const allDirs = [...new Set(D.nodes.filter(n => !n.virtual).map(n => n.dir))].sort();
+
+/** Treffer suchen und nach Typ gruppieren. */
+function collectHits(q) {
+  const groups = { 'Dateien': [], 'Ordner': [], 'Funktionen': [], 'APIs & Dienste': [] };
+  const seen = new Set();
+  for (const dir of allDirs) {
+    if (dir.toLowerCase().includes(q) && groups['Ordner'].length < 4) {
+      groups['Ordner'].push({ type: 'dir', dir, label: dir === '/' ? '/ (Root)' : dir });
+    }
+  }
+  for (const n of D.nodes) {
+    if (seen.has(n.id)) continue;
+    const apiish = n.virtual || ['Datenbank', 'Externer Dienst', 'Authentifizierung'].includes(n.category);
+    if ((n.label + ' ' + n.path).toLowerCase().includes(q)) {
+      const g = apiish ? 'APIs & Dienste' : 'Dateien';
+      if (groups[g].length < 6) { groups[g].push({ type: 'node', id: n.id, label: n.label, dir: n.dir, cat: n.category }); seen.add(n.id); }
+      continue;
+    }
+    const sym = n.symbols.find(s => s.toLowerCase().includes(q));
+    if (sym && groups['Funktionen'].length < 6) {
+      groups['Funktionen'].push({ type: 'node', id: n.id, label: sym + '()', dir: n.label, cat: n.category });
+      seen.add(n.id);
+      continue;
+    }
+    if ((n.desc + ' ' + n.envVars.join(' ')).toLowerCase().includes(q)) {
+      const g = apiish ? 'APIs & Dienste' : 'Dateien';
+      if (groups[g].length < 6) { groups[g].push({ type: 'node', id: n.id, label: n.label, dir: n.dir, cat: n.category }); seen.add(n.id); }
+    }
+  }
+  return groups;
+}
+
+function hlMatch(label, q) {
+  const i = label.toLowerCase().indexOf(q);
+  if (i < 0) return esc(label);
+  return esc(label.slice(0, i)) + '<b>' + esc(label.slice(i, i + q.length)) + '</b>' + esc(label.slice(i + q.length));
+}
+
 function runSearch() {
   const q = searchInput.value.trim().toLowerCase();
   if (!q) { searchResults.classList.remove('open'); return; }
-  const terms = q.split(/\s+/);
-  const hits = [];
-  for (const it of searchIndex) {
-    if (terms.every(t => it.hay.includes(t))) {
-      hits.push(it.id);
-      if (hits.length >= 14) break;
+  const groups = collectHits(q);
+  let html = '';
+  let count = 0;
+  for (const [gname, items] of Object.entries(groups)) {
+    if (!items.length) continue;
+    html += '<div class="rhead">' + gname + '</div>';
+    for (const it of items) {
+      const color = it.type === 'dir' ? '#8a94a6' : catColor(it.cat);
+      html += '<div class="res" data-idx="' + count + '" data-type="' + it.type + '" data-ref="' +
+        esc(it.type === 'dir' ? it.dir : it.id) + '">' +
+        '<span class="dot" style="background:' + color + '"></span>' +
+        '<span class="n">' + hlMatch(it.label, q) + '</span>' +
+        '<span class="p">' + esc(it.dir || '') + '</span></div>';
+      count++;
     }
   }
   searchSel = 0;
-  if (!hits.length) {
-    searchResults.innerHTML = '<div class="res"><span class="n" style="color:var(--text-faint)">Keine Treffer</span></div>';
-  } else {
-    searchResults.innerHTML = hits.map((id, i) => {
-      const n = nodeById.get(id);
-      return '<div class="res' + (i === 0 ? ' sel' : '') + '" data-id="' + esc(id) + '">' +
-        '<span class="dot" style="background:' + catColor(n.category) + '"></span>' +
-        '<span class="n">' + esc(n.label) + '</span>' +
-        '<span class="p">' + esc(n.dir) + '</span></div>';
-    }).join('');
-    searchResults.querySelectorAll('.res[data-id]').forEach(el => {
-      el.addEventListener('click', () => pickSearch(el.dataset.id));
-    });
-  }
+  searchResults.innerHTML = html || '<div class="res"><span class="n" style="color:var(--text-faint)">Keine Treffer</span></div>';
+  searchResults.querySelectorAll('.res[data-ref]').forEach(el => {
+    el.addEventListener('click', () => pickSearch(el.dataset.type, el.dataset.ref));
+  });
+  markSearchSel();
   searchResults.classList.add('open');
 }
 
-function pickSearch(id) {
+function markSearchSel() {
+  searchResults.querySelectorAll('.res[data-ref]').forEach((el, i) =>
+    el.classList.toggle('sel', i === searchSel));
+}
+
+function pickSearch(type, ref) {
   searchResults.classList.remove('open');
-  // Falls Knoten im aktuellen View nicht vorhanden → Abhängigkeits-Ansicht
-  if (!viewIdsForDataId(id).length) switchView('deps');
-  selectNode(id);
+  $('#search-box').classList.remove('expanded');
+  searchInput.blur();
+  if (type === 'dir') {
+    // Zu allen Dateien des Ordners fliegen
+    if (state.view === 'mindmap') {
+      const gid = 'dir:' + ref;
+      if (vgNodeById.has(gid) && !state.expanded.has(gid)) toggleCluster(gid);
+    }
+    const members = VG.nodes.filter(vn => vn.ref && !vn.ref.virtual && vn.ref.dir === ref);
+    if (members.length) {
+      const bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+      for (const m of members) {
+        bb.x0 = Math.min(bb.x0, m.x - m.w); bb.x1 = Math.max(bb.x1, m.x + m.w);
+        bb.y0 = Math.min(bb.y0, m.y - m.h); bb.y1 = Math.max(bb.y1, m.y + m.h);
+      }
+      flyToBounds(bb, 700, 1.1);
+    }
+    return;
+  }
+  if (!viewIdsForDataId(ref).length) switchView('deps');
+  selectNode(ref); // fliegt automatisch hin und hebt hervor
 }
 
 searchInput.addEventListener('input', runSearch);
 searchInput.addEventListener('keydown', ev => {
-  const items = [...searchResults.querySelectorAll('.res[data-id]')];
-  if (ev.key === 'ArrowDown') { searchSel = Math.min(items.length - 1, searchSel + 1); }
-  else if (ev.key === 'ArrowUp') { searchSel = Math.max(0, searchSel - 1); }
-  else if (ev.key === 'Enter') { if (items[searchSel]) pickSearch(items[searchSel].dataset.id); return; }
-  else return;
+  const items = [...searchResults.querySelectorAll('.res[data-ref]')];
+  if (ev.key === 'ArrowDown') searchSel = Math.min(items.length - 1, searchSel + 1);
+  else if (ev.key === 'ArrowUp') searchSel = Math.max(0, searchSel - 1);
+  else if (ev.key === 'Enter') {
+    if (items[searchSel]) pickSearch(items[searchSel].dataset.type, items[searchSel].dataset.ref);
+    return;
+  } else return;
   ev.preventDefault();
-  items.forEach((el, i) => el.classList.toggle('sel', i === searchSel));
+  markSearchSel();
 });
 document.addEventListener('click', ev => {
-  if (!ev.target.closest('#search-box')) searchResults.classList.remove('open');
+  if (!ev.target.closest('#search-box') && !ev.target.closest('#btn-search-toggle')) {
+    searchResults.classList.remove('open');
+    if (isMobile()) $('#search-box').classList.remove('expanded');
+  }
+});
+$('#btn-search-toggle').addEventListener('click', () => {
+  const box = $('#search-box');
+  box.classList.toggle('expanded');
+  if (box.classList.contains('expanded')) setTimeout(() => searchInput.focus(), 60);
 });
 
-// ---------------------------------------------------------------------------
-// Filter-UI
-// ---------------------------------------------------------------------------
+// --- Filter-UI --------------------------------------------------------------
 
 function buildFilterUI() {
   const body = $('#filter-body');
@@ -1131,7 +1632,7 @@ function buildFilterUI() {
         if (k === 'onlyConnected' && inp.checked) { state.filters.onlyUnconnected = false; body.querySelector('[data-kind=onlyUnconnected]').checked = false; }
         if (k === 'onlyUnconnected' && inp.checked) { state.filters.onlyConnected = false; body.querySelector('[data-kind=onlyConnected]').checked = false; }
       }
-      applyFilters();
+      updateVisibility();
       applyHighlight();
     });
   });
@@ -1141,14 +1642,12 @@ function buildFilterUI() {
     state.filters.cats = new Set(D.meta.categories.concat(['Gruppe']));
     state.filters.onlyConnected = state.filters.onlyUnconnected = state.filters.onlyFindings = state.filters.onlyHubs = false;
     buildFilterUI();
-    applyFilters();
+    updateVisibility();
     applyHighlight();
   });
 }
 
-// ---------------------------------------------------------------------------
-// Legende
-// ---------------------------------------------------------------------------
+// --- Legende ----------------------------------------------------------------
 
 function buildLegend() {
   const el = $('#legend');
@@ -1162,13 +1661,12 @@ function buildLegend() {
     html += '<div class="lrow"><span class="line' + (s.dashed ? ' dashed' : '') + '" style="border-color:' + s.color + '"></span>' + esc(s.label) + '</div>';
   }
   html += '<hr><div class="lrow">⚠ &nbsp;Mögliche Auffälligkeit am Knoten</div>' +
-    '<div class="lrow">Gestrichelter Rahmen = Dienst/Datenbank (virtuell)</div>';
+    '<div class="lrow">Gestrichelter Rahmen = Dienst/Datenbank (virtuell)</div>' +
+    '<div class="lrow">▸/▾ = Cluster zu-/aufgeklappt (Mindmap)</div>';
   el.innerHTML = html;
 }
 
-// ---------------------------------------------------------------------------
-// Auffälligkeiten-Panel
-// ---------------------------------------------------------------------------
+// --- Auffälligkeiten-Panel --------------------------------------------------
 
 function buildFindings() {
   const list = $('#findings-list');
@@ -1180,22 +1678,95 @@ function buildFindings() {
       const f = D.findings[+el.dataset.i];
       const ids = f.nodes.filter(id => nodeById.has(id));
       if (!ids.length) return;
+      for (const id of ids) ensureNodeVisible(id);
       state.selected = null;
       state.multiHl = new Set(ids.flatMap(id => viewIdsForDataId(id)));
       applyHighlight();
-      focusNode(ids[0], true);
+      const vns = [...state.multiHl].map(id => vgNodeById.get(id)).filter(Boolean);
+      if (vns.length) {
+        const bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+        for (const m of vns) {
+          bb.x0 = Math.min(bb.x0, m.x - m.w); bb.x1 = Math.max(bb.x1, m.x + m.w);
+          bb.y0 = Math.min(bb.y0, m.y - m.h); bb.y1 = Math.max(bb.y1, m.y + m.h);
+        }
+        flyToBounds(bb, 700, 1.0);
+      }
     });
   });
 }
 
-// ---------------------------------------------------------------------------
-// Statuszeile
-// ---------------------------------------------------------------------------
+// --- Minimap ----------------------------------------------------------------
+
+let mmScale = 1, mmOff = { x: 0, y: 0 };
+let mmDirty = false;
+
+function drawMinimap() {
+  if (mmDirty) return;
+  mmDirty = true;
+  requestAnimationFrame(() => {
+    mmDirty = false;
+    const W = minimap.width, H = minimap.height;
+    mmCtx.clearRect(0, 0, W, H);
+    if (!VG) return;
+    const bb = contentBBox(false);
+    const pad = 12;
+    mmScale = Math.min((W - pad * 2) / (bb.x1 - bb.x0 + 1), (H - pad * 2) / (bb.y1 - bb.y0 + 1));
+    mmOff.x = pad - bb.x0 * mmScale + (W - pad * 2 - (bb.x1 - bb.x0) * mmScale) / 2;
+    mmOff.y = pad - bb.y0 * mmScale + (H - pad * 2 - (bb.y1 - bb.y0) * mmScale) / 2;
+    for (const n of VG.nodes) {
+      if (!n._show) continue;
+      mmCtx.fillStyle = n.color;
+      mmCtx.globalAlpha = 0.85;
+      mmCtx.fillRect(n.x * mmScale + mmOff.x - 1.5, n.y * mmScale + mmOff.y - 1.5, 3, 3);
+    }
+    mmCtx.globalAlpha = 1;
+    strokeMinimapViewport();
+  });
+}
+
+function strokeMinimapViewport() {
+  const x0 = (-cam.x / cam.k) * mmScale + mmOff.x;
+  const y0 = (-cam.y / cam.k) * mmScale + mmOff.y;
+  const w = (svg.clientWidth / cam.k) * mmScale;
+  const h = (svg.clientHeight / cam.k) * mmScale;
+  mmCtx.strokeStyle = 'rgba(110,168,254,0.9)';
+  mmCtx.lineWidth = 1.2;
+  mmCtx.strokeRect(x0, y0, w, h);
+  mmCtx.fillStyle = 'rgba(110,168,254,0.08)';
+  mmCtx.fillRect(x0, y0, w, h);
+}
+
+function drawMinimapViewport() { drawMinimap(); }
+
+minimap.addEventListener('pointerdown', ev => {
+  minimap.setPointerCapture(ev.pointerId);
+  const move = e => {
+    const r = minimap.getBoundingClientRect();
+    // Canvas kann per CSS skaliert sein (mobil) → in Canvas-Pixel umrechnen
+    const px = (e.clientX - r.left) * (minimap.width / r.width);
+    const py = (e.clientY - r.top) * (minimap.height / r.height);
+    const wx = (px - mmOff.x) / mmScale;
+    const wy = (py - mmOff.y) / mmScale;
+    stopCamAnim(); stopInertia();
+    cam.x = svg.clientWidth / 2 - wx * cam.k;
+    cam.y = svg.clientHeight / 2 - wy * cam.k;
+    applyTransform();
+  };
+  move(ev);
+  const up = () => {
+    minimap.removeEventListener('pointermove', move);
+    minimap.removeEventListener('pointerup', up);
+  };
+  minimap.addEventListener('pointermove', move);
+  minimap.addEventListener('pointerup', up);
+});
+
+// --- Statuszeile ------------------------------------------------------------
 
 const VIEW_NAMES = { mindmap: 'Mindmap', deps: 'Abhängigkeitsgraph', folders: 'Ordnerstruktur', flow: 'Datenfluss', system: 'Systemübersicht' };
 
 function updateStats() {
-  const visible = VG.nodes.filter(n => n.ref && n._el && n._el.style.display !== 'none').length;
+  const visible = VG.nodes.filter(n => n.ref && n._show).length;
   $('#stats').innerHTML =
     '<span><b>' + VIEW_NAMES[state.view] + '</b></span>' +
     '<span>Dateien: <b>' + D.meta.fileCount + '</b></span>' +
@@ -1205,9 +1776,30 @@ function updateStats() {
     '<span>Stand: <b>' + new Date(D.meta.generatedAt).toLocaleDateString('de-DE') + '</b></span>';
 }
 
-// ---------------------------------------------------------------------------
-// Ansichten umschalten
-// ---------------------------------------------------------------------------
+// --- Ansichten umschalten ---------------------------------------------------
+
+function contentBBox(visibleOnly) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const n of VG.nodes) {
+    if (visibleOnly && !n._show) continue;
+    x0 = Math.min(x0, n.x - n.w); x1 = Math.max(x1, n.x + n.w);
+    y0 = Math.min(y0, n.y - n.h); y1 = Math.max(y1, n.y + n.h);
+  }
+  for (const h of VG.hulls) {
+    x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x + h.w);
+    y0 = Math.min(y0, h.y); y1 = Math.max(y1, h.y + h.h);
+  }
+  if (x0 > x1) { x0 = -500; y0 = -500; x1 = 500; y1 = 500; }
+  return { x0, y0, x1, y1 };
+}
+
+function fitView(animate) {
+  const bb = contentBBox(true);
+  if (animate) { flyToBounds(bb, 700); return; }
+  const W = svg.clientWidth, H = svg.clientHeight;
+  const k = Math.max(0.05, Math.min(3, Math.min(W / (bb.x1 - bb.x0 + 200), H / (bb.y1 - bb.y0 + 200))));
+  setCam(W / 2 - (bb.x0 + bb.x1) / 2 * k, H / 2 - (bb.y0 + bb.y1) / 2 * k, k);
+}
 
 const BUILDERS = { mindmap: buildMindmap, deps: buildDeps, folders: buildFolders, flow: buildFlow, system: buildSystem };
 const layoutCache = {};
@@ -1215,11 +1807,11 @@ const layoutCache = {};
 function switchView(v, forceRebuild) {
   state.view = v;
   document.querySelectorAll('#views button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  if (forceRebuild) delete layoutCache[v];
+  if (forceRebuild) { delete layoutCache[v]; if (v === 'mindmap') state.expanded = new Set(['root']); }
   if (!layoutCache[v]) layoutCache[v] = BUILDERS[v]();
   VG = layoutCache[v];
-  render();
-  fitView();
+  render({ animate: true });
+  fitView(false);
   applyHighlight();
 }
 
@@ -1227,13 +1819,11 @@ document.querySelectorAll('#views button').forEach(b => {
   b.addEventListener('click', () => switchView(b.dataset.view));
 });
 
-// ---------------------------------------------------------------------------
-// Kopf-/Werkzeugleisten-Buttons
-// ---------------------------------------------------------------------------
+// --- Kopf-/Werkzeugleisten-Buttons ------------------------------------------
 
-$('#btn-zoom-in').addEventListener('click', () => zoomAt(svg.clientWidth / 2, svg.clientHeight / 2, 1.35));
-$('#btn-zoom-out').addEventListener('click', () => zoomAt(svg.clientWidth / 2, svg.clientHeight / 2, 1 / 1.35));
-$('#btn-center').addEventListener('click', fitView);
+$('#btn-zoom-in').addEventListener('click', () => smoothZoomAt(svg.clientWidth / 2, svg.clientHeight / 2, 1.45, 260));
+$('#btn-zoom-out').addEventListener('click', () => smoothZoomAt(svg.clientWidth / 2, svg.clientHeight / 2, 1 / 1.45, 260));
+$('#btn-center').addEventListener('click', () => fitView(true));
 $('#btn-reset').addEventListener('click', () => switchView(state.view, true));
 $('#btn-fullscreen').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -1264,9 +1854,12 @@ window.addEventListener('resize', () => { applyTransform(); drawMinimap(); });
 // ---------------------------------------------------------------------------
 
 $('#brand-repo').textContent = D.meta.repo + (D.meta.domain ? ' · ' + D.meta.domain : '');
+initPinGate();
 buildFilterUI();
 buildLegend();
 buildFindings();
+// Mobil: Filterpanel initial zu, damit die Karte im Fokus ist
+if (isMobile()) { $('#left').classList.add('hidden'); $('#btn-filters').classList.remove('active'); }
 switchView('mindmap');
 
 })();
