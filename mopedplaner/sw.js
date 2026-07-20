@@ -5,7 +5,7 @@
  * die App funktioniert damit komplett offline in der Garage.
  */
 
-const CACHE = 'mopedplaner-v8';
+const CACHE = 'mopedplaner-v9';
 
 const SHELL = [
   './',
@@ -69,18 +69,19 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || url.origin !== location.origin) return;
   if (!url.pathname.includes('/mopedplaner/')) return;
 
+  // Network-first: online immer der frische, in sich konsistente Code-Stand
+  // (verhindert, dass ein neues app.js mit alten Modulen gemischt wird –
+  // die Ursache für einen weißen/schwarzen Bildschirm nach Updates).
+  // Offline: sauberer Rückfall auf den zuletzt gecachten Stand.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

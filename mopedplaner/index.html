@@ -32,6 +32,49 @@
 
   <nav id="tabbar" aria-label="Hauptnavigation"></nav>
 
+  <script>
+  /* Selbstheilung: Rendert die App nicht (z. B. wegen eines veralteten
+     Service-Worker-Caches nach einem Update), werden Caches + Service Worker
+     EINMAL geleert und die Seite neu geladen. Verhindert schwarze Bildschirme
+     nach Deployments. Läuft nur einmal pro Sitzung – keine Reload-Schleife. */
+  (function () {
+    function rendered() {
+      var r = document.getElementById('view-root');
+      return !!(r && r.querySelector('.view, .onboard, .empty-state'));
+    }
+    function heal() {
+      if (sessionStorage.getItem('mp-heal')) return;
+      sessionStorage.setItem('mp-heal', '1');
+      var reload = function () { location.reload(); };
+      var jobs = [];
+      try {
+        if (window.caches && caches.keys) {
+          jobs.push(caches.keys().then(function (ks) {
+            return Promise.all(ks.filter(function (k) { return k.indexOf('mopedplaner-') === 0; })
+              .map(function (k) { return caches.delete(k); }));
+          }));
+        }
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+            return Promise.all(rs.map(function (r) { return r.unregister(); }));
+          }));
+        }
+      } catch (e) { /* egal – trotzdem neu laden */ }
+      Promise.all(jobs).catch(function () {}).then(reload);
+      setTimeout(reload, 1500);
+    }
+    window.addEventListener('error', function (e) {
+      if (e && e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) heal();
+    }, true);
+    window.addEventListener('load', function () {
+      setTimeout(function () { if (!rendered()) heal(); }, 3500);
+    });
+    window.addEventListener('DOMContentLoaded', function () {
+      // Erfolgreicher Start räumt den Heil-Marker wieder ab (nächster Fehler darf wieder heilen)
+      setTimeout(function () { if (rendered()) sessionStorage.removeItem('mp-heal'); }, 4000);
+    });
+  })();
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

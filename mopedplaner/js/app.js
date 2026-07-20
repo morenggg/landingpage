@@ -5,7 +5,7 @@
  */
 
 import { el, icon, closeSheet } from './ui.js';
-import { route, setNotFound, startRouter, currentPath } from './router.js';
+import { route, setNotFound, startRouter, currentPath, refresh } from './router.js';
 import { seedDemoIfEmpty } from './store.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderGarage } from './views/garage.js';
@@ -107,9 +107,16 @@ route('mehr', () => mount(renderEinstellungen));
 setNotFound(() => mount(renderDashboard));
 
 buildTabbar();
+// WICHTIG: Der Router startet immer und zuerst – der App-Start darf niemals
+// an Seeding, Speicher oder sonst etwas hängen (sonst: schwarzer Bildschirm).
+startRouter();
 // Beim allerersten Start ein Beispiel-Fahrzeug anlegen (löschbar), damit die
-// App sofort ihren Charakter zeigt – dann erst rendern.
-seedDemoIfEmpty().catch(() => {}).finally(() => startRouter());
+// App sofort ihren Charakter zeigt. Läuft NACH dem ersten Rendern und ist
+// gegen jeden Fehler abgesichert; bei Erfolg wird neu gerendert.
+Promise.resolve()
+  .then(() => (typeof seedDemoIfEmpty === 'function' ? seedDemoIfEmpty() : false))
+  .then((added) => { if (added) refresh(); })
+  .catch(() => {});
 
 /* Offline-Indikator – dezent, nicht alarmistisch. navigator.onLine wird
    nur vorsichtig interpretiert: „online" ist nicht garantiert, aber
