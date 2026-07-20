@@ -1354,9 +1354,28 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 /* ═══════════════════════════════════════════════════════════════
    START (Werkstatt-Assistent) – ruhige Leitfrage, eine Aktion
    ═══════════════════════════════════════════════════════════════ */
-.view-start { padding-top: 14px; }
+.view-start { padding-top: 6px; }
+
+/* Der glühende Moped-Held */
+.start-moped { position: relative; display: block; margin: 4px auto 0; width: 100%; max-width: 340px; }
+.start-moped-glow {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  width: 78%; height: 150%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,107,44,0.30), rgba(255,107,44,0.06) 60%, transparent 72%);
+  filter: blur(6px); pointer-events: none;
+}
+.start-moped-art { position: relative; display: block; color: var(--accent); }
+.start-moped-art svg {
+  display: block; width: 74%; max-width: 236px; height: auto; margin: 0 auto; overflow: visible;
+  filter: drop-shadow(0 6px 20px rgba(255,107,44,0.45));
+}
+
+.start-greet {
+  margin: 4px 0 0; font-family: var(--font-value); font-weight: 600;
+  text-transform: none; letter-spacing: 0.01em; font-size: 0.95rem; color: var(--accent-brass);
+}
+.start-greet-veh { color: var(--muted-strong); }
 .start-top { display: flex; align-items: center; gap: 10px; }
-.start-greet { font-family: var(--font-value); font-weight: 600; font-size: var(--fs-caption); color: var(--muted); }
 .start-veh {
   display: inline-flex; align-items: center; gap: 8px; margin-left: auto;
   padding: 5px 12px; background: var(--surface); border: 1px solid var(--line);
@@ -1370,8 +1389,8 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 .cond-bars i.on { background: var(--accent-brass); }
 
 .start-q {
-  margin: 18px 0 0; font-family: var(--font-value); font-weight: 700;
-  font-size: clamp(2.1rem, 9vw, 2.6rem); line-height: 0.95; letter-spacing: -0.015em; color: var(--text);
+  margin: 12px 0 0; font-family: var(--font-value); font-weight: 700;
+  font-size: clamp(2.1rem, 9vw, 2.7rem); line-height: 0.94; letter-spacing: -0.015em; color: var(--text);
 }
 
 .start-primary {
@@ -1391,19 +1410,22 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 .start-primary-main {
   margin: 4px 0 0; font-family: var(--font-value); font-weight: 700; font-size: 1.5rem; line-height: 1.02; color: var(--text);
 }
-.start-primary-meta { margin: 9px 0 0; font-size: var(--fs-caption); color: var(--muted); }
-.start-primary-arr { position: absolute; right: 14px; top: 16px; color: var(--accent); }
+.start-primary-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 11px; }
+.start-primary-meta { font-size: var(--fs-caption); color: var(--muted); }
+.start-primary-arr { color: var(--accent); flex: none; transform: scaleX(-1); }
 .start-primary.calm .start-primary-arr { color: var(--muted); }
 
-.start-verbs { display: flex; gap: 8px; margin-top: 12px; }
+.start-verbs { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
 .start-verb {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;
-  padding: 13px 4px; background: var(--surface); border: 1px solid var(--line);
-  border-radius: 14px; color: var(--text); font-size: var(--fs-caption); font-weight: 500;
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
+  padding: 14px 16px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; color: var(--text); font-size: var(--fs-body); font-weight: 500;
   cursor: pointer; font-family: inherit;
 }
 .start-verb:hover { border-color: var(--line-strong); background: var(--surface-2); }
-.start-verb .verb-icon { color: var(--accent); }
+.start-verb .verb-icon { color: var(--accent); flex: none; }
+.start-verb .verb-label { flex: 1; }
+.start-verb .verb-arr { color: var(--muted); flex: none; }
 
 .start-hints { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .start-hint {
@@ -1420,7 +1442,9 @@ body:has(#offline-bar.show) .toast { bottom: calc(var(--tabbar-h) + 52px); }
 .start-hint .hint-arr { margin-left: auto; color: var(--muted); flex: none; }
 
 .view-start-empty { display: flex; flex-direction: column; }
-.onboard-title { font-family: var(--font-value); font-weight: 700; font-size: 1.7rem; line-height: 1.02; margin: 10px 0 0; }
+.onboard-moped { display: block; color: var(--accent); }
+.onboard-moped svg { display: block; width: 60%; max-width: 190px; height: auto; overflow: visible; filter: drop-shadow(0 6px 18px rgba(255,107,44,0.4)); }
+.onboard-title { font-family: var(--font-value); font-weight: 700; font-size: 1.7rem; line-height: 1.02; margin: 14px 0 0; }
 
 /* ═══════════════════════════════════════════════════════════════
    DIGITALER ZWILLING – interaktive Prinzipzeichnung

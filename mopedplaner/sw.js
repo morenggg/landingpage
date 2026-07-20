@@ -5,7 +5,7 @@
  * die App funktioniert damit komplett offline in der Garage.
  */
 
-const CACHE = 'mopedplaner-v6';
+const CACHE = 'mopedplaner-v7';
 
 const SHELL = [
   './',
