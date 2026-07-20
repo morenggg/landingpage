@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Projekt-Map · morenggg/landingpage</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Arbeitsfläche -->
+  <div id="stage-wrap">
+    <svg id="stage" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid-s" width="28" height="28" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.045)"/>
+        </pattern>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="context-stroke" opacity="0.85"/>
+        </marker>
+      </defs>
+      <rect id="grid-bg" x="-100000" y="-100000" width="200000" height="200000" fill="url(#grid-s)"/>
+      <g id="viewport">
+        <g id="layer-hulls"></g>
+        <g id="layer-edges"></g>
+        <g id="layer-edgehits"></g>
+        <g id="layer-nodes"></g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Kopfleiste -->
+  <header id="topbar">
+    <div id="brand" class="glass">
+      <div class="logo">PM</div>
+      <div>
+        <div class="t1">Projekt-Map</div>
+        <div class="t2" id="brand-repo">…</div>
+      </div>
+    </div>
+
+    <nav id="views" class="glass" aria-label="Ansichten">
+      <button data-view="mindmap" class="active">Mindmap</button>
+      <button data-view="deps">Abhängigkeiten</button>
+      <button data-view="folders">Ordner</button>
+      <button data-view="flow">Datenfluss</button>
+      <button data-view="system">System</button>
+    </nav>
+
+    <div id="search-box">
+      <span class="icon">⌕</span>
+      <input id="search" type="search" placeholder="Suchen: Dateien, Funktionen, APIs, Pfade …" autocomplete="off" spellcheck="false">
+      <div id="search-results" class="glass"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button id="btn-filters" class="iconbtn active" title="Filter ein-/ausblenden">☰</button>
+    <button id="btn-findings" class="iconbtn" title="Auffälligkeiten">⚠</button>
+    <button id="btn-legend" class="iconbtn" title="Legende">🗺</button>
+    <button id="btn-fullscreen" class="iconbtn" title="Vollbild">⛶</button>
+  </header>
+
+  <!-- Filter-Seitenleiste -->
+  <aside id="left" class="glass">
+    <div class="head">
+      <span>Filter</span>
+      <button class="linkbtn" id="btn-filter-reset">Zurücksetzen</button>
+    </div>
+    <div class="body" id="filter-body"><!-- wird von app.js gefüllt --></div>
+  </aside>
+
+  <!-- Detail-Seitenleiste -->
+  <aside id="detail" class="glass" aria-live="polite">
+    <div class="head">
+      <div class="row1">
+        <span class="dot" id="d-dot"></span>
+        <h3 id="d-title">–</h3>
+        <button class="close" id="d-close" title="Schließen">✕</button>
+      </div>
+      <div class="path" id="d-path"></div>
+      <div class="tags" id="d-tags"></div>
+    </div>
+    <div class="body" id="d-body"></div>
+  </aside>
+
+  <!-- Legende -->
+  <div id="legend" class="glass"></div>
+
+  <!-- Auffälligkeiten -->
+  <div id="findings-panel" class="glass">
+    <h3>Mögliche Auffälligkeiten</h3>
+    <div class="sub">Automatisch erkannt – vorsichtig formulierte Hinweise, keine Fehlerbehauptungen.</div>
+    <div id="findings-list"></div>
+  </div>
+
+  <!-- Werkzeuge -->
+  <div id="tools">
+    <div class="group">
+      <button class="iconbtn" id="btn-zoom-in" title="Hineinzoomen">＋</button>
+      <button class="iconbtn" id="btn-zoom-out" title="Herauszoomen">－</button>
+      <button class="iconbtn" id="btn-center" title="Ansicht zentrieren">◎</button>
+      <button class="iconbtn" id="btn-reset" title="Layout zurücksetzen">↺</button>
+    </div>
+  </div>
+
+  <!-- Minimap -->
+  <div id="minimap-wrap" class="glass">
+    <canvas id="minimap" width="210" height="140"></canvas>
+  </div>
+
+  <!-- Statuszeile -->
+  <div id="stats" class="glass"></div>
+
+  <!-- Tooltip -->
+  <div id="tooltip" class="glass"></div>
+
+  <script src="repository-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
