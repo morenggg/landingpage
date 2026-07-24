@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DartGolf – Tests</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <main class="screen screen--sheet">
+    <div class="sheet">
+      <header class="sheet-head">
+        <h2>DartGolf – Tests</h2>
+        <a class="btn btn--small btn--ghost" href="../index.html">Zurück zum Spiel</a>
+      </header>
+      <div class="sheet-body">
+        <p class="field-hint">
+          Dieselben Tests laufen auch ohne Browser über <code>node tests/run-node.mjs</code>.
+        </p>
+        <p id="summary" class="hud-value">Tests laufen …</p>
+        <pre id="output" class="code-box" style="max-height:60vh"></pre>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import './normalizer.test.js';
+    import './game.test.js';
+    import { runAll } from './runner.js';
+
+    const output = document.getElementById('output');
+    const summary = document.getElementById('summary');
+    const lines = [];
+
+    const { passed, failed } = runAll((line) => lines.push(line));
+
+    output.textContent = lines.join('\n');
+    summary.textContent = `${passed} bestanden, ${failed} fehlgeschlagen`;
+    summary.style.color = failed === 0 ? 'var(--accent)' : 'var(--danger)';
+  </script>
+</body>
+</html>

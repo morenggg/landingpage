@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "DartGolf Bridge (experimentell)",
+  "version": "0.1.0",
+  "description": "Optionaler Fallback: liest Trefferereignisse im eigenen Autodarts-Tab mit und gibt sie an den geöffneten DartGolf-Tab weiter.",
+  "permissions": ["tabs"],
+  "host_permissions": [
+    "https://play.autodarts.io/*",
+    "https://autodarts.io/*",
+    "https://dorfdulliracing.de/dartgolf/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.autodarts.io/*", "https://autodarts.io/*"],
+      "js": ["content-autodarts.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://dorfdulliracing.de/dartgolf/*"],
+      "js": ["content-dartgolf.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["hook.js"],
+      "matches": ["https://play.autodarts.io/*", "https://autodarts.io/*"]
+    }
+  ]
+}
