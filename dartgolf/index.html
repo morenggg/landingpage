@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DartGolf – Minigolf mit Dartpfeilen</title>
+  <meta name="description" content="DartGolf: digitales Minigolf, gesteuert durch Dartwürfe. Läuft komplett im Browser, mit vollwertigem Testmodus und vorbereiteter Autodarts-Anbindung.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#070b10">
+
+  <!--
+    Content Security Policy: keine externen Skripte, kein eval, keine fremden
+    Einbettungen. connect-src erlaubt ws:/wss:, weil der experimentelle
+    Autodarts-Provider eine vom Nutzer eingetragene Adresse ansprechen kann.
+    Hinweis: frame-ancestors wirkt nur als HTTP-Header und steht deshalb nicht
+    hier – siehe README, Abschnitt Sicherheit.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DartGolf">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<noscript>
+  <div class="noscript">
+    <h1>DartGolf</h1>
+    <p>DartGolf ist eine Web-App und benötigt JavaScript. Bitte aktiviere JavaScript in deinem Browser.</p>
+  </div>
+</noscript>
+
+<div id="app" class="app">
+
+  <!-- ============================ Startbildschirm ============================ -->
+  <section id="screen-start" class="screen screen--start" aria-label="Startbildschirm">
+    <div class="start-inner">
+      <p class="eyebrow">Dart trifft Minigolf</p>
+      <h1 class="wordmark"><span class="wordmark-a">Dart</span><span class="wordmark-b">Golf</span></h1>
+      <p class="lead">
+        Jeder Dartwurf ist ein Minigolfschlag. Das getroffene Segment bestimmt die
+        Richtung, der Multiplikator die Stärke. Wer mit den wenigsten Schlägen
+        einlocht, gewinnt.
+      </p>
+
+      <div class="start-actions">
+        <button type="button" class="btn btn--primary btn--xl" id="btn-start-game">Spiel starten</button>
+        <div class="start-actions-secondary">
+          <button type="button" class="btn btn--ghost" id="btn-open-connection">Autodarts verbinden</button>
+          <button type="button" class="btn btn--ghost" id="btn-test-mode">Testmodus</button>
+          <button type="button" class="btn btn--ghost" id="btn-open-guide">Spielanleitung</button>
+        </div>
+      </div>
+
+      <div class="start-meta">
+        <span class="status-pill" id="start-status" data-state="disconnected">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Testmodus</span>
+        </span>
+        <button type="button" class="btn btn--small" id="btn-fullscreen-start">Vollbild</button>
+        <span class="version" id="version-label">Prototype 0.1</span>
+      </div>
+
+      <p class="privacy-note" id="privacy-note">
+        DartGolf verarbeitet Spielstände und Einstellungen lokal in diesem Browser.
+        Bei Nutzung der experimentellen Autodarts-Verbindung werden nur die für das
+        Spiel erforderlichen Trefferinformationen verarbeitet.
+      </p>
+
+      <p class="offline-note" id="offline-note" hidden>
+        Du bist offline. Spiel und Testmodus funktionieren weiter – die
+        Autodarts-Verbindung braucht eine aktive Verbindung.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================ Spielerstellung ============================ -->
+  <section id="screen-setup" class="screen screen--sheet" aria-label="Spiel einrichten" hidden>
+    <div class="sheet">
+      <header class="sheet-head">
+        <h2>Spiel einrichten</h2>
+        <button type="button" class="btn btn--small btn--ghost" id="btn-setup-back">Zurück</button>
+      </header>
+      <div class="sheet-body" id="setup-body"><!-- von player-setup.js gefüllt --></div>
+      <footer class="sheet-foot">
+        <button type="button" class="btn btn--primary btn--xl" id="btn-setup-start">Los geht's</button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============================== Spiel ================================== -->
+  <section id="screen-game" class="screen screen--game" aria-label="Spielfeld" hidden>
+
+    <div class="stage" id="stage">
+      <canvas id="stage-canvas" aria-label="Minigolfbahn" role="img"></canvas>
+      <div class="stage-prompt" id="stage-prompt" aria-live="polite"></div>
+    </div>
+
+    <header class="hud hud--top">
+      <div class="hud-block hud-block--course">
+        <span class="hud-label">Bahn</span>
+        <span class="hud-value" id="hud-hole">1 / 3</span>
+        <span class="hud-sub" id="hud-course-name">Auftakt</span>
+        <span class="hud-tag" id="hud-par">Par 3</span>
+      </div>
+
+      <div class="hud-block hud-block--player">
+        <span class="hud-label">Am Zug</span>
+        <span class="hud-player" id="hud-player">
+          <span class="player-dot" id="hud-player-color" aria-hidden="true"></span>
+          <span id="hud-player-name">Spieler 1</span>
+        </span>
+        <span class="hud-sub" id="hud-strokes">Schläge: 0</span>
+      </div>
+
+      <div class="hud-block hud-block--score">
+        <span class="hud-label">Gesamt</span>
+        <span class="hud-value" id="hud-total">0</span>
+        <span class="hud-sub" id="hud-topar">Par</span>
+      </div>
+
+      <div class="hud-block hud-block--status">
+        <span class="status-pill" id="hud-status" data-state="disconnected">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Testmodus</span>
+        </span>
+      </div>
+    </header>
+
+    <footer class="hud hud--bottom">
+      <div class="hud-block hud-block--throw">
+        <span class="hud-label">Letzter Dart</span>
+        <span class="hud-value hud-value--throw" id="hud-throw">–</span>
+        <span class="hud-sub" id="hud-shot">Warte auf Wurf</span>
+      </div>
+
+      <nav class="hud-controls" aria-label="Spielsteuerung">
+        <button type="button" class="btn btn--icon" id="btn-pause" title="Pause (P)">Pause</button>
+        <button type="button" class="btn btn--icon" id="btn-sound" title="Ton an/aus">Ton an</button>
+        <button type="button" class="btn btn--icon" id="btn-fullscreen-game" title="Vollbild (F)">Vollbild</button>
+        <button type="button" class="btn btn--icon" id="btn-test-panel" title="Testpanel">Testpanel</button>
+        <button type="button" class="btn btn--icon" id="btn-restart" title="Neu starten">Neustart</button>
+        <button type="button" class="btn btn--icon btn--danger" id="btn-quit" title="Spiel beenden">Beenden</button>
+      </nav>
+    </footer>
+
+    <div class="overlay" id="pause-overlay" hidden>
+      <div class="overlay-card">
+        <h2>Pause</h2>
+        <p>Das Spiel ist angehalten. Eingehende Würfe werden ignoriert.</p>
+        <button type="button" class="btn btn--primary" id="btn-resume">Weiter</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="hole-summary" hidden>
+      <div class="overlay-card" id="hole-summary-card"><!-- dynamisch --></div>
+    </div>
+  </section>
+
+  <!-- ============================= Ergebnis ================================ -->
+  <section id="screen-result" class="screen screen--sheet" aria-label="Ergebnis" hidden>
+    <div class="sheet">
+      <header class="sheet-head">
+        <h2>Endstand</h2>
+      </header>
+      <div class="sheet-body" id="result-body"><!-- dynamisch --></div>
+      <footer class="sheet-foot sheet-foot--split">
+        <button type="button" class="btn btn--primary" id="btn-result-again">Nochmal spielen</button>
+        <button type="button" class="btn btn--ghost" id="btn-result-home">Zum Start</button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- =========================== Spielanleitung ============================ -->
+  <section id="screen-guide" class="screen screen--sheet" aria-label="Spielanleitung" hidden>
+    <div class="sheet">
+      <header class="sheet-head">
+        <h2>Spielanleitung</h2>
+        <button type="button" class="btn btn--small btn--ghost" id="btn-guide-back">Zurück</button>
+      </header>
+      <div class="sheet-body guide">
+        <section>
+          <h3>Ziel</h3>
+          <p>Jede Bahn hat ein Loch und ein Par. Wer mit den wenigsten Schlägen einlocht, gewinnt.</p>
+        </section>
+
+        <section>
+          <h3>Richtung: das getroffene Segment</h3>
+          <p>
+            Die Richtung entspricht der Lage des Zahlenfeldes auf der Scheibe.
+            Die <strong>20</strong> steht oben und schlägt nach vorn. Von dort geht es im
+            Uhrzeigersinn weiter: jedes Segment dreht die Richtung um 18 Grad.
+          </p>
+          <ul class="guide-list">
+            <li><strong>20</strong> – nach vorn</li>
+            <li><strong>6</strong> – nach rechts</li>
+            <li><strong>3</strong> – nach hinten</li>
+            <li><strong>11</strong> – nach links</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3>Stärke: der Multiplikator</h3>
+          <ul class="guide-list">
+            <li><strong>Single</strong> – leichter Schlag</li>
+            <li><strong>Double</strong> – mittlerer Schlag</li>
+            <li><strong>Triple</strong> – starker Schlag</li>
+            <li><strong>Outer Bull (25)</strong> – gezielter Schlag Richtung Loch</li>
+            <li><strong>Bullseye (50)</strong> – Präzisionsschlag: Richtung und Stärke passen zur Entfernung</li>
+            <li><strong>Miss</strong> – kein Ballkontakt, der Schlag zählt trotzdem</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3>Gefahren</h3>
+          <p>Wasser und Aus kosten einen Strafschlag. Der Ball kehrt an die Stelle vor dem Schlag zurück.</p>
+        </section>
+
+        <section>
+          <h3>Steuerungsmodi</h3>
+          <p>
+            <strong>Einfach</strong> dreht den Schlag anteilig Richtung Loch – gut für den Einstieg.
+            <strong>Fortgeschritten</strong> nutzt den Segmentwinkel ohne Hilfe.
+          </p>
+        </section>
+
+        <section>
+          <h3>Tastatur</h3>
+          <ul class="guide-list guide-list--keys">
+            <li><kbd>1</kbd>–<kbd>9</kbd> Segment wählen (im Testpanel)</li>
+            <li><kbd>S</kbd> Single, <kbd>D</kbd> Double, <kbd>T</kbd> Triple</li>
+            <li><kbd>B</kbd> Bull, <kbd>M</kbd> Miss</li>
+            <li><kbd>Leertaste</kbd> gewählten Wurf auslösen</li>
+            <li><kbd>R</kbd> Zufallswurf, <kbd>F</kbd> Vollbild, <kbd>P</kbd> Pause</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== Testpanel ============================== -->
+  <aside id="test-panel" class="panel panel--test" aria-label="Testmodus" data-open="false">
+    <button type="button" class="panel-toggle" id="test-panel-toggle" aria-expanded="false">
+      Testpanel schließen
+    </button>
+    <div class="panel-body" id="test-panel-body"><!-- von test-panel.js gefüllt --></div>
+  </aside>
+
+  <!-- ========================== Verbindungsdialog ========================== -->
+  <div id="connection-dialog" class="modal" role="dialog" aria-modal="true" aria-labelledby="connection-title" hidden>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2 id="connection-title">Autodarts verbinden</h2>
+        <button type="button" class="btn btn--small btn--ghost" id="btn-connection-close">Schließen</button>
+      </header>
+      <div class="modal-body" id="connection-body"><!-- von connection-panel.js gefüllt --></div>
+    </div>
+  </div>
+
+  <!-- ============================= Debugpanel ============================== -->
+  <aside id="debug-panel" class="panel panel--debug" aria-label="Debug" hidden>
+    <header class="panel-head">
+      <h2>Debug</h2>
+      <button type="button" class="btn btn--small btn--ghost" id="btn-debug-close">Schließen</button>
+    </header>
+    <div class="panel-body" id="debug-body"><!-- von debug-panel.js gefüllt --></div>
+  </aside>
+
+  <!-- ============================== Hinweise =============================== -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <div id="orientation-hint" class="orientation-hint" hidden>
+    <div class="orientation-card">
+      <p class="orientation-icon" aria-hidden="true">⟳</p>
+      <h2>Bitte quer halten</h2>
+      <p>DartGolf spielt sich im Querformat deutlich besser. Du kannst aber auch so weiterspielen.</p>
+      <button type="button" class="btn btn--small" id="btn-orientation-dismiss">Trotzdem weiter</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
