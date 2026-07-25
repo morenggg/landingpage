@@ -120,6 +120,32 @@ Engine noch in einen einzelnen Bildschirm.
 
 ---
 
+## 3b. Erklärvideo
+
+Unter `video/` liegt ein Erklärvideo (~116 s, 1920×1080) **samt kompletter
+Produktion** – Bühne, Szenen, Tonspur und Bauskripte:
+
+```
+video/out/dartgolf-demo.mp4     fertiges Video
+video/out/poster.jpg            Vorschaubild
+video/narration.md              Sprechertext für eine echte Aufnahme
+video/captions.srt              Untertitel
+video/README.md                 wie es gebaut wird und warum so
+```
+
+Besonderheit: Die Demo-Passage ist kein Nachbau, sondern die echte App in
+einem iframe – mit virtualisierter Zeit, damit sie Frame-genau mitläuft.
+Musik und Geräusche sind selbst berechnet, es liegen keine fremden
+Mediendateien im Repository.
+
+Neu bauen (Webserver auf `127.0.0.1:8099` vorausgesetzt):
+
+```bash
+cd dartgolf/video
+npm install playwright ffmpeg-static
+node build/build.mjs --fps 30
+```
+
 ## 4. Lokale Entwicklung
 
 Es gibt keinen Buildschritt. ES-Module brauchen aber einen Webserver

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>DartGolf – Render-Studio</title>
+  <meta name="robots" content="noindex">
+
+  <!-- Schriften des Projekts, lokal gehostet (kein externer Abruf). -->
+  <link rel="stylesheet" href="../../../fonts/fonts.css">
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+
+<!--
+  Diese Seite ist kein Teil der Web-App, sondern die Bühne für das Erklärvideo.
+
+  Sie rendert ausschließlich deterministisch: `window.renderFrame(t)` zeichnet
+  den Zustand zum Zeitpunkt t (in Sekunden). Es laufen keine eigenen
+  Animationen und keine Timer – das Rendering-Skript unter ../build/render.mjs
+  setzt die Zeit Frame für Frame und fotografiert das Ergebnis.
+
+  Dadurch fällt kein einziger Frame aus, unabhängig davon, wie lange das
+  Zeichnen dauert.
+-->
+
+<div id="stage">
+  <!-- Hintergrundebene: Verlauf, Raster, Lichter -->
+  <canvas id="fx-back" width="1920" height="1080"></canvas>
+
+  <!-- Szenen-Inhalte (Text, Karten, echte App im iframe) -->
+  <div id="layers"></div>
+
+  <!-- Vordergrundebene: Partikel, Datenpakete, Übergänge -->
+  <canvas id="fx-front" width="1920" height="1080"></canvas>
+
+  <!-- Filmkorn und Vignette liegen ganz oben und sind statisch -->
+  <div id="grain" aria-hidden="true"></div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
