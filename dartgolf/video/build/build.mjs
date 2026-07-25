@@ -31,8 +31,13 @@ function arg(name, fallback) {
 }
 
 const FPS = arg('fps', '30');
+/** Güte des Web-Exports. Höher = kleiner. 30 ergibt rund 14 MB bei 116 s. */
+const WEB_CRF = arg('web-crf', '30');
 const VIDEO_ONLY = path.join(VIDEO_DIR, 'out', 'video-only.mp4');
 const AUDIO = path.join(VIDEO_DIR, 'out', 'soundtrack.wav');
+/** Master in hoher Güte – bleibt lokal, wird nicht eingecheckt. */
+const MASTER = path.join(VIDEO_DIR, 'out', 'master.mp4');
+/** Auslieferungsfassung für die Website. */
 const FINAL = path.join(VIDEO_DIR, 'out', 'dartgolf-demo.mp4');
 const POSTER = path.join(VIDEO_DIR, 'out', 'poster.jpg');
 
@@ -68,7 +73,7 @@ if (!has('skip-render')) {
   ], { cwd: VIDEO_DIR });
 }
 
-/* 4. Zusammenlegen */
+/* 4. Master zusammenlegen (Bild in hoher Güte + Ton) */
 if (!fs.existsSync(VIDEO_ONLY)) throw new Error(`Fehlt: ${VIDEO_ONLY}`);
 if (!fs.existsSync(AUDIO)) throw new Error(`Fehlt: ${AUDIO}`);
 
@@ -84,6 +89,31 @@ await run(FFMPEG, [
   // Kürzeste Spur bestimmt die Länge: Bild und Ton sind gleich lang gebaut.
   '-shortest',
   '-movflags', '+faststart',
+  MASTER,
+]);
+
+/*
+ * 5. Web-Export.
+ *
+ * Der Master ist mit rund 40 MB zu schwer für eine Webseite: der Player müsste
+ * erst puffern, bevor überhaupt etwas läuft. Diese Fassung behält die volle
+ * Auflösung (die Schrift der App-Oberfläche muss lesbar bleiben), senkt aber
+ * die Bitrate auf etwa 1 Mbit/s. faststart legt den Index nach vorn, damit
+ * der Browser sofort mit dem Abspielen beginnen kann.
+ */
+await run(FFMPEG, [
+  '-y', '-hide_banner', '-loglevel', 'error',
+  '-i', MASTER,
+  '-c:v', 'libx264',
+  '-preset', 'slow',
+  '-crf', WEB_CRF,
+  '-pix_fmt', 'yuv420p',
+  '-profile:v', 'high',
+  '-c:a', 'aac',
+  '-b:a', '112k',
+  '-ar', '48000',
+  '-ac', '2',
+  '-movflags', '+faststart',
   FINAL,
 ]);
 
@@ -98,9 +128,11 @@ await run(FFMPEG, [
 ]);
 
 const size = (fs.statSync(FINAL).size / 1048576).toFixed(1);
+const masterSize = (fs.statSync(MASTER).size / 1048576).toFixed(1);
 const secs = ((Date.now() - started) / 1000).toFixed(0);
 
 process.stdout.write(`\n✓ Fertig in ${secs} s\n`);
-process.stdout.write(`  Video:      ${FINAL} (${size} MB)\n`);
+process.stdout.write(`  Website:    ${FINAL} (${size} MB, CRF ${WEB_CRF})\n`);
+process.stdout.write(`  Master:     ${MASTER} (${masterSize} MB, bleibt lokal)\n`);
 process.stdout.write(`  Vorschau:   ${POSTER}\n`);
 process.stdout.write(`  Untertitel: ${path.join(VIDEO_DIR, 'captions.srt')}\n`);

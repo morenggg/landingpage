@@ -6,7 +6,7 @@ identisch neu erzeugt werden.
 
 | Datei | Inhalt |
 | --- | --- |
-| `out/dartgolf-demo.mp4` | Das fertige Video, 1920×1080, 30 fps, ~116 s |
+| `out/dartgolf-demo.mp4` | Auslieferungsfassung für die Website: 1920×1080, 30 fps, ~116 s, ~14 MB |
 | `out/poster.jpg` | Vorschaubild |
 | `captions.srt` | Untertitel (aus `studio/subtitles.js` erzeugt) |
 | `narration.md` | Sprechertext für eine echte Sprachaufnahme |
@@ -74,6 +74,30 @@ im Repository steht kein Zeile Video-Code in `/dartgolf/src/`.
 Ein Nebeneffekt wird bewusst genutzt: der Endstand am Ende der Demo entsteht,
 indem ein zweiter, unsichtbarer App-Rahmen in einem einzigen Frame durch eine
 komplette Runde geschickt wird. Virtuelle Zeit kostet keine Videozeit.
+
+---
+
+## 2b · Zwei Fassungen: Master und Web-Export
+
+`build/build.mjs` erzeugt zwei Dateien:
+
+| Datei | Güte | Zweck |
+| --- | --- | --- |
+| `out/master.mp4` | CRF 21, ~40 MB | Archiv und Weiterverwendung (YouTube, Schnitt). Wird **nicht** eingecheckt. |
+| `out/dartgolf-demo.mp4` | CRF 30, ~14 MB | Die Datei, die die Website ausliefert. |
+
+Warum zwei? Der Master ist für eine Webseite zu schwer – der Player müsste
+minutenlang puffern, bevor überhaupt etwas läuft. Der Web-Export behält die
+**volle Auflösung** (die Schrift der App-Oberfläche muss lesbar bleiben) und
+senkt nur die Bitrate auf rund 1 Mbit/s. In beiden Fällen liegt der Index
+vorne (`-movflags +faststart`), sonst müsste der Browser die ganze Datei laden,
+bevor das erste Bild erscheint.
+
+Güte des Web-Exports ändern:
+
+```bash
+node build/build.mjs --skip-render --skip-audio --web-crf 26   # größer, feiner
+```
 
 ---
 
@@ -223,7 +247,7 @@ Das Video ist eine Produkt-Demo, keine Werbung. Deshalb:
 * Die Musik ist selbst synthetisiert und klingt entsprechend schlicht.
   Sie ist als ruhiger Hintergrund gedacht, nicht als Musikstück.
 * Der Bau braucht einen laufenden Webserver und rund 20 Minuten.
-* `out/soundtrack.wav` ist eine Zwischendatei (21 MB) und wird nicht
-  eingecheckt – sie entsteht in Sekunden neu.
+* `out/soundtrack.wav` (21 MB), `out/video-only.mp4` und `out/master.mp4`
+  sind Zwischendateien und werden nicht eingecheckt – sie entstehen neu.
 * Die Demo läuft in einer Chromium-Version der Bauumgebung. Auf anderen
   Browsern kann die Anwendung minimal anders aussehen (Schriftglättung).

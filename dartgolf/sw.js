@@ -7,10 +7,32 @@
  *  - App-Shell beim Installieren in den Cache legen,
  *  - danach "cache first" für eigene Dateien, mit Aktualisierung im Hintergrund,
  *  - Navigationsanfragen fallen offline auf offline.html zurück,
- *  - fremde Adressen (z. B. eine Autodarts-Quelle) werden nie zwischengespeichert.
+ *  - fremde Adressen (z. B. eine Autodarts-Quelle) werden nie zwischengespeichert,
+ *  - große Dateien (Video) werden weder zwischengespeichert noch abgefangen.
  */
 
-const CACHE = 'dartgolf-v2';
+/**
+ * Obergrenze für den Zwischenspeicher: alles darüber wird durchgelassen.
+ *
+ * Hintergrund: Eine große Antwort in den Cache zu kopieren, während der Player
+ * sie gleichzeitig liest, bremst den Stream aus – das Video "lädt" dann nur.
+ * Solche Dateien liefert der Browser besser direkt aus.
+ */
+const MAX_CACHE_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Darf diese Antwort in den Zwischenspeicher?
+ * @param {Response} response
+ * @returns {boolean}
+ */
+function isCacheable(response) {
+  if (!response || response.status !== 200 || response.type !== 'basic') return false;
+  const length = Number(response.headers.get('content-length'));
+  if (Number.isFinite(length) && length > MAX_CACHE_BYTES) return false;
+  return true;
+}
+
+const CACHE = 'dartgolf-v3';
 
 const SHELL = [
   './',
@@ -103,7 +125,7 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const network = fetch(request)
         .then((response) => {
-          if (response && response.status === 200 && response.type === 'basic') {
+          if (isCacheable(response)) {
             const copy = response.clone();
             caches.open(CACHE).then((cache) => cache.put(request, copy));
           }

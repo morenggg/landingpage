@@ -4,6 +4,7 @@ package-lock.json
 
 # Zwischendateien des Bauvorgangs – entstehen in Minuten neu
 out/video-only.mp4
+out/master.mp4
 out/soundtrack.wav
 out/_*.mp4
 out/_*.jpg

@@ -266,8 +266,10 @@
   <!-- ============================ Erklärvideo =============================== -->
   <!--
     Das Video liegt im Repository unter video/out/. Es wird bewusst NICHT
-    vorgeladen (preload="none"): die Datei ist rund 40 MB groß und soll die
-    Startseite nicht belasten. Sichtbar ist zunächst nur das Vorschaubild.
+    vorgeladen (preload="none"), damit die Startseite leicht bleibt – sichtbar
+    ist zunächst nur das Vorschaubild. Die Datei ist auf etwa 14 MB bei voller
+    Auflösung ausgelegt und beginnt dadurch sofort zu laufen; der Index liegt
+    vorne (faststart).
   -->
   <div id="video-dialog" class="modal" role="dialog" aria-modal="true" aria-labelledby="video-title" hidden>
     <div class="modal-card modal-card--video">
@@ -298,8 +300,8 @@
         </div>
         <p class="field-hint">
           Aufbau, Datenfluss, Steuerung und eine Live-Demo im Testmodus.
-          Rund 116 Sekunden, etwa 40 MB – im Mobilfunknetz vielleicht später ansehen.
-          Der Ton ist Beiwerk, alle Aussagen stehen als Untertitel im Bild.
+          Rund 116 Sekunden, etwa 14 MB. Der Ton ist Beiwerk – alle Aussagen
+          stehen als Untertitel im Bild.
         </p>
       </div>
     </div>

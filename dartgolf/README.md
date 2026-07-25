@@ -124,7 +124,7 @@ Engine noch in einen einzelnen Bildschirm.
 
 Auf dem Startbildschirm führt die Schaltfläche **„Video ansehen"** zu einem
 Erklärvideo (~116 s, 1920×1080). Es wird bewusst erst beim Abspielen geladen
-(`preload="none"`, rund 40 MB) und ist vom Service-Worker-Cache ausgenommen –
+(`preload="none"`, rund 14 MB) und ist vom Service-Worker-Cache ausgenommen –
 die Startseite bleibt dadurch leicht. Untertitel liegen als WebVTT bei.
 
 Unter `video/` liegt neben dem Video die **komplette Produktion** – Bühne,
@@ -182,7 +182,7 @@ Ordner `dartgolf/` zu committen – die Seite ist danach unter `/dartgolf/`
 erreichbar. Bestehende Seiten werden nicht berührt.
 
 Nach Änderungen an Dateien der App-Shell sollte die Cache-Version in `sw.js`
-(`const CACHE = 'dartgolf-v2'`) erhöht werden, damit alle Clients die neue
+(`const CACHE = 'dartgolf-v3'`) erhöht werden, damit alle Clients die neue
 Fassung laden.
 
 ---
