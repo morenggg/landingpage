@@ -1,0 +1,13 @@
+# Bauwerkzeuge (werden mit `npm install playwright ffmpeg-static` geholt)
+node_modules
+package-lock.json
+
+# Zwischendateien des Bauvorgangs – entstehen in Minuten neu
+out/video-only.mp4
+out/soundtrack.wav
+out/_*.mp4
+out/_*.jpg
+
+# Das fertige Video und das Vorschaubild liegen bewusst im Repository:
+# !out/dartgolf-demo.mp4
+# !out/poster.jpg

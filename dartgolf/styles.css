@@ -765,6 +765,27 @@ input[type="color"] {
   padding: clamp(1rem, 2.5vw, 1.8rem);
 }
 
+/* Der Videodialog darf breiter werden als die übrigen Dialoge. */
+.modal-card--video { width: min(100%, 76rem); }
+
+.video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #05080c;
+}
+
+.video-frame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #05080c;
+}
+
 .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.8rem; }
 .modal-head h2 { margin: 0; font-size: var(--fs-lg); }
 .modal-body { display: flex; flex-direction: column; gap: 0.8rem; }

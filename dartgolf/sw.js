@@ -10,7 +10,7 @@
  *  - fremde Adressen (z. B. eine Autodarts-Quelle) werden nie zwischengespeichert.
  */
 
-const CACHE = 'dartgolf-v1';
+const CACHE = 'dartgolf-v2';
 
 const SHELL = [
   './',
@@ -76,6 +76,12 @@ self.addEventListener('fetch', (event) => {
   // Nur eigene Dateien im eigenen Geltungsbereich behandeln.
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.startsWith(new URL('./', self.location).pathname)) return;
+
+  // Das Erklärvideo bleibt außen vor: es ist rund 40 MB groß und wird vom
+  // Player in Teilstücken (Range-Requests) geladen. Beides passt nicht in
+  // einen Shell-Cache – der Browser übernimmt das selbst.
+  if (url.pathname.includes('/video/')) return;
+  if (request.headers.has('range')) return;
 
   // Seitenaufrufe: Netz zuerst, offline die Startseite aus dem Cache.
   if (request.mode === 'navigate') {

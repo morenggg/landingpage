@@ -120,6 +120,38 @@ Engine noch in einen einzelnen Bildschirm.
 
 ---
 
+## 3b. Erklärvideo
+
+Auf dem Startbildschirm führt die Schaltfläche **„Video ansehen"** zu einem
+Erklärvideo (~116 s, 1920×1080). Es wird bewusst erst beim Abspielen geladen
+(`preload="none"`, rund 40 MB) und ist vom Service-Worker-Cache ausgenommen –
+die Startseite bleibt dadurch leicht. Untertitel liegen als WebVTT bei.
+
+Unter `video/` liegt neben dem Video die **komplette Produktion** – Bühne,
+Szenen, Tonspur und Bauskripte:
+
+```
+video/out/dartgolf-demo.mp4     fertiges Video
+video/out/poster.jpg            Vorschaubild (auch Poster im Player)
+video/narration.md              Sprechertext für eine echte Aufnahme
+video/captions.vtt              Untertitel für den Player im Browser
+video/captions.srt              dieselben Untertitel für Videoschnitt
+video/README.md                 wie es gebaut wird und warum so
+```
+
+Besonderheit: Die Demo-Passage ist kein Nachbau, sondern die echte App in
+einem iframe – mit virtualisierter Zeit, damit sie Frame-genau mitläuft.
+Musik und Geräusche sind selbst berechnet, es liegen keine fremden
+Mediendateien im Repository.
+
+Neu bauen (Webserver auf `127.0.0.1:8099` vorausgesetzt):
+
+```bash
+cd dartgolf/video
+npm install playwright ffmpeg-static
+node build/build.mjs --fps 30
+```
+
 ## 4. Lokale Entwicklung
 
 Es gibt keinen Buildschritt. ES-Module brauchen aber einen Webserver
@@ -150,7 +182,7 @@ Ordner `dartgolf/` zu committen – die Seite ist danach unter `/dartgolf/`
 erreichbar. Bestehende Seiten werden nicht berührt.
 
 Nach Änderungen an Dateien der App-Shell sollte die Cache-Version in `sw.js`
-(`const CACHE = 'dartgolf-v1'`) erhöht werden, damit alle Clients die neue
+(`const CACHE = 'dartgolf-v2'`) erhöht werden, damit alle Clients die neue
 Fassung laden.
 
 ---

@@ -1,0 +1,307 @@
+/**
+ * DartGolf – Render-Studio: Gestaltung der Videobühne
+ *
+ * Feste Bühne 1920x1080. Es gibt hier bewusst KEINE CSS-Animationen und keine
+ * Transitions: jede Bewegung wird pro Frame aus JavaScript gesetzt, damit das
+ * Rendering deterministisch bleibt.
+ *
+ * Farben und Schriften folgen der App (dunkel, Neon-Akzente, Barlow Condensed).
+ */
+
+:root {
+  --bg: #05080c;
+  --bg-2: #0a1018;
+  --panel: rgba(14, 22, 32, 0.86);
+  --line: rgba(255, 255, 255, 0.10);
+  --text: #eaf2f8;
+  --dim: #93a6b8;
+  --mint: #3ddc97;
+  --cyan: #4cc9f0;
+  --violet: #b892ff;
+  --amber: #ffb703;
+  --magenta: #ff5d8f;
+
+  --sans: 'Barlow Condensed', 'Liberation Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #000;
+}
+
+#stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  background: var(--bg);
+  overflow: hidden;
+  font-family: var(--sans);
+  color: var(--text);
+  /* Kantenglättung der Schrift wie in einem Videoschnittprogramm */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+#fx-back { position: absolute; inset: 0; z-index: 1; }
+#layers  { position: absolute; inset: 0; z-index: 10; }
+#fx-front { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+
+/* Feines Filmkorn + Vignette: nimmt der Fläche das "Digitale". */
+#grain {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.34;
+  background-image:
+    radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.30'/></svg>");
+  background-size: cover, 320px 320px;
+  mix-blend-mode: soft-light;
+}
+
+/* ----------------------------- Szenen-Ebenen ---------------------------- */
+
+.scene {
+  position: absolute;
+  inset: 0;
+  /* Wird pro Frame gesetzt; Standard ist unsichtbar. */
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity, filter;
+}
+
+/* ------------------------------- Typografie ----------------------------- */
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.h1 {
+  font-size: 150px;
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+}
+
+.h2 {
+  font-size: 96px;
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.h3 {
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1.28;
+  color: var(--dim);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.grad-mint {
+  background: linear-gradient(104deg, var(--mint) 0%, var(--cyan) 62%, var(--violet) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Zeichenweise Einblendung: jedes Zeichen ist ein eigenes Element. */
+.char { display: inline-block; white-space: pre; will-change: transform, opacity; }
+.word { display: inline-block; white-space: nowrap; }
+
+/* --------------------------------- Chips -------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 26px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--mono);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.chip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--dim); }
+.chip.is-mint .dot { background: var(--mint); box-shadow: 0 0 14px var(--mint); }
+.chip.is-amber .dot { background: var(--amber); box-shadow: 0 0 14px var(--amber); }
+.chip.is-amber { border-color: rgba(255, 183, 3, 0.42); color: #ffe6b0; }
+
+/* -------------------------------- Karten -------------------------------- */
+
+.card {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--panel);
+  padding: 38px 40px;
+  box-shadow: 0 60px 120px -60px #000, inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  will-change: transform, opacity;
+}
+
+.card .card-title {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+
+.card .card-text {
+  font-size: 27px;
+  line-height: 1.34;
+  color: var(--dim);
+}
+
+.card .card-icon {
+  width: 74px;
+  height: 74px;
+  margin-bottom: 26px;
+}
+
+/* --------------------------- Code / JSON-Anzeige ------------------------ */
+
+.code {
+  font-family: var(--mono);
+  font-size: 26px;
+  line-height: 1.62;
+  white-space: pre;
+  color: #c9d8e6;
+}
+
+.code .k { color: var(--cyan); }
+.code .s { color: var(--mint); }
+.code .n { color: var(--amber); }
+.code .c { color: #5b6b7c; }
+
+/* ------------------------- Gerätrahmen für die App ---------------------- */
+
+/*
+  Der Rahmen zeigt die echte Web-App in einem iframe. Er wird als Ganzes
+  skaliert und verschoben (Kamerafahrt), die App selbst läuft in ihrer
+  natürlichen Größe von 1920x1080.
+*/
+.device {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.device-shell {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #05080c;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 80px 160px -60px rgba(0, 0, 0, 0.95);
+}
+
+.device-shell iframe {
+  width: 1920px;
+  height: 1080px;
+  border: 0;
+  display: block;
+}
+
+/* Reflexion auf dem "Glas" des Rahmens – rein dekorativ. */
+.device-gloss {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(122deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 34%);
+}
+
+/* Beschriftungen, die auf die App zeigen (Callouts). */
+.callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(76, 201, 240, 0.45);
+  background: rgba(8, 14, 22, 0.92);
+  font-family: var(--mono);
+  font-size: 24px;
+  color: #dceffb;
+  white-space: nowrap;
+  box-shadow: 0 30px 70px -40px #000;
+  will-change: transform, opacity;
+}
+
+.callout.is-mint { border-color: rgba(61, 220, 151, 0.5); }
+.callout.is-amber { border-color: rgba(255, 183, 3, 0.5); color: #ffe9bd; }
+.callout .badge {
+  font-weight: 700;
+  color: var(--cyan);
+}
+.callout.is-mint .badge { color: var(--mint); }
+.callout.is-amber .badge { color: var(--amber); }
+
+/* ------------------------------ Untertitel ------------------------------ */
+
+/*
+  Die Untertitel sind Teil der Gestaltung (wie bei modernen Produktvideos)
+  und ersetzen die fehlende Sprecherstimme.
+*/
+#subtitle {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  z-index: 45;
+  max-width: 1360px;
+  text-align: center;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: -0.005em;
+  color: #f2f7fb;
+  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* Fortschrittslinie am unteren Rand – ruhiger Takt für das ganze Video. */
+#progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  z-index: 46;
+  background: linear-gradient(90deg, var(--mint), var(--cyan));
+  opacity: 0.5;
+}
