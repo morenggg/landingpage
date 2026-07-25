@@ -52,6 +52,8 @@ const autodartsProvider = new AutodartsProvider();
 
 /** @type {GameEngine|null} */
 let engine = null;
+/** Steuerung des Videodialogs (wird in init() gesetzt). */
+let videoDialog = { open() {}, close() {} };
 /** Zuletzt gespeicherte Einstellungen (werden beim Spielstart übernommen). */
 let settings = loadSettings();
 
@@ -264,6 +266,43 @@ function wireStartScreen() {
   });
 }
 
+/**
+ * Erklärvideo: Dialog öffnen und schließen.
+ *
+ * Das Video wird erst geladen, wenn es abgespielt wird (preload="none").
+ * Beim Schließen wird es angehalten, damit im Hintergrund kein Ton läuft.
+ */
+function wireVideoDialog() {
+  const dialog = qs('#video-dialog');
+  const video = qs('#demo-video');
+  if (!dialog || !video) return;
+
+  const open = () => {
+    setHidden(dialog, false);
+  };
+  const close = () => {
+    try {
+      video.pause();
+    } catch { /* ohne Abspielunterstützung unkritisch */ }
+    setHidden(dialog, true);
+  };
+
+  qs('#btn-open-video').addEventListener('click', open);
+  qs('#btn-video-close').addEventListener('click', close);
+  // Klick auf den Hintergrund schließt den Dialog.
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) close();
+  });
+
+  return { open, close };
+}
+
+/** Ist der Videodialog gerade offen? */
+function isVideoDialogOpen() {
+  const dialog = qs('#video-dialog');
+  return Boolean(dialog && !dialog.hasAttribute('hidden'));
+}
+
 function wireSetupScreen() {
   qs('#btn-setup-back').addEventListener('click', () => {
     setState({ screen: SCREEN.START });
@@ -321,6 +360,16 @@ function wireResultScreen() {
 /** Tastatursteuerung. */
 function wireKeyboard() {
   window.addEventListener('keydown', (event) => {
+    // Läuft das Erklärvideo, gehören alle Tasten dem Player.
+    // Nur Escape schließt den Dialog.
+    if (isVideoDialogOpen()) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        videoDialog.close();
+      }
+      return;
+    }
+
     // Eingabefelder haben Vorrang.
     const target = event.target;
     if (target instanceof HTMLElement) {
@@ -454,6 +503,7 @@ function init() {
 
   wireStartScreen();
   wireSetupScreen();
+  videoDialog = wireVideoDialog() || videoDialog;
   wireGameScreen();
   wireResultScreen();
   wireKeyboard();

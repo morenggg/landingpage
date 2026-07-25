@@ -54,6 +54,7 @@
           <button type="button" class="btn btn--ghost" id="btn-open-connection">Autodarts verbinden</button>
           <button type="button" class="btn btn--ghost" id="btn-test-mode">Testmodus</button>
           <button type="button" class="btn btn--ghost" id="btn-open-guide">Spielanleitung</button>
+          <button type="button" class="btn btn--ghost" id="btn-open-video">Video ansehen</button>
         </div>
       </div>
 
@@ -259,6 +260,48 @@
         <button type="button" class="btn btn--small btn--ghost" id="btn-connection-close">Schließen</button>
       </header>
       <div class="modal-body" id="connection-body"><!-- von connection-panel.js gefüllt --></div>
+    </div>
+  </div>
+
+  <!-- ============================ Erklärvideo =============================== -->
+  <!--
+    Das Video liegt im Repository unter video/out/. Es wird bewusst NICHT
+    vorgeladen (preload="none"): die Datei ist rund 40 MB groß und soll die
+    Startseite nicht belasten. Sichtbar ist zunächst nur das Vorschaubild.
+  -->
+  <div id="video-dialog" class="modal" role="dialog" aria-modal="true" aria-labelledby="video-title" hidden>
+    <div class="modal-card modal-card--video">
+      <header class="modal-head">
+        <h2 id="video-title">DartGolf in 2 Minuten</h2>
+        <button type="button" class="btn btn--small btn--ghost" id="btn-video-close">Schließen</button>
+      </header>
+      <div class="modal-body">
+        <div class="video-frame">
+          <video
+            id="demo-video"
+            controls
+            preload="none"
+            playsinline
+            poster="video/out/poster.jpg"
+            width="1920"
+            height="1080">
+            <source src="video/out/dartgolf-demo.mp4" type="video/mp4">
+            <track
+              kind="subtitles"
+              label="Deutsch"
+              srclang="de"
+              src="video/captions.vtt"
+              default>
+            Dein Browser kann dieses Video nicht abspielen.
+            <a href="video/out/dartgolf-demo.mp4">Video herunterladen</a>
+          </video>
+        </div>
+        <p class="field-hint">
+          Aufbau, Datenfluss, Steuerung und eine Live-Demo im Testmodus.
+          Rund 116 Sekunden, etwa 40 MB – im Mobilfunknetz vielleicht später ansehen.
+          Der Ton ist Beiwerk, alle Aussagen stehen als Untertitel im Bild.
+        </p>
+      </div>
     </div>
   </div>
 
